@@ -11,7 +11,9 @@
 }
 
 body {
-  /* font-family is now handled by Tailwind's font-body class in layout.tsx */
+ font-family: 'Zpix', sans-serif; /* Directly apply Zpix and provide a fallback */
+ font-smooth: never;
+ -webkit-font-smoothing: none;
 }
 
 @layer base {
@@ -107,12 +109,10 @@ body {
   }
   body {
     @apply bg-background text-foreground;
-    /* font-family is handled by .font-body utility class in layout.tsx */
   }
   svg {
     shape-rendering: crispEdges;
   }
-  .shadow-sm { box-shadow: 2px 2px 0px 0px hsl(var(--border)); }
   .shadow-md { box-shadow: 3px 3px 0px 0px hsl(var(--border)); }
   .shadow-lg { box-shadow: 4px 4px 0px 0px hsl(var(--border)); }
   .shadow-xl { box-shadow: 6px 6px 0px 0px hsl(var(--border)); }
@@ -129,8 +129,6 @@ body {
     box-shadow: 1px 1px 0px 0px hsl(var(--border));
   }
   .font-pixelated {
-    font-smooth: never;
-    -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: grayscale;
     image-rendering: pixelated; /* For images */
     image-rendering: crisp-edges; /* For images */
