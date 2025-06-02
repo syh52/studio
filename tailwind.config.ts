@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['VT323', 'monospace'], // Pixel font for body
-        headline: ['"Press Start 2P"', 'cursive'], // Pixel font for headlines
+        headline: ['"Press Start 2P"', 'monospace'], // Pixel font for headlines, consistent fallback
         code: ['VT323', 'monospace'],
       },
       colors: {
