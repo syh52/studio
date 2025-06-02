@@ -17,10 +17,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <head>
-        {/* Zpix is now primary, loaded via @font-face in globals.css.
-            VT323 and Press Start 2P are fallbacks defined in tailwind.config.ts,
-            and do not need direct import here if Zpix covers Latin characters well.
-        */}
+        {/* Zpix is now primary, loaded via @font-face in globals.css. */}
       </head>
       <body className="font-body antialiased font-pixelated">
         <AuthProvider>
