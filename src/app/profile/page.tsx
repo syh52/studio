@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCircle, Mail, Award, LogOut, Edit3 } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
-import Image from 'next/image';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 export default function ProfilePage() {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
@@ -31,14 +31,16 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto py-8 space-y-6">
       <Card className="pixel-border shadow-lg">
         <CardHeader className="text-center">
-          <Image 
-            src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`} 
-            alt="用户头像" 
-            width={120} 
-            height={120} 
-            data-ai-hint="avatar character"
-            className="rounded-full mx-auto mb-4 pixel-border border-4 border-accent"
-          />
+          <Avatar className="w-32 h-32 mx-auto mb-4 pixel-border border-4 border-accent">
+            <AvatarImage
+              src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`}
+              alt={user.username || "用户头像"}
+              data-ai-hint="avatar character"
+            />
+            <AvatarFallback className="text-3xl font-headline bg-secondary text-secondary-foreground">
+              {user.username ? user.username.charAt(0).toUpperCase() : "U"}
+            </AvatarFallback>
+          </Avatar>
           <CardTitle className="font-headline text-3xl text-accent">{user.username}</CardTitle>
           <CardDescription>您的 Lexicon 个人资料</CardDescription>
         </CardHeader>
