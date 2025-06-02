@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext'; // FIXED_AVATAR_STYLE import removed
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';

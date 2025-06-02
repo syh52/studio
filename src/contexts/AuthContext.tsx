@@ -5,8 +5,6 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// FIXED_AVATAR_STYLE is removed as we now use a static image path directly in components
-
 interface User {
   id: string;
   email: string;
@@ -42,7 +40,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUser = localStorage.getItem('aviationLexiconUser');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      delete parsedUser.avatarStyle; // Ensure any old avatarStyle is removed
+      // Ensure any old avatarStyle is removed if present from previous versions
+      delete parsedUser.avatarStyle; 
       setUser(parsedUser);
     }
     setIsLoading(false);
@@ -50,7 +49,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLocalStorage = (updatedUser: User | null) => {
     if (updatedUser) {
-      localStorage.setItem('aviationLexiconUser', JSON.stringify(updatedUser));
+      // Ensure avatarStyle is not part of the stored user object
+      const userToStore = { ...updatedUser };
+      delete (userToStore as any).avatarStyle;
+      localStorage.setItem('aviationLexiconUser', JSON.stringify(userToStore));
     } else {
       localStorage.removeItem('aviationLexiconUser');
     }
@@ -99,6 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     MOCK_USERS[email] = { email, username, password: pass };
     localStorage.setItem(`${email}_points`, "0");
     localStorage.removeItem(`${email}_lastCheckIn`);
+    // No avatarStyle to set for new users
     setIsLoading(false);
     return true;
   };
