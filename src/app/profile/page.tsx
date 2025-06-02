@@ -33,9 +33,9 @@ export default function ProfilePage() {
         <CardHeader className="text-center">
           <Avatar className="w-32 h-32 mx-auto mb-4 pixel-border border-4 border-accent">
             <AvatarImage
-              src={`https://api.dicebear.com/8.x/bottts/svg?seed=${user.id}`}
+              src={`https://api.dicebear.com/8.x/shapes/svg?seed=${user.id}`}
               alt={user.username || "用户头像"}
-              data-ai-hint="robot avatar"
+              data-ai-hint="pixel creature"
             />
             <AvatarFallback className="text-3xl font-headline bg-secondary text-secondary-foreground">
               {user.username ? user.username.charAt(0).toUpperCase() : "U"}
