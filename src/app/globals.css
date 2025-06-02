@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Zpix';
+  src: url('/fonts/zpix.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 body {
   font-family: var(--font-body), sans-serif; /* Updated in layout.tsx */
 }
@@ -123,7 +131,8 @@ body {
     font-smooth: never;
     -webkit-font-smoothing: none;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeSpeed;
+    image-rendering: pixelated; /* For images */
+    image-rendering: crisp-edges; /* For images */
   }
 }
 

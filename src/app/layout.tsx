@@ -17,10 +17,8 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+        {/* Removed Google Fonts for Press Start 2P and VT323 as Zpix will be primary */}
+        {/* If specific English pixel fonts are still desired for certain elements, they can be re-added */}
       </head>
       <body className="font-body antialiased font-pixelated">
         <AuthProvider>

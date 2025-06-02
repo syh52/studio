@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['VT323', 'monospace'], // Pixel font for body
-        headline: ['"Press Start 2P"', 'monospace'], // Pixel font for headlines, consistent fallback
-        code: ['VT323', 'monospace'],
+        body: ['Zpix', 'VT323', 'Arial', 'sans-serif', 'monospace'], 
+        headline: ['Zpix', '"Press Start 2P"', 'Arial', 'sans-serif', 'monospace'], 
+        code: ['Zpix', 'VT323', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
