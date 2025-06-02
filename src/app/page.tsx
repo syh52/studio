@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
@@ -60,7 +61,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8 py-6">
       <section className="text-center space-y-4">
-        <Image src="https://placehold.co/300x150.png?text=Lexicon" alt="Lexicon 横幅" width={300} height={150} data-ai-hint="lexicon pixelart" className="mx-auto pixel-border shadow-lg"/>
+        <Image src="https://placehold.co/300x150.png?text=Lexicon" alt="Lexicon 横幅" width={300} height={150} data-ai-hint="cute creature" className="mx-auto pixel-border shadow-lg"/>
         <h1 className="text-4xl font-headline text-accent">欢迎来到 Lexicon！</h1>
         {isAuthenticated && user ? (
           <p className="text-lg">你好，<span className="font-bold text-accent">{user.username}</span>！准备好扩展你的航空词汇量了吗？</p>
