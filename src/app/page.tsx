@@ -37,14 +37,14 @@ export default function HomePage() {
 
   const handleDailyCheckIn = () => {
     if (!isAuthenticated) {
-      toast({ title: "Not Logged In", description: "Please log in to check in.", variant: "destructive" });
+      toast({ title: "尚未登录", description: "请登录后进行签到。", variant: "destructive" });
       return;
     }
     const success = dailyCheckIn();
     if (success) {
-      toast({ title: "Checked In!", description: `You've earned 10 Index points! Current Index: ${user?.indexPoints}.`, className:"bg-green-600 text-white pixel-border" });
+      toast({ title: "签到成功！", description: `您已获得10点“指数”！当前指数：${user?.indexPoints}。`, className:"bg-green-600 text-white pixel-border" });
     } else {
-      toast({ title: "Already Checked In", description: "You've already checked in today. Come back tomorrow!", variant: "default" });
+      toast({ title: "今日已签到", description: "您今天已经签到过了。明天再来吧！", variant: "default" });
     }
   };
 
@@ -52,7 +52,7 @@ export default function HomePage() {
     return (
       <div className="flex flex-col items-center justify-center text-center py-10">
          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-headline text-xl">Loading Trainer...</p>
+        <p className="font-headline text-xl">教练加载中...</p>
       </div>
     );
   }
@@ -60,48 +60,48 @@ export default function HomePage() {
   return (
     <div className="space-y-8 py-6">
       <section className="text-center space-y-4">
-        <Image src="https://placehold.co/300x150.png?text=Aviation+Trainer" alt="Aviation Banner" width={300} height={150} data-ai-hint="aviation pixelart" className="mx-auto pixel-border shadow-lg"/>
-        <h1 className="text-4xl font-headline text-accent">Welcome to the Aviation Lexicon Trainer!</h1>
+        <Image src="https://placehold.co/300x150.png?text=Aviation+Trainer" alt="航空训练横幅" width={300} height={150} data-ai-hint="aviation pixelart" className="mx-auto pixel-border shadow-lg"/>
+        <h1 className="text-4xl font-headline text-accent">欢迎来到航空词汇教练！</h1>
         {isAuthenticated && user ? (
-          <p className="text-lg">Hello, <span className="font-bold text-accent">{user.username}</span>! Ready to expand your aviation vocabulary?</p>
+          <p className="text-lg">你好，<span className="font-bold text-accent">{user.username}</span>！准备好扩展你的航空词汇量了吗？</p>
         ) : (
-          <p className="text-lg">Your journey to mastering aviation English starts here. Log in to begin!</p>
+          <p className="text-lg">您掌握航空英语的旅程从这里开始。请登录后开始！</p>
         )}
       </section>
 
       {isAuthenticated && (
         <section className="text-center">
           <Button onClick={handleDailyCheckIn} className="btn-pixel bg-primary text-primary-foreground hover:bg-primary/80 text-lg px-6 py-3">
-            <CalendarCheck size={24} className="mr-2" /> Daily Check-in
+            <CalendarCheck size={24} className="mr-2" /> 每日签到
           </Button>
         </section>
       )}
        {!isAuthenticated && (
         <section className="text-center">
           <Button onClick={() => router.push('/login')} className="btn-pixel bg-accent text-accent-foreground hover:bg-accent/90 text-lg px-6 py-3">
-            <LogIn size={24} className="mr-2" /> Login to Get Started
+            <LogIn size={24} className="mr-2" /> 登录以开始
           </Button>
         </section>
       )}
 
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <FeatureCard 
-          title="Vocabulary" 
-          description="Study essential English vocabulary with Chinese translations, audio, and examples using flashcards." 
+          title="词汇学习" 
+          description="通过抽认卡学习带有中文翻译、音频和例句的基础英语词汇。" 
           link="/vocabulary"
           icon={<BookOpen size={32} />}
           disabled={!isAuthenticated}
         />
         <FeatureCard 
-          title="Scenario Dialogues" 
-          description="Practice basic scenario dialogues for aviation safety officers with read and listen modes." 
+          title="情景对话" 
+          description="练习航空安全员的基础情景对话，支持阅读和收听模式。" 
           link="/dialogues"
           icon={<Plane size={32} />}
           disabled={!isAuthenticated}
         />
         <FeatureCard 
-          title="Quizzes" 
-          description="Test your understanding with vocabulary and dialogue quizzes. Earn points for correct answers." 
+          title="测验" 
+          description="通过词汇和对话测验来检验您的理解程度。答对即可获得积分。" 
           link="/quizzes"
           icon={<CheckSquare size={32} />}
           disabled={!isAuthenticated}

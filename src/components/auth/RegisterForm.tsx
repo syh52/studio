@@ -23,10 +23,10 @@ export default function RegisterForm() {
     setIsLoading(true);
     const success = await register(username, email, password);
     if (success) {
-      toast({ title: "Registration Successful", description: "Welcome! Please log in." });
+      toast({ title: "注册成功", description: "欢迎！请登录。" });
       router.push('/login');
     } else {
-      toast({ title: "Registration Failed", description: "User may already exist or invalid data.", variant: "destructive" });
+      toast({ title: "注册失败", description: "用户可能已存在或数据无效。", variant: "destructive" });
       setIsLoading(false);
     }
   };
@@ -34,13 +34,13 @@ export default function RegisterForm() {
   return (
     <Card className="w-full max-w-md mx-auto pixel-border shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl text-center text-accent">Register</CardTitle>
-        <CardDescription className="text-center">Create your Aviation Lexicon Trainer account.</CardDescription>
+        <CardTitle className="font-headline text-2xl text-center text-accent">注册</CardTitle>
+        <CardDescription className="text-center">创建您的航空词汇教练账户。</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">用户名</Label>
             <Input
               id="username"
               type="text"
@@ -48,11 +48,11 @@ export default function RegisterForm() {
               onChange={(e) => setUsername(e.target.value)}
               required
               className="input-pixel"
-              placeholder="Pilot123"
+              placeholder="例如：飞行员123"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">邮箱</Label>
             <Input
               id="email"
               type="email"
@@ -64,7 +64,7 @@ export default function RegisterForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">密码</Label>
             <Input
               id="password"
               type="password"
@@ -76,15 +76,15 @@ export default function RegisterForm() {
             />
           </div>
           <Button type="submit" className="w-full btn-pixel bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-            {isLoading ? 'Registering...' : 'Register'}
+            {isLoading ? '注册中...' : '注册'}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm">
-          Already have an account?{' '}
+          已经有账户了？{' '}
           <Link href="/login" className="text-accent hover:underline">
-            Login here
+            在此登录
           </Link>
         </p>
       </CardFooter>

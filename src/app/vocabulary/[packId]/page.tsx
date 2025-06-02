@@ -50,10 +50,10 @@ export default function FlashcardPage() {
   if (!pack) {
     return (
       <div className="text-center py-10">
-        <h1 className="text-2xl font-headline text-destructive">Vocabulary Pack Not Found</h1>
-        <p className="text-muted-foreground">The requested vocabulary pack could not be located.</p>
+        <h1 className="text-2xl font-headline text-destructive">未找到词汇包</h1>
+        <p className="text-muted-foreground">无法找到所请求的词汇包。</p>
         <Link href="/vocabulary" passHref>
-          <Button variant="link" className="text-accent mt-4">Back to Vocabulary Packs</Button>
+          <Button variant="link" className="text-accent mt-4">返回词汇包列表</Button>
         </Link>
       </div>
     );
@@ -63,12 +63,12 @@ export default function FlashcardPage() {
      return (
       <div className="text-center py-10">
         <h1 className="text-2xl font-headline text-accent">{pack.name}</h1>
-        <p className="text-muted-foreground">This pack has no vocabulary items yet.</p>
+        <p className="text-muted-foreground">此词汇包中还没有词条。</p>
          <Link href={`/vocabulary/${pack.id}/quiz`} passHref>
-          <Button variant="outline" className="btn-pixel mt-4 mr-2 border-accent text-accent hover:bg-accent/10">Go to Quiz</Button>
+          <Button variant="outline" className="btn-pixel mt-4 mr-2 border-accent text-accent hover:bg-accent/10">参加测验</Button>
         </Link>
         <Link href="/vocabulary" passHref>
-          <Button variant="link" className="text-accent mt-4">Back to Packs</Button>
+          <Button variant="link" className="text-accent mt-4">返回词汇包</Button>
         </Link>
       </div>
     );
@@ -94,7 +94,7 @@ export default function FlashcardPage() {
   return (
     <div className="flex flex-col items-center space-y-6 py-6">
       <h1 className="text-3xl font-headline text-accent text-center">{pack.name}</h1>
-      <p className="text-muted-foreground">Card {currentCardIndex + 1} of {shuffledItems.length}</p>
+      <p className="text-muted-foreground">卡片 {currentCardIndex + 1} / {shuffledItems.length}</p>
       
       <Progress value={progressPercentage} className="w-full max-w-md pixel-border h-3" />
 
@@ -102,13 +102,13 @@ export default function FlashcardPage() {
       
       <div className="flex items-center justify-center space-x-4 mt-6 w-full max-w-md">
         <Button onClick={goToPreviousCard} className="btn-pixel" aria-label="Previous card">
-          <ChevronLeft size={24} /> Prev
+          <ChevronLeft size={24} /> 上一个
         </Button>
         <Button onClick={restartPack} variant="outline" className="btn-pixel" aria-label="Restart pack">
-          <RotateCcw size={20} />
+          <RotateCcw size={20} /> 重置
         </Button>
         <Button onClick={goToNextCard} className="btn-pixel" aria-label="Next card">
-          Next <ChevronRight size={24} />
+          下一个 <ChevronRight size={24} />
         </Button>
       </div>
 
@@ -116,11 +116,11 @@ export default function FlashcardPage() {
         <Link href={`/vocabulary/${pack.id}/quiz`} passHref>
           <Button className="btn-pixel bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto">
             <CheckCircle2 size={20} className="mr-2" />
-            Finished? Take the Quiz!
+            学完了？参加测验！
           </Button>
         </Link>
         <Link href="/vocabulary" passHref>
-          <Button variant="link" className="text-accent">Back to Vocabulary Packs</Button>
+          <Button variant="link" className="text-accent">返回词汇包列表</Button>
         </Link>
       </div>
     </div>

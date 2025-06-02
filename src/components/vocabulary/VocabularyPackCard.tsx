@@ -21,17 +21,17 @@ export default function VocabularyPackCard({ pack }: VocabularyPackCardProps) {
         <CardDescription className="h-16 overflow-hidden text-ellipsis">{pack.description}</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow">
-        <p className="text-sm text-muted-foreground">Contains {pack.items.length} terms.</p>
+        <p className="text-sm text-muted-foreground">包含 {pack.items.length} 个词条。</p>
       </CardContent>
       <CardFooter className="flex justify-between items-center">
         <Link href={`/vocabulary/${pack.id}`} passHref>
           <Button className="btn-pixel bg-primary text-primary-foreground hover:bg-primary/90">
-            <LucideIcons.Sparkles size={16} className="mr-2"/>Start Learning
+            <LucideIcons.Sparkles size={16} className="mr-2"/>开始学习
           </Button>
         </Link>
         <Link href={`/vocabulary/${pack.id}/quiz`} passHref>
           <Button variant="outline" className="btn-pixel border-accent text-accent hover:bg-accent/10">
-            <LucideIcons.FileQuestion size={16} className="mr-2"/>Take Quiz
+            <LucideIcons.FileQuestion size={16} className="mr-2"/>参加测验
           </Button>
         </Link>
       </CardFooter>

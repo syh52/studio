@@ -18,7 +18,7 @@ export default function Flashcard({ item }: FlashcardProps) {
 
   const playAudio = () => {
     // Mock audio playback
-    alert(`Playing audio for: ${item.english}`);
+    alert(`正在播放音频： ${item.english}`);
     if (item.pronunciationAudio) {
       // const audio = new Audio(item.pronunciationAudio);
       // audio.play();
@@ -36,7 +36,7 @@ export default function Flashcard({ item }: FlashcardProps) {
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); playAudio(); }} className="absolute top-4 right-4 text-accent hover:bg-accent/20">
           <Volume2 size={24} />
         </Button>
-        <p className="text-sm text-muted-foreground mt-auto">Click to see translation</p>
+        <p className="text-sm text-muted-foreground mt-auto">点击查看翻译</p>
       </div>
 
       {/* Back of the card */}
@@ -49,7 +49,7 @@ export default function Flashcard({ item }: FlashcardProps) {
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); playAudio(); }} className="absolute top-4 right-4 text-accent hover:bg-accent/20">
           <Volume2 size={24} />
         </Button>
-        <p className="text-sm text-muted-foreground/70 mt-auto">Click to see English</p>
+        <p className="text-sm text-muted-foreground/70 mt-auto">点击查看英文</p>
       </div>
     </Card>
   );

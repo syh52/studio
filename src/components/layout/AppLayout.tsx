@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </main>
       {showHeader && (
         <footer className="text-center p-4 text-xs text-muted-foreground border-t-2 border-primary">
-          © {new Date().getFullYear()} Aviation Lexicon Trainer. All pixels reserved.
+          © {new Date().getFullYear()} 航空词汇教练。保留所有像素。
         </footer>
       )}
     </div>

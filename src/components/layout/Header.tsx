@@ -22,15 +22,15 @@ export default function Header() {
   const pathname = usePathname();
 
   const navLinks = [
-    { href: "/vocabulary", label: "Vocabulary", icon: <BookOpen size={18} /> },
-    { href: "/dialogues", label: "Dialogues", icon: <Plane size={18} /> },
-    { href: "/quizzes", label: "Quizzes", icon: <CheckSquare size={18} /> },
+    { href: "/vocabulary", label: "词汇", icon: <BookOpen size={18} /> },
+    { href: "/dialogues", label: "对话", icon: <Plane size={18} /> },
+    { href: "/quizzes", label: "测验", icon: <CheckSquare size={18} /> },
   ];
 
   if (isLoading) {
     return (
       <header className="bg-primary text-primary-foreground p-3 flex justify-between items-center pixel-border border-b-4 border-accent">
-        <h1 className="text-xl md:text-2xl font-headline">Aviation Lexicon Trainer</h1>
+        <h1 className="text-xl md:text-2xl font-headline">航空词汇教练</h1>
         <div className="h-8 w-24 bg-primary-foreground/20 animate-pulse rounded-sm"></div>
       </header>
     );
@@ -39,7 +39,7 @@ export default function Header() {
   return (
     <header className="bg-primary text-primary-foreground p-3 flex flex-col sm:flex-row justify-between items-center gap-2 pixel-border border-b-4 border-accent sticky top-0 z-50">
       <Link href="/" className="text-lg md:text-xl font-headline hover:text-accent transition-colors">
-        Aviation Lexicon Trainer
+        航空词汇教练
       </Link>
       
       <nav className="flex items-center gap-2 md:gap-3">
@@ -77,16 +77,16 @@ export default function Header() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => router.push('/profile')} className="cursor-pointer">
                   <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                  <span>个人资料</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                  <span>设置</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-400 hover:!text-red-400 focus:!bg-red-500/20 focus:!text-red-400">
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
+                  <span>退出登录</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -95,10 +95,10 @@ export default function Header() {
         {!isAuthenticated && (
           <div className="flex gap-2">
             <Button onClick={() => router.push('/login')} variant="secondary" size="sm" className="btn-pixel text-xs">
-              <LogIn size={16} className="mr-1 md:mr-2" /> Login
+              <LogIn size={16} className="mr-1 md:mr-2" /> 登录
             </Button>
             <Button onClick={() => router.push('/register')} variant="default" size="sm" className="btn-pixel bg-accent text-accent-foreground hover:bg-accent/90 text-xs">
-              <UserPlus size={16} className="mr-1 md:mr-2" /> Register
+              <UserPlus size={16} className="mr-1 md:mr-2" /> 注册
             </Button>
           </div>
         )}

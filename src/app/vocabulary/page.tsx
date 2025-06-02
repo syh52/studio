@@ -34,8 +34,8 @@ export default function VocabularyPage() {
   return (
     <div className="space-y-8">
       <section className="text-center">
-        <h1 className="text-3xl font-headline text-accent mb-2">Vocabulary Packs</h1>
-        <p className="text-lg text-muted-foreground">Choose a pack to start learning aviation terms.</p>
+        <h1 className="text-3xl font-headline text-accent mb-2">词汇包</h1>
+        <p className="text-lg text-muted-foreground">选择一个词汇包开始学习航空术语。</p>
       </section>
       
       {/* Search bar - future enhancement */}
@@ -43,7 +43,7 @@ export default function VocabularyPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
         <Input 
           type="search" 
-          placeholder="Search vocabulary packs..." 
+          placeholder="搜索词汇包..." 
           className="pl-10 input-pixel"
           // onChange={(e) => setSearchTerm(e.target.value)} 
         />
@@ -55,7 +55,7 @@ export default function VocabularyPage() {
         ))}
       </div>
       {vocabularyPacks.length === 0 && (
-        <p className="text-center text-muted-foreground">No vocabulary packs available at the moment. Check back soon!</p>
+        <p className="text-center text-muted-foreground">目前没有可用的词汇包。请稍后再回来查看！</p>
       )}
     </div>
   );

@@ -22,10 +22,10 @@ export default function LoginForm() {
     setIsLoading(true);
     const success = await login(email, password);
     if (success) {
-      toast({ title: "Login Successful", description: "Welcome back!" });
+      toast({ title: "登录成功", description: "欢迎回来！" });
       router.push('/');
     } else {
-      toast({ title: "Login Failed", description: "Invalid email or password.", variant: "destructive" });
+      toast({ title: "登录失败", description: "邮箱或密码无效。", variant: "destructive" });
       setIsLoading(false);
     }
   };
@@ -33,13 +33,13 @@ export default function LoginForm() {
   return (
     <Card className="w-full max-w-md mx-auto pixel-border shadow-lg">
       <CardHeader>
-        <CardTitle className="font-headline text-2xl text-center text-accent">Login</CardTitle>
-        <CardDescription className="text-center">Access your Aviation Lexicon Trainer account.</CardDescription>
+        <CardTitle className="font-headline text-2xl text-center text-accent">登录</CardTitle>
+        <CardDescription className="text-center">访问您的航空词汇教练账户。</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">邮箱</Label>
             <Input
               id="email"
               type="email"
@@ -51,7 +51,7 @@ export default function LoginForm() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">密码</Label>
             <Input
               id="password"
               type="password"
@@ -63,19 +63,18 @@ export default function LoginForm() {
             />
           </div>
           <Button type="submit" className="w-full btn-pixel bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? '登录中...' : '登录'}
           </Button>
         </form>
         <Button variant="outline" className="w-full mt-4 btn-pixel" disabled={isLoading}>
-          {/* Placeholder for WeChat Login */}
-          Log in with WeChat (Coming Soon)
+          微信一键登录 (敬请期待)
         </Button>
       </CardContent>
       <CardFooter className="flex justify-center">
         <p className="text-sm">
-          Don't have an account?{' '}
+          还没有账户？{' '}
           <Link href="/register" className="text-accent hover:underline">
-            Register here
+            在此注册
           </Link>
         </p>
       </CardFooter>
