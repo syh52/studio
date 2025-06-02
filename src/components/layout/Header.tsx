@@ -1,7 +1,7 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth, FIXED_AVATAR_STYLE } from '@/contexts/AuthContext'; // Import FIXED_AVATAR_STYLE
+import { useAuth } from '@/contexts/AuthContext'; // FIXED_AVATAR_STYLE import removed
 import { Button } from '@/components/ui/button';
 import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from 'react';
+
+const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; // Path to your new default avatar
 
 export default function Header() {
   const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth();
@@ -42,9 +44,6 @@ export default function Header() {
     );
   }
   
-  // Use FIXED_AVATAR_STYLE directly
-  const avatarStyle = FIXED_AVATAR_STYLE;
-
   return (
     <header className="bg-primary text-primary-foreground p-3 flex flex-col sm:flex-row justify-between items-center gap-2 pixel-border border-b-4 border-accent sticky top-0 z-50">
       <Link href="/" className="text-lg md:text-xl font-headline hover:text-accent transition-colors">
@@ -71,9 +70,9 @@ export default function Header() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-primary-foreground/20">
                   <Avatar className="h-8 w-8 border-2 border-accent">
                     <AvatarImage
-                      src={`https://api.dicebear.com/8.x/${avatarStyle}/svg?seed=${user.id}`}
+                      src={DEFAULT_AVATAR_PATH} // Use the static path
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="pixel person" // Updated hint
+                      data-ai-hint="dinosaur avatar" // Updated hint
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}

@@ -5,8 +5,7 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Default style is now fixed, constants for selection are removed.
-const FIXED_AVATAR_STYLE = 'pixel-art';
+// FIXED_AVATAR_STYLE is removed as we now use a static image path directly in components
 
 interface User {
   id: string;
@@ -14,7 +13,6 @@ interface User {
   username: string;
   indexPoints: number;
   lastCheckIn: string | null; // YYYY-MM-DD
-  // avatarStyle field is removed
 }
 
 interface AuthContextType {
@@ -26,7 +24,6 @@ interface AuthContextType {
   logout: () => void;
   dailyCheckIn: () => boolean;
   addPoints: (points: number) => void;
-  // updateAvatarStyle function is removed
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -45,8 +42,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUser = localStorage.getItem('aviationLexiconUser');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      // avatarStyle is no longer part of the user object from storage in this simplified version
-      delete parsedUser.avatarStyle; 
+      delete parsedUser.avatarStyle; // Ensure any old avatarStyle is removed
       setUser(parsedUser);
     }
     setIsLoading(false);
@@ -54,7 +50,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLocalStorage = (updatedUser: User | null) => {
     if (updatedUser) {
-      // avatarStyle is no longer saved
       localStorage.setItem('aviationLexiconUser', JSON.stringify(updatedUser));
     } else {
       localStorage.removeItem('aviationLexiconUser');
@@ -77,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const points = parseInt(localStorage.getItem(`${email}_points`) || "0");
       const lastCheckIn = localStorage.getItem(`${email}_lastCheckIn`) || null;
-      // avatarStyle is no longer managed per user here
 
       const loggedInUser: User = {
         id: existingUserData.id || Date.now().toString(),
@@ -85,7 +79,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         username: mockUser.username,
         indexPoints: points,
         lastCheckIn: lastCheckIn,
-        // avatarStyle removed
       };
       setUser(loggedInUser);
       updateLocalStorage(loggedInUser);
@@ -106,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     MOCK_USERS[email] = { email, username, password: pass };
     localStorage.setItem(`${email}_points`, "0");
     localStorage.removeItem(`${email}_lastCheckIn`);
-    // No avatarStyle to set here
     setIsLoading(false);
     return true;
   };
@@ -115,7 +107,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (user) { 
         localStorage.setItem(`${user.email}_points`, user.indexPoints.toString());
         if(user.lastCheckIn) localStorage.setItem(`${user.email}_lastCheckIn`, user.lastCheckIn);
-        // No avatarStyle to save
     }
     setUser(null);
     updateLocalStorage(null); 
@@ -142,8 +133,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateLocalStorage(updatedUser);
   };
 
-  // updateAvatarStyle function is removed
-
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, dailyCheckIn, addPoints }}>
       {children}
@@ -158,6 +147,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-// AVATAR_STYLES and DEFAULT_AVATAR_STYLE constants are removed
-export { FIXED_AVATAR_STYLE }; // Export the fixed style if needed elsewhere, though components will hardcode it now.
