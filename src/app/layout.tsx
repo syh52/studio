@@ -17,8 +17,10 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <head>
-        {/* Removed Google Fonts for Press Start 2P and VT323 as Zpix will be primary */}
-        {/* If specific English pixel fonts are still desired for certain elements, they can be re-added */}
+        {/* Zpix is now primary, loaded via @font-face in globals.css.
+            VT323 and Press Start 2P are fallbacks defined in tailwind.config.ts,
+            and do not need direct import here if Zpix covers Latin characters well.
+        */}
       </head>
       <body className="font-body antialiased font-pixelated">
         <AuthProvider>

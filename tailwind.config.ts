@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Zpix', 'VT323', 'Arial', 'sans-serif', 'monospace'], 
-        headline: ['Zpix', '"Press Start 2P"', 'Arial', 'sans-serif', 'monospace'], 
+        body: ['Zpix', 'VT323', 'Arial', 'sans-serif', 'monospace'],
+        headline: ['Zpix', '"Press Start 2P"', 'Arial', 'sans-serif', 'monospace'],
         code: ['Zpix', 'VT323', 'monospace'],
       },
       colors: {

@@ -11,7 +11,7 @@
 }
 
 body {
-  font-family: var(--font-body), sans-serif; /* Updated in layout.tsx */
+  /* font-family is now handled by Tailwind's font-body class in layout.tsx */
 }
 
 @layer base {
@@ -107,6 +107,7 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    /* font-family is handled by .font-body utility class in layout.tsx */
   }
   svg {
     shape-rendering: crispEdges;
