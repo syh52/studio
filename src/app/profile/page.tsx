@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,7 +32,7 @@ export default function ProfilePage() {
       <Card className="pixel-border shadow-lg">
         <CardHeader className="text-center">
           <Image 
-            src={`https://placehold.co/120x120.png?text=${user.username ? user.username.charAt(0).toUpperCase() : 'U'}`} 
+            src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`} 
             alt="用户头像" 
             width={120} 
             height={120} 
@@ -77,3 +78,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
