@@ -39,7 +39,7 @@ export default function ProfilePage() {
             className="rounded-full mx-auto mb-4 pixel-border border-4 border-accent"
           />
           <CardTitle className="font-headline text-3xl text-accent">{user.username}</CardTitle>
-          <CardDescription>您的航空词汇教练个人资料</CardDescription>
+          <CardDescription>您的 Lexicon 个人资料</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3 p-3 bg-card-foreground/5 rounded-sm pixel-border">

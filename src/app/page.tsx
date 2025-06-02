@@ -52,7 +52,7 @@ export default function HomePage() {
     return (
       <div className="flex flex-col items-center justify-center text-center py-10">
          <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-headline text-xl">教练加载中...</p>
+        <p className="font-headline text-xl">Lexicon 加载中...</p>
       </div>
     );
   }
@@ -60,8 +60,8 @@ export default function HomePage() {
   return (
     <div className="space-y-8 py-6">
       <section className="text-center space-y-4">
-        <Image src="https://placehold.co/300x150.png?text=Aviation+Trainer" alt="航空训练横幅" width={300} height={150} data-ai-hint="aviation pixelart" className="mx-auto pixel-border shadow-lg"/>
-        <h1 className="text-4xl font-headline text-accent">欢迎来到航空词汇教练！</h1>
+        <Image src="https://placehold.co/300x150.png?text=Lexicon" alt="Lexicon 横幅" width={300} height={150} data-ai-hint="lexicon pixelart" className="mx-auto pixel-border shadow-lg"/>
+        <h1 className="text-4xl font-headline text-accent">欢迎来到 Lexicon！</h1>
         {isAuthenticated && user ? (
           <p className="text-lg">你好，<span className="font-bold text-accent">{user.username}</span>！准备好扩展你的航空词汇量了吗？</p>
         ) : (

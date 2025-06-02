@@ -15,10 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useState, useEffect } from 'react'; // Added useState and useEffect
+import { useState, useEffect } from 'react';
 
 export default function Header() {
-  const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth(); // Renamed isLoading to authIsLoading
+  const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -33,23 +33,19 @@ export default function Header() {
     { href: "/quizzes", label: "测验", icon: <CheckSquare size={18} /> },
   ];
 
-  // If not mounted yet, or if auth is still loading, show a consistent placeholder.
-  // This placeholder will be rendered by the server, and initially by the client, matching perfectly.
   if (!isMounted || authIsLoading) {
     return (
       <header className="bg-primary text-primary-foreground p-3 flex justify-between items-center pixel-border border-b-4 border-accent">
-        <div className="text-lg md:text-xl font-headline">航空词汇教练</div> {/* Consistent title placeholder */}
-        <div className="h-8 w-24 bg-primary-foreground/20 animate-pulse rounded-sm"></div> {/* Placeholder for auth-dependent parts */}
+        <div className="text-lg md:text-xl font-headline">Lexicon</div>
+        <div className="h-8 w-24 bg-primary-foreground/20 animate-pulse rounded-sm"></div>
       </header>
     );
   }
 
-  // If mounted and auth is resolved, show the full header.
-  // This part is effectively client-side rendered after mount and auth resolution.
   return (
     <header className="bg-primary text-primary-foreground p-3 flex flex-col sm:flex-row justify-between items-center gap-2 pixel-border border-b-4 border-accent sticky top-0 z-50">
       <Link href="/" className="text-lg md:text-xl font-headline hover:text-accent transition-colors">
-        航空词汇教练
+        Lexicon
       </Link>
       
       <nav className="flex items-center gap-2 md:gap-3">

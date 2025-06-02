@@ -34,7 +34,7 @@ export default function LoginForm() {
     <Card className="w-full max-w-md mx-auto pixel-border shadow-lg">
       <CardHeader>
         <CardTitle className="font-headline text-2xl text-center text-accent">登录</CardTitle>
-        <CardDescription className="text-center">访问您的航空词汇教练账户。</CardDescription>
+        <CardDescription className="text-center">访问您的 Lexicon 账户。</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">

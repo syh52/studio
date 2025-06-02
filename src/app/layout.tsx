@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import AppLayout from '@/components/layout/AppLayout';
 
 export const metadata: Metadata = {
-  title: '航空词汇教练',
+  title: 'Lexicon',
   description: '学习基础航空英语词汇和对话。',
 };
 
