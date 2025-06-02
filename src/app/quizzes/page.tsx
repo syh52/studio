@@ -51,21 +51,28 @@ export default function QuizzesPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  if (isLoading || !isAuthenticated) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-        <p className="ml-4 font-headline text-lg">加载测验模块...</p>
+        <p className="ml-4 font-headline text-lg">加载认证状态...</p>
       </div>
     );
   }
   
-  // TODO: Implement search/filter functionality for quizzes if many packs are added
-  // const [searchTerm, setSearchTerm] = useState('');
-  // const filteredPacks = vocabularyPacks.filter(pack => 
-  //   pack.name.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
-
+  if (!isAuthenticated) {
+    // User is not authenticated, and auth loading is complete.
+    // The useEffect above should trigger a redirect to /login.
+    // Show a message or a different spinner while redirecting.
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <p className="ml-4 font-headline text-lg">需要登录，正在跳转至登录页面...</p>
+      </div>
+    );
+  }
+  
+  // If we reach here, isLoading is false and isAuthenticated is true.
   return (
     <div className="space-y-8">
       <section className="text-center">
@@ -73,18 +80,6 @@ export default function QuizzesPage() {
         <p className="text-lg text-muted-foreground">选择一个词汇包来检验您的学习成果并赢取指数！</p>
       </section>
       
-      {/* Search bar - future enhancement
-      <div className="relative w-full max-w-lg mx-auto">
-        <LucideIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input 
-          type="search" 
-          placeholder="搜索测验..." 
-          className="pl-10 input-pixel"
-          // onChange={(e) => setSearchTerm(e.target.value)} 
-        />
-      </div> 
-      */}
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {vocabularyPacks.map(pack => (
           <QuizPackCard key={pack.id} pack={pack} />
