@@ -1,3 +1,4 @@
+
 "use client";
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
+import { MessageCircleMore } from 'lucide-react'; // Using a generic chat icon for WeChat
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -26,6 +28,22 @@ export default function LoginForm() {
       router.push('/');
     } else {
       toast({ title: "登录失败", description: "邮箱或密码无效。", variant: "destructive" });
+      setIsLoading(false);
+    }
+  };
+
+  const handleWeChatLogin = async () => {
+    setIsLoading(true);
+    // Simulate WeChat login process
+    // In a real app, this would involve redirecting to WeChat, getting a code, exchanging for token, etc.
+    // For mock, we'll use a predefined mock WeChat user.
+    const success = await login('wechat_user_placeholder@lexicon.app', 'mock_wechat_password');
+    if (success) {
+      toast({ title: "微信登录成功 (模拟)", description: "欢迎，微信用户！", className:"bg-green-600 text-white pixel-border" });
+      router.push('/');
+    } else {
+      // This case should ideally not happen if mock user is set up correctly
+      toast({ title: "微信登录失败 (模拟)", description: "模拟微信用户配置错误。", variant: "destructive" });
       setIsLoading(false);
     }
   };
@@ -63,11 +81,23 @@ export default function LoginForm() {
             />
           </div>
           <Button type="submit" className="w-full btn-pixel bg-accent text-accent-foreground hover:bg-accent/90" disabled={isLoading}>
-            {isLoading ? '登录中...' : '登录'}
+            {isLoading && !email.startsWith('wechat_') ? '登录中...' : '邮箱登录'}
           </Button>
         </form>
-        <Button variant="outline" className="w-full mt-4 btn-pixel" disabled={isLoading}>
-          微信一键登录 (敬请期待)
+        <Button 
+          variant="outline" 
+          className="w-full mt-4 btn-pixel bg-green-500 hover:bg-green-600 text-white border-green-700 focus:ring-green-400" 
+          onClick={handleWeChatLogin}
+          disabled={isLoading}
+        >
+          {isLoading && email.startsWith('wechat_') ? (
+            '微信登录中...'
+          ) : (
+            <>
+              <MessageCircleMore size={20} className="mr-2" />
+              微信一键登录 (模拟)
+            </>
+          )}
         </Button>
       </CardContent>
       <CardFooter className="flex justify-center">

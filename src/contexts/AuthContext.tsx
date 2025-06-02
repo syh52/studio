@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { ReactNode } from 'react';
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // Mock user data - in a real app, this would come from a backend
 const MOCK_USERS: Record<string, Omit<User, 'id' | 'indexPoints' | 'lastCheckIn' > & {password: string}> = {
   "user@example.com": { email: "user@example.com", username: "TestUser", password: "password123" },
+  "wechat_user_placeholder@lexicon.app": { email: "wechat_user_placeholder@lexicon.app", username: "微信用户", password: "mock_wechat_password" },
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -88,8 +90,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       indexPoints: 0,
       lastCheckIn: null,
     };
-    setUser(newUser);
-    updateLocalStorage(newUser);
+    // For new registrations, we don't set the user immediately,
+    // but ensure their data is ready for first login.
+    // setUser(newUser); // Removed: User should login after registration
+    // updateLocalStorage(newUser); // Removed: User should login after registration
     localStorage.setItem(`${email}_points`, "0");
     localStorage.removeItem(`${email}_lastCheckIn`);
     setIsLoading(false);
