@@ -33,7 +33,7 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto py-8 space-y-6">
       <Card className="pixel-border shadow-lg">
         <CardHeader className="text-center">
-          <Avatar className="w-32 h-32 mx-auto mb-4 pixel-border border-4 border-accent">
+          <Avatar className="w-24 h-24 mx-auto mb-4 pixel-border border-4 border-accent">
             <AvatarImage
               src={DEFAULT_AVATAR_PATH} 
               alt={user.username || "用户头像"}
