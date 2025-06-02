@@ -69,9 +69,9 @@ export default function Header() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-primary-foreground/20">
                   <Avatar className="h-8 w-8 border-2 border-accent">
                     <AvatarImage
-                      src={`https://api.dicebear.com/8.x/shapes/svg?seed=${user.id}`}
+                      src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`}
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="pixel creature"
+                      data-ai-hint="pixel person"
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}
@@ -118,3 +118,4 @@ export default function Header() {
     </header>
   );
 }
+
