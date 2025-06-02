@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { VocabularyPack, VocabularyItem } from '@/lib/data';
@@ -22,7 +23,7 @@ const shuffleArray = <T>(array: T[]): T[] => {
 };
 
 export default function QuizClientPage({ pack }: QuizClientPageProps) {
-  const { addPoints } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, addPoints } = useAuth(); // Added auth state for potential future use or immediate checks
   const router = useRouter();
 
   const [shuffledItems, setShuffledItems] = useState<VocabularyItem[]>([]);
@@ -34,6 +35,13 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
   
   useEffect(() => {
+    // Initial auth check
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  useEffect(() => {
     if (pack && pack.items.length > 0) {
       setShuffledItems(shuffleArray([...pack.items]));
       setCurrentQuestionIndex(0);
@@ -41,6 +49,10 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
       setQuizCompleted(false);
       setIsAnswerChecked(false);
       setSelectedAnswer(null);
+    } else if (pack && pack.items.length === 0) {
+      // If pack exists but has no items, QuizClientPage handles this by showing a message.
+      // No need to shuffle or set quiz-specific state.
+      setShuffledItems([]); // Ensure shuffledItems is empty to trigger the "no items" message
     }
   }, [pack]);
 
@@ -65,8 +77,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
 
       let options = [correctAnswer, ...uniqueDistractors];
       
-      // Ensure we have TOTAL_OPTIONS, pad if necessary with generic distractors if pack is too small
-      const genericDistractors = ["其他选项A", "其他选项B", "其他选项C"];
+      const genericDistractors = ["其他选项A", "其他选项B", "其他选项C", "另一个答案", "以上都不是"];
       let genericIndex = 0;
       while(options.length < TOTAL_OPTIONS && genericIndex < genericDistractors.length) {
         if (!options.includes(genericDistractors[genericIndex])) {
@@ -74,24 +85,29 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
         }
         genericIndex++;
       }
-      // If still not enough (e.g. only 1 item in pack), just take what we have, up to TOTAL_OPTIONS
-      options = options.slice(0, TOTAL_OPTIONS);
+      options = shuffleArray(options.slice(0, TOTAL_OPTIONS));
+      
+      // Ensure we always have TOTAL_OPTIONS, even if some are duplicates or generic if pack is very small
+      while(options.length < TOTAL_OPTIONS) {
+          options.push(`补充选项${options.length + 1}`); // Fallback for extremely small packs
+      }
 
-
-      setCurrentOptions(shuffleArray(options));
+      setCurrentOptions(options);
     }
   }, [currentItem, pack.items]);
 
 
   const handleAnswerSelect = (option: string) => {
-    if (isAnswerChecked) return;
+    if (isAnswerChecked || !currentItem) return;
 
     setSelectedAnswer(option);
     setIsAnswerChecked(true);
 
-    if (option === currentItem?.chinese) {
+    if (option === currentItem.chinese) {
       setScore(prevScore => prevScore + POINTS_PER_CORRECT_ANSWER);
-      addPoints(POINTS_PER_CORRECT_ANSWER);
+      if (isAuthenticated) { // Only add points if authenticated
+        addPoints(POINTS_PER_CORRECT_ANSWER);
+      }
     }
   };
 
@@ -106,7 +122,11 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
   };
   
   const restartQuiz = () => {
-    setShuffledItems(shuffleArray([...pack.items]));
+    if (pack && pack.items.length > 0) {
+      setShuffledItems(shuffleArray([...pack.items]));
+    } else {
+      setShuffledItems([]);
+    }
     setCurrentQuestionIndex(0);
     setScore(0);
     setQuizCompleted(false);
@@ -114,7 +134,25 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
     setSelectedAnswer(null);
   };
 
-  if (!pack || shuffledItems.length === 0) {
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <p className="ml-4 font-headline text-lg">加载认证信息...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated && !authLoading) {
+     // This case should ideally be handled by the useEffect redirect, but as a fallback:
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+        <p className="ml-4 font-headline text-lg">请先登录以进行测验。正在跳转至登录页面...</p>
+      </div>
+    );
+  }
+
+  if (!pack || (pack.items.length === 0 && shuffledItems.length === 0 && !currentItem) ) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-10">
         <HelpCircle size={48} className="text-muted-foreground mb-4" />
@@ -161,7 +199,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
      );
   }
 
-  const progressPercentage = ((currentQuestionIndex +1) / shuffledItems.length) * 100;
+  const progressPercentage = shuffledItems.length > 0 ? ((currentQuestionIndex +1) / shuffledItems.length) * 100 : 0;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
@@ -178,6 +216,20 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
           <div className="text-center p-6 bg-card-foreground/5 rounded-sm pixel-border">
             <p className="text-sm text-muted-foreground mb-1">请选择以下英文单词的正确中文翻译：</p>
             <h2 className="font-headline text-4xl text-primary">{currentItem.english}</h2>
+            {currentItem.pronunciationAudio && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="mt-2 text-accent hover:bg-accent/20"
+                onClick={() => {
+                  // const audio = new Audio(currentItem.pronunciationAudio);
+                  // audio.play().catch(e => console.error("Error playing audio:", e));
+                  alert(`模拟播放音频: ${currentItem.english}`)
+                }}
+              >
+                <Volume2 size={24} />
+              </Button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -189,7 +241,8 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
                 } else if (option === selectedAnswer) {
                   buttonClass += " quiz-option-incorrect";
                 } else {
-                  buttonClass += " opacity-60";
+                  // For non-selected, non-correct answers when an answer is checked
+                  buttonClass += " opacity-60 cursor-not-allowed"; 
                 }
               }
               return (
@@ -198,7 +251,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
                   variant="outline"
                   className={buttonClass}
                   onClick={() => handleAnswerSelect(option)}
-                  disabled={isAnswerChecked}
+                  disabled={isAnswerChecked} // Disable all options once an answer is checked
                 >
                   {option}
                 </Button>
@@ -214,9 +267,12 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
                   <p>太棒了！回答正确！</p>
                 </div>
               ) : (
-                <div className="flex items-center justify-center gap-2">
-                  <AlertCircle size={20} />
-                  <p>回答错误。正确答案是： <span className="font-bold">{currentItem.chinese}</span></p>
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={20} />
+                    <p>回答错误。</p>
+                  </div>
+                  <p>正确答案是： <span className="font-bold">{currentItem.chinese}</span></p>
                 </div>
               )}
             </div>
@@ -236,7 +292,11 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
           </div>
         </CardContent>
       </Card>
+       <div className="text-center mt-6">
+        <Link href="/quizzes" passHref>
+          <Button variant="link" className="text-accent">返回测验列表</Button>
+        </Link>
+      </div>
     </div>
   );
 }
-
