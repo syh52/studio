@@ -11,9 +11,12 @@
 }
 
 body {
- font-family: 'Zpix', sans-serif; /* Directly apply Zpix and provide a fallback */
- font-smooth: never;
+ font-family: 'Zpix', 'sans-serif'; 
  -webkit-font-smoothing: none;
+ -moz-osx-font-smoothing: grayscale;
+ image-rendering: pixelated;
+ image-rendering: crisp-edges;
+ font-smooth: never;
 }
 
 @layer base {
@@ -124,14 +127,14 @@ body {
     border-width: 2px;
     box-shadow: 2px 2px 0px 0px hsl(var(--border));
   }
-  .btn-pixel:active, .input-pixel:active { /* Corrected .input-pixel:active */
+  .btn-pixel:active, .input-pixel:active {
     transform: translate(1px, 1px);
     box-shadow: 1px 1px 0px 0px hsl(var(--border));
   }
   .font-pixelated {
     -moz-osx-font-smoothing: grayscale;
-    image-rendering: pixelated; /* For images */
-    image-rendering: crisp-edges; /* For images */
+    image-rendering: pixelated; 
+    image-rendering: crisp-edges; 
   }
 }
 
@@ -149,4 +152,21 @@ body {
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+
+  /* Quiz Option Button Styles */
+  .quiz-option:not(:disabled):hover {
+    @apply bg-accent/20 border-accent;
+  }
+  .quiz-option-correct {
+    @apply bg-green-500 text-white border-green-700 hover:bg-green-600 hover:border-green-800;
+    box-shadow: 2px 2px 0px 0px hsl(var(--border)); /* maintain pixel shadow */
+  }
+  .quiz-option-incorrect {
+    @apply bg-red-500 text-white border-red-700 hover:bg-red-600 hover:border-red-800;
+    box-shadow: 2px 2px 0px 0px hsl(var(--border)); /* maintain pixel shadow */
+  }
+  .quiz-option:disabled:not(.quiz-option-correct):not(.quiz-option-incorrect) {
+     @apply opacity-60; /* For other options when one is selected */
+  }
 }
+
