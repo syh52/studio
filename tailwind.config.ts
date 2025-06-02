@@ -1,7 +1,7 @@
 import type {Config} from 'tailwindcss';
 
 export default {
-  darkMode: ['class'],
+  darkMode: ['class'], // Enforce dark mode as default via class name 'dark' on html/body
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -10,9 +10,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
-        code: ['monospace'],
+        body: ['VT323', 'monospace'], // Pixel font for body
+        headline: ['"Press Start 2P"', 'cursive'], // Pixel font for headlines
+        code: ['VT323', 'monospace'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -67,9 +67,18 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: 'var(--radius)', // Will be 0rem
+        md: 'var(--radius)', // Will be 0rem
+        sm: 'var(--radius)', // Will be 0rem
+      },
+      boxShadow: { // Custom pixelated shadows
+        sm: '2px 2px 0px 0px hsl(var(--border))',
+        DEFAULT: '3px 3px 0px 0px hsl(var(--border))',
+        md: '3px 3px 0px 0px hsl(var(--border))',
+        lg: '4px 4px 0px 0px hsl(var(--border))',
+        xl: '6px 6px 0px 0px hsl(var(--border))',
+        'hard-accent': '3px 3px 0px 0px hsl(var(--accent))',
+        none: 'none',
       },
       keyframes: {
         'accordion-down': {
