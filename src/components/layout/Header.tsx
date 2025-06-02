@@ -35,12 +35,12 @@ export default function Header() {
 
   // This block is rendered on the server, and on the client's initial render pass.
   // It must match what the server sends to avoid hydration errors.
-  // Based on the error, server sends: <h1 className="text-xl md:text-2xl font-headline">Lexicon</h1>
+  // Based on the error, server sends: <div className="text-lg md:text-xl font-headline">Lexicon</div>
   if (!isMounted || authIsLoading) {
     return (
       <header className="bg-primary text-primary-foreground p-3 flex justify-between items-center pixel-border border-b-4 border-accent">
         {/* Matching the server's reported output for the "Lexicon" part of the loading skeleton */}
-        <h1 className="text-xl md:text-2xl font-headline">Lexicon</h1>
+        <div className="text-lg md:text-xl font-headline">Lexicon</div>
         <div className="h-8 w-24 bg-primary-foreground/20 animate-pulse rounded-sm"></div>
       </header>
     );
