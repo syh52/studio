@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, UserPlus, UserCircle, Award, Plane, BookOpen, CheckSquare, Settings } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react'; // Removed Award
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -14,8 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Ensure AvatarImage is imported
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from 'react';
+import { DEFAULT_AVATAR_STYLE } from '@/contexts/AuthContext';
 
 export default function Header() {
   const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth();
@@ -36,12 +37,13 @@ export default function Header() {
   if (!isMounted || authIsLoading) {
     return (
       <header className="bg-primary text-primary-foreground p-3 flex justify-between items-center pixel-border border-b-4 border-accent">
-        {/* Matching the server's reported output for the "Lexicon" part of the loading skeleton */}
         <div className="text-lg md:text-xl font-headline">Lexicon</div>
         <div className="h-8 w-24 bg-primary-foreground/20 animate-pulse rounded-sm"></div>
       </header>
     );
   }
+  
+  const avatarStyle = user?.avatarStyle || DEFAULT_AVATAR_STYLE;
 
   return (
     <header className="bg-primary text-primary-foreground p-3 flex flex-col sm:flex-row justify-between items-center gap-2 pixel-border border-b-4 border-accent sticky top-0 z-50">
@@ -69,9 +71,9 @@ export default function Header() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-primary-foreground/20">
                   <Avatar className="h-8 w-8 border-2 border-accent">
                     <AvatarImage
-                      src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`}
+                      src={`https://api.dicebear.com/8.x/${avatarStyle}/svg?seed=${user.id}`}
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="pixel person"
+                      data-ai-hint="pixel avatar"
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}
@@ -93,7 +95,7 @@ export default function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/settings')} className="cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
-                  <span>设置</span>
+                  <span>设置 (敬请期待)</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-400 hover:!text-red-400 focus:!bg-red-500/20 focus:!text-red-400">
@@ -118,4 +120,3 @@ export default function Header() {
     </header>
   );
 }
-
