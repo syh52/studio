@@ -17,7 +17,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from 'react';
 
-const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; // Path to your new default avatar
+// const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; // Path to your new default avatar
+const DEFAULT_AVATAR_PATH = "https://placehold.co/32x32.png"; // Temporary placeholder
 
 export default function Header() {
   const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth();
@@ -70,9 +71,9 @@ export default function Header() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-primary-foreground/20">
                   <Avatar className="h-8 w-8 border-2 border-accent">
                     <AvatarImage
-                      src={DEFAULT_AVATAR_PATH} // Use the static path
+                      src={DEFAULT_AVATAR_PATH} 
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="dinosaur avatar" // Updated hint
+                      data-ai-hint="placeholder image" 
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}

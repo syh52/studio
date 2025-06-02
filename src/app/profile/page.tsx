@@ -9,7 +9,8 @@ import { UserCircle, Mail, Award, LogOut } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
-const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; // Path to your new default avatar
+// const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; // Path to your new default avatar
+const DEFAULT_AVATAR_PATH = "https://placehold.co/128x128.png"; // Temporary placeholder
 
 export default function ProfilePage() {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
@@ -35,9 +36,9 @@ export default function ProfilePage() {
         <CardHeader className="text-center">
           <Avatar className="w-32 h-32 mx-auto mb-4 pixel-border border-4 border-accent">
             <AvatarImage
-              src={DEFAULT_AVATAR_PATH} // Use the static path
+              src={DEFAULT_AVATAR_PATH} 
               alt={user.username || "用户头像"}
-              data-ai-hint="dinosaur avatar" // Updated hint
+              data-ai-hint="placeholder image" 
             />
             <AvatarFallback className="text-3xl font-headline bg-secondary text-secondary-foreground">
               {user.username ? user.username.charAt(0).toUpperCase() : "U"}
