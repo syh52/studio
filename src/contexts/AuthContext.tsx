@@ -5,16 +5,8 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-// Define available avatar styles
-export const AVATAR_STYLES = [
-  { value: 'pixel-art', label: '经典像素人' },
-  { value: 'pixel-art-neutral', label: '中性像素人' },
-  { value: 'bottts', label: '像素机器人' },
-  { value: 'shapes', label: '抽象像素形状' },
-  { value: 'identicon', label: '像素方块图案' },
-  // Add more styles from DiceBear as needed, ensuring they are pixelated
-];
-export const DEFAULT_AVATAR_STYLE = 'pixel-art';
+// Default style is now fixed, constants for selection are removed.
+const FIXED_AVATAR_STYLE = 'pixel-art';
 
 interface User {
   id: string;
@@ -22,7 +14,7 @@ interface User {
   username: string;
   indexPoints: number;
   lastCheckIn: string | null; // YYYY-MM-DD
-  avatarStyle: string; // Added field for avatar style
+  // avatarStyle field is removed
 }
 
 interface AuthContextType {
@@ -34,13 +26,12 @@ interface AuthContextType {
   logout: () => void;
   dailyCheckIn: () => boolean;
   addPoints: (points: number) => void;
-  updateAvatarStyle: (newStyle: string) => void; // Added function
+  // updateAvatarStyle function is removed
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock user data - in a real app, this would come from a backend
-const MOCK_USERS: Record<string, Omit<User, 'id' | 'indexPoints' | 'lastCheckIn' | 'avatarStyle' > & {password: string}> = {
+const MOCK_USERS: Record<string, Omit<User, 'id' | 'indexPoints' | 'lastCheckIn' > & {password: string}> = {
   "user@example.com": { email: "user@example.com", username: "TestUser", password: "password123" },
   "wechat_user_placeholder@lexicon.app": { email: "wechat_user_placeholder@lexicon.app", username: "微信用户", password: "mock_wechat_password" },
 };
@@ -54,10 +45,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedUser = localStorage.getItem('aviationLexiconUser');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      // Ensure avatarStyle exists, provide default if not
-      if (!parsedUser.avatarStyle) {
-        parsedUser.avatarStyle = DEFAULT_AVATAR_STYLE;
-      }
+      // avatarStyle is no longer part of the user object from storage in this simplified version
+      delete parsedUser.avatarStyle; 
       setUser(parsedUser);
     }
     setIsLoading(false);
@@ -65,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLocalStorage = (updatedUser: User | null) => {
     if (updatedUser) {
+      // avatarStyle is no longer saved
       localStorage.setItem('aviationLexiconUser', JSON.stringify(updatedUser));
     } else {
       localStorage.removeItem('aviationLexiconUser');
@@ -73,11 +63,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 500));
     const mockUser = MOCK_USERS[email];
     if (mockUser && mockUser.password === pass) {
-      // Attempt to load existing user data, or initialize new if not fully present
       const storedUserRaw = localStorage.getItem('aviationLexiconUser');
       let existingUserData: Partial<User> = {};
       if (storedUserRaw) {
@@ -87,22 +75,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
       }
       
-      // Prioritize local storage for points, lastCheckIn, and avatarStyle if they exist for this email
       const points = parseInt(localStorage.getItem(`${email}_points`) || "0");
       const lastCheckIn = localStorage.getItem(`${email}_lastCheckIn`) || null;
-      const avatarStyle = localStorage.getItem(`${email}_avatarStyle`) || existingUserData.avatarStyle || DEFAULT_AVATAR_STYLE;
-
+      // avatarStyle is no longer managed per user here
 
       const loggedInUser: User = {
-        id: existingUserData.id || Date.now().toString(), // simple id or existing
+        id: existingUserData.id || Date.now().toString(),
         email: mockUser.email,
         username: mockUser.username,
         indexPoints: points,
         lastCheckIn: lastCheckIn,
-        avatarStyle: avatarStyle,
+        // avatarStyle removed
       };
       setUser(loggedInUser);
-      updateLocalStorage(loggedInUser); // This will now save the full user object including avatarStyle
+      updateLocalStorage(loggedInUser);
       setIsLoading(false);
       return true;
     }
@@ -115,36 +101,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     if (MOCK_USERS[email]) {
       setIsLoading(false);
-      return false; // User already exists
+      return false; 
     }
     MOCK_USERS[email] = { email, username, password: pass };
-    // For new registrations, set up their initial data structure for local storage.
-    // This data will be fully populated into the User object upon first login.
     localStorage.setItem(`${email}_points`, "0");
-    localStorage.removeItem(`${email}_lastCheckIn`); // Ensure no old check-in data
-    localStorage.setItem(`${email}_avatarStyle`, DEFAULT_AVATAR_STYLE); // Set default avatar style
+    localStorage.removeItem(`${email}_lastCheckIn`);
+    // No avatarStyle to set here
     setIsLoading(false);
     return true;
   };
 
   const logout = () => {
-    if (user) { // Save current user's full state before logging out
+    if (user) { 
         localStorage.setItem(`${user.email}_points`, user.indexPoints.toString());
         if(user.lastCheckIn) localStorage.setItem(`${user.email}_lastCheckIn`, user.lastCheckIn);
-        localStorage.setItem(`${user.email}_avatarStyle`, user.avatarStyle);
+        // No avatarStyle to save
     }
     setUser(null);
-    updateLocalStorage(null); // Clears the 'aviationLexiconUser' item
+    updateLocalStorage(null); 
     router.push('/login');
   };
   
   const dailyCheckIn = () => {
     if (!user) return false;
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0]; 
     if (user.lastCheckIn === today) {
-      return false; // Already checked in today
+      return false; 
     }
-    const pointsEarned = 10; // Example points for daily check-in
+    const pointsEarned = 10; 
     const updatedUser = { ...user, indexPoints: user.indexPoints + pointsEarned, lastCheckIn: today };
     setUser(updatedUser);
     updateLocalStorage(updatedUser);
@@ -158,17 +142,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateLocalStorage(updatedUser);
   };
 
-  const updateAvatarStyle = (newStyle: string) => {
-    if (!user) return;
-    if (AVATAR_STYLES.find(style => style.value === newStyle)) {
-      const updatedUser = { ...user, avatarStyle: newStyle };
-      setUser(updatedUser);
-      updateLocalStorage(updatedUser);
-    }
-  };
+  // updateAvatarStyle function is removed
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, dailyCheckIn, addPoints, updateAvatarStyle }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, dailyCheckIn, addPoints }}>
       {children}
     </AuthContext.Provider>
   );
@@ -181,3 +158,6 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// AVATAR_STYLES and DEFAULT_AVATAR_STYLE constants are removed
+export { FIXED_AVATAR_STYLE }; // Export the fixed style if needed elsewhere, though components will hardcode it now.

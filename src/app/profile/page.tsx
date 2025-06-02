@@ -1,18 +1,19 @@
 
 "use client";
 import { useEffect } from 'react';
-import { useAuth, AVATAR_STYLES, DEFAULT_AVATAR_STYLE } from '@/contexts/AuthContext';
+import { useAuth, FIXED_AVATAR_STYLE } from '@/contexts/AuthContext'; // Import FIXED_AVATAR_STYLE
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserCircle, Mail, Award, LogOut } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// Label and Select are removed as they are no longer used for avatar style selection
+// import { Label } from '@/components/ui/label';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function ProfilePage() {
-  const { user, logout, isAuthenticated, isLoading, updateAvatarStyle } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuth(); // updateAvatarStyle removed
   const router = useRouter();
 
   useEffect(() => {
@@ -29,11 +30,13 @@ export default function ProfilePage() {
     );
   }
 
-  const handleAvatarStyleChange = (newStyle: string) => {
-    updateAvatarStyle(newStyle);
-  };
+  // Avatar style selection logic is removed
+  // const handleAvatarStyleChange = (newStyle: string) => {
+  //   updateAvatarStyle(newStyle);
+  // };
   
-  const currentAvatarStyle = user.avatarStyle || DEFAULT_AVATAR_STYLE;
+  // Use FIXED_AVATAR_STYLE directly
+  const currentAvatarStyle = FIXED_AVATAR_STYLE;
 
   return (
     <div className="max-w-2xl mx-auto py-8 space-y-6">
@@ -43,7 +46,7 @@ export default function ProfilePage() {
             <AvatarImage
               src={`https://api.dicebear.com/8.x/${currentAvatarStyle}/svg?seed=${user.id}`}
               alt={user.username || "用户头像"}
-              data-ai-hint="pixel avatar"
+              data-ai-hint="pixel person" // Updated hint
             />
             <AvatarFallback className="text-3xl font-headline bg-secondary text-secondary-foreground">
               {user.username ? user.username.charAt(0).toUpperCase() : "U"}
@@ -77,24 +80,7 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="space-y-2 p-3 bg-card-foreground/5 rounded-sm pixel-border">
-            <Label htmlFor="avatar-style-select" className="text-xs text-muted-foreground">头像风格</Label>
-            <Select
-              value={currentAvatarStyle}
-              onValueChange={handleAvatarStyleChange}
-            >
-              <SelectTrigger id="avatar-style-select" className="w-full input-pixel">
-                <SelectValue placeholder="选择头像风格" />
-              </SelectTrigger>
-              <SelectContent className="pixel-border">
-                {AVATAR_STYLES.map(style => (
-                  <SelectItem key={style.value} value={style.value} className="font-body">
-                    {style.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Avatar style selection Select component is removed */}
           
           <Button onClick={logout} variant="destructive" className="w-full btn-pixel mt-6">
             <LogOut size={20} className="mr-2" /> 退出登录

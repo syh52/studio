@@ -1,9 +1,9 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, FIXED_AVATAR_STYLE } from '@/contexts/AuthContext'; // Import FIXED_AVATAR_STYLE
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react'; // Removed Award
+import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState, useEffect } from 'react';
-import { DEFAULT_AVATAR_STYLE } from '@/contexts/AuthContext';
 
 export default function Header() {
   const { isAuthenticated, user, logout, isLoading: authIsLoading } = useAuth();
@@ -43,7 +42,8 @@ export default function Header() {
     );
   }
   
-  const avatarStyle = user?.avatarStyle || DEFAULT_AVATAR_STYLE;
+  // Use FIXED_AVATAR_STYLE directly
+  const avatarStyle = FIXED_AVATAR_STYLE;
 
   return (
     <header className="bg-primary text-primary-foreground p-3 flex flex-col sm:flex-row justify-between items-center gap-2 pixel-border border-b-4 border-accent sticky top-0 z-50">
@@ -73,7 +73,7 @@ export default function Header() {
                     <AvatarImage
                       src={`https://api.dicebear.com/8.x/${avatarStyle}/svg?seed=${user.id}`}
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="pixel avatar"
+                      data-ai-hint="pixel person" // Updated hint
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}
