@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"; // Ensure AvatarImage is imported
 import { useState, useEffect } from 'react';
 
 export default function Header() {
@@ -68,6 +68,11 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0 hover:bg-primary-foreground/20">
                   <Avatar className="h-8 w-8 border-2 border-accent">
+                    <AvatarImage
+                      src={`https://api.dicebear.com/8.x/pixel-art/svg?seed=${user.id}`}
+                      alt={user.username || "User Avatar"}
+                      data-ai-hint="avatar character"
+                    />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}
                     </AvatarFallback>
