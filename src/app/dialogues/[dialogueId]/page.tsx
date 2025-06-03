@@ -21,8 +21,8 @@ const DialogueLineDisplay = ({ line, index }: { line: DialogueLine; index: numbe
   };
 
   const speakerColorClass = line.speaker === 'Safety Officer' || line.speaker === 'Security Officer' 
-                            ? 'text-primary' 
-                            : 'text-accent';
+                            ? 'text-accent'  // Now accent for officers
+                            : 'text-primary'; // Now primary for others
 
   return (
     <div className={`mb-4 p-3 rounded-md pixel-border ${index % 2 === 0 ? 'bg-card-foreground/5' : 'bg-card-foreground/10'}`}>
