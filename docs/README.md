@@ -10,6 +10,9 @@
 ### 2. [blueprint.md](./blueprint.md)
 **项目蓝图** - 应用的核心功能和设计规范
 
+### 3. [quick-reference.md](./quick-reference.md)
+**快速参考卡片** - 常用命令和数据结构的快速查询
+
 ## 快速链接
 
 - 修改词汇和对话：查看 [modification-guide.md](./modification-guide.md#修改词汇)
