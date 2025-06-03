@@ -11,7 +11,6 @@ export default {
     extend: {
       fontFamily: {
         body: ['Zpix', 'VT323', 'Arial', 'sans-serif', 'monospace'],
-        body: ['Zpix', 'sans-serif'],
         code: ['Zpix', 'VT323', 'monospace'],
       },
       colors: {

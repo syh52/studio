@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { VocabularyPack, VocabularyItem } from '@/lib/data';
@@ -7,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from "@/components/ui/progress";
-import { AlertCircle, CheckCircle, HelpCircle, ArrowRightCircle, RotateCcw } from 'lucide-react';
+import { AlertCircle, CheckCircle, HelpCircle, ArrowRightCircle, RotateCcw, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -18,7 +17,7 @@ interface QuizClientPageProps {
 const POINTS_PER_CORRECT_ANSWER = 5;
 const TOTAL_OPTIONS = 4;
 
-const shuffleArray = <T>(array: T[]): T[] => {
+const shuffleArray = <T,>(array: T[]): T[] => {
   return [...array].sort(() => Math.random() - 0.5);
 };
 
@@ -174,7 +173,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
           <CardTitle className="font-headline text-2xl text-accent">测验完成！</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-lg">您在“{pack.name}”测验中的最终得分是：</p>
+          <p className="text-lg">您在"{pack.name}"测验中的最终得分是：</p>
           <p className="font-headline text-4xl text-primary">{score} 分</p>
           <div className="flex justify-center gap-4 mt-6">
             <Button onClick={restartQuiz} className="btn-pixel">
