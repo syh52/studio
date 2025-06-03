@@ -20,10 +20,14 @@ const DialogueLineDisplay = ({ line, index }: { line: DialogueLine; index: numbe
     }
   };
 
+  const speakerColorClass = line.speaker === 'Safety Officer' || line.speaker === 'Security Officer' 
+                            ? 'text-primary' 
+                            : 'text-accent';
+
   return (
     <div className={`mb-4 p-3 rounded-md pixel-border ${index % 2 === 0 ? 'bg-card-foreground/5' : 'bg-card-foreground/10'}`}>
       <div className="flex justify-between items-center mb-1">
-        <p className="font-semibold text-accent">{line.speaker}</p>
+        <p className={`font-semibold ${speakerColorClass}`}>{line.speaker}</p>
         {line.audio && (
           <Button variant="ghost" size="icon" onClick={playAudio} className="w-7 h-7 text-accent hover:bg-accent/20">
             <Volume2 size={18} />
