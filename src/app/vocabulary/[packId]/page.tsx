@@ -1,3 +1,4 @@
+
 "use client";
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,8 +13,8 @@ import { Progress } from "@/components/ui/progress";
 export default function FlashcardPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
-  const params = useParams();
-  const packId = params.packId as string;
+  const params = useParams<{ packId: string }>();
+  const packId = params.packId;
 
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [shuffledItems, setShuffledItems] = useState<VocabularyItem[]>([]);
@@ -113,7 +114,7 @@ export default function FlashcardPage() {
       </div>
 
       <div className="mt-8 flex flex-col sm:flex-row gap-4 items-center">
-        <Link href={`/vocabulary/${pack.id}/quiz`} passHref>
+        <Link href={`/vocabulary/${packId}/quiz`} passHref>
           <Button className="btn-pixel bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto">
             <CheckCircle2 size={20} className="mr-2" />
             学完了？参加测验！

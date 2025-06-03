@@ -21,8 +21,8 @@ const DialogueLineDisplay = ({ line, index }: { line: DialogueLine; index: numbe
   };
 
   const speakerColorClass = line.speaker === 'Safety Officer' || line.speaker === 'Security Officer' 
-                            ? 'text-accent'  // Now accent for officers
-                            : 'text-primary'; // Now primary for others
+                            ? 'text-accent'  // Accent for officers
+                            : 'text-primary'; // Primary for others
 
   return (
     <div className={`mb-4 p-3 rounded-md pixel-border ${index % 2 === 0 ? 'bg-card-foreground/5' : 'bg-card-foreground/10'}`}>
@@ -43,8 +43,8 @@ const DialogueLineDisplay = ({ line, index }: { line: DialogueLine; index: numbe
 export default function DialoguePracticePage() {
   const { isAuthenticated, isLoading: authIsLoading } = useAuth();
   const router = useRouter();
-  const params = useParams();
-  const dialogueId = params.dialogueId as string;
+  const params = useParams<{ dialogueId: string }>();
+  const dialogueId = params.dialogueId;
 
   const dialogue = useMemo(() => dialogues.find(d => d.id === dialogueId), [dialogueId]);
 
@@ -120,4 +120,3 @@ export default function DialoguePracticePage() {
     </div>
   );
 }
-
