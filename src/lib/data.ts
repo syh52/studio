@@ -1,3 +1,4 @@
+
 export interface VocabularyItem {
   id: string;
   english: string;
@@ -83,7 +84,23 @@ export const dialogues: Dialogue[] = [
       { id: "dl008", speaker: "ATC", english: "SkyAir 123, understood. Turn left heading 270, descend and maintain flight level one zero zero. Nearest airport is Capital City, runway 09 available.", chinese: "天空航空123，明白。左转航向270，下降并保持高度层100。最近机场是首都机场，09号跑道可用。" },
     ],
   },
+  {
+    id: "fighting-on-plane",
+    title: "打架斗殴 (Fighting and Brawling)",
+    description: "处理机上乘客打架斗殴情景的模拟对话。",
+    icon: "ShieldAlert",
+    lines: [
+      { id: "dl-fight-001", speaker: "Security Officer", english: "Calm down, both of you! Can you tell me what happened?", chinese: "你们两个冷静一下！能告诉我什么原因吗？" },
+      { id: "dl-fight-002", speaker: "Passenger A", english: "He bumped into me on purpose!", chinese: "他路过的时候故意撞我！" },
+      { id: "dl-fight-003", speaker: "Passenger B", english: "No! He swore at me!", chinese: "不是！是他向我说脏话！" },
+      { id: "dl-fight-004", speaker: "Security Officer", english: "I'm the security officer of this flight. Your behavior is affecting flight safety.", chinese: "我是本次航班的安全员，你们的行为已经影响到了飞行安全。" },
+      { id: "dl-fight-005", speaker: "Passenger A", english: "Change his seat, or I will beat him up.", chinese: "你把他换到别的位置，否则我还会动手！" },
+      { id: "dl-fight-006", speaker: "Security Officer", english: "If you do not stop right now, I'll report to the captain to call the police to handle it!", chinese: "如果你们不停止你们的行为，我将会报告机长，让机长通知地面公安进行处置！" },
+    ],
+  },
 ];
 
 // Quiz data can be generated from vocabulary/dialogues or defined separately
 // For now, quiz logic will pick from these.
+
+    
