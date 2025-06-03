@@ -170,10 +170,30 @@ export const dialogues: Dialogue[] = [
       { id: "dl-hijack-005", speaker: "Security Officer", english: "I have stopped him and the situation is under control.", chinese: "我已将其制服，情况已得到控制。" },
     ],
   },
+  {
+    id: "fighting-brawling",
+    title: "打架斗殴",
+    description: "处理乘客间打架斗殴事件。",
+    icon: "ShieldAlert",
+    lines: [
+      { id: "dl-fight-001", speaker: "Security Officer", english: "Stop! What are you doing? Calm down, both of you!", chinese: "住手！你们在干什么？你们两个冷静一下！" },
+      { id: "dl-fight-002", speaker: "Passenger A", english: "He bumped into me on purpose!", chinese: "他路过的时候故意撞我！" },
+      { id: "dl-fight-003", speaker: "Passenger B", english: "He swore at me first!", chinese: "是他先骂我的！" },
+      { id: "dl-fight-004", speaker: "Security Officer", english: "Fighting on an aircraft is a serious offense. I need you both to cooperate. What happened?", chinese: "在飞机上打架是严重违规行为。我需要你们双方配合。发生了什么事？" },
+      { id: "dl-fight-005", speaker: "Passenger A", english: "He started it! He pushed me and called me names.", chinese: "是他先动手的！他推我，还骂我。" },
+      { id: "dl-fight-006", speaker: "Passenger B", english: "That's a lie! You were blocking the aisle and wouldn't move!", chinese: "胡说！你挡着过道不让我过去！" },
+      { id: "dl-fight-007", speaker: "Security Officer", english: "Okay, I understand there's a disagreement. We need to resolve this peacefully. I will separate you for now. Passenger A, please come with me. Passenger B, please remain in your seat and calm down.", chinese: "好了，我明白你们之间有分歧。我们需要和平解决。我现在会把你们分开。乘客A，请跟我来。乘客B，请留在座位上冷静一下。" },
+      { id: "dl-fight-008", speaker: "Security Officer", english: "Captain, there was a physical altercation between two passengers in 25B and 25C. I have separated them. The situation is currently under control.", chinese: "机长，25B和25C的两名乘客发生了肢体冲突。我已经将他们分开了。目前情况已得到控制。" },
+      { id: "dl-fight-009", speaker: "Captain", english: "Roger that. Keep me updated. Do we need to involve ground authorities upon arrival?", chinese: "收到。随时向我汇报。我们抵达后需要地面警方介入吗？" },
+      { id: "dl-fight-010", speaker: "Security Officer", english: "Potentially. I will assess further and inform you. For now, I will issue them both with verbal warnings and monitor their behavior.", chinese: "有可能。我会进一步评估并告知您。目前，我会对他们分别进行口头警告，并监控他们的行为。" },
+    ]
+  }
 ];
 
 // Quiz data can be generated from vocabulary/dialogues or defined separately
 // For now, quiz logic will pick from these.
+    
+
     
 
     
