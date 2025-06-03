@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
@@ -43,7 +42,7 @@ export default function HomePage() {
     }
     const success = dailyCheckIn();
     if (success) {
-      toast({ title: "签到成功！", description: `您已获得10点“指数”！当前指数：${user?.indexPoints}。`, className:"bg-green-600 text-white pixel-border" });
+      toast({ title: "签到成功！", description: `您已获得10点"指数"！当前指数：${user?.indexPoints}。`, className:"bg-green-600 text-white pixel-border" });
     } else {
       toast({ title: "今日已签到", description: "您今天已经签到过了。明天再来吧！", variant: "default" });
     }
@@ -63,6 +62,7 @@ export default function HomePage() {
       <section className="text-center space-y-4">
         <Image src="https://placehold.co/300x150.png?text=Lexicon" alt="Lexicon 横幅" width={300} height={150} data-ai-hint="cute creature" className="mx-auto pixel-border shadow-lg"/>
         <h1 className="text-4xl font-headline text-accent">欢迎来到 Lexicon！</h1>
+        <p className="text-sm text-gray-600">最后更新：2024年本地版本</p>
         {isAuthenticated && user ? (
           <p className="text-lg">你好，<span className="font-bold text-accent">{user.username}</span>！准备好扩展你的航空词汇量了吗？</p>
         ) : (
