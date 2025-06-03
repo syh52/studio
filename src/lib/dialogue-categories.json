@@ -1,0 +1,183 @@
+{
+  "dialogueCategories": {
+    "dailyOperations": {
+      "id": "daily-operations",
+      "name": "日常执勤对话",
+      "nameEn": "Daily Operations Dialogues",
+      "description": "航空安全员日常工作中的常见对话场景",
+      "icon": "ClipboardList",
+      "subcategories": [
+        {
+          "id": "pre-flight-check",
+          "name": "飞行前检查",
+          "nameEn": "Pre-flight Check",
+          "dialogueIds": ["dl001", "dl002", "dl003", "dl004"],
+          "keyPoints": ["绕机检查", "轮胎", "操纵面", "盖板", "轮挡", "起落架销"]
+        },
+        {
+          "id": "passenger-smoking",
+          "name": "旅客吸烟事件处置",
+          "nameEn": "Passenger Smoking Incident",
+          "dialogueIds": ["dl-psmoke-001", "dl-psmoke-002", "dl-psmoke-003", "dl-psmoke-004", "dl-psmoke-005", "dl-psmoke-006"],
+          "keyPoints": ["录音录像", "没收烟具", "报警处理", "最后下机"]
+        },
+        {
+          "id": "power-bank-usage",
+          "name": "擅自使用充电宝",
+          "nameEn": "Unauthorized Power Bank Usage",
+          "dialogueIds": ["dl-power-001", "dl-power-002", "dl-power-003", "dl-power-004", "dl-power-005", "dl-power-006"],
+          "keyPoints": ["禁止使用充电宝", "CAAC法规", "替代方案"]
+        },
+        {
+          "id": "intoxicated-passenger",
+          "name": "醉酒旅客管理",
+          "nameEn": "Intoxicated Passenger Management",
+          "dialogueIds": ["dl-drunk-001", "dl-drunk-002", "dl-drunk-003", "dl-drunk-004", "dl-drunk-005", "dl-drunk-006", "dl-drunk-007", "dl-drunk-008"],
+          "keyPoints": ["确认醉酒状态", "同行人员", "行为控制"]
+        },
+        {
+          "id": "localized-cabin-check",
+          "name": "局部清舱",
+          "nameEn": "Localized Cabin Check",
+          "dialogueIds": ["dl-local-001", "dl-local-002", "dl-local-003", "dl-local-004", "dl-local-005"],
+          "keyPoints": ["行李检查", "座位确认", "安全原因说明"]
+        },
+        {
+          "id": "journey-discontinuation",
+          "name": "乘客终止行程",
+          "nameEn": "Passenger Journey Discontinuation",
+          "dialogueIds": ["dl-discon-001", "dl-discon-002", "dl-discon-003", "dl-discon-004", "dl-discon-005", "dl-discon-006"],
+          "keyPoints": ["座位信息", "检查类型", "报告流程"]
+        },
+        {
+          "id": "deportee-reception",
+          "name": "遣返旅客接收",
+          "nameEn": "Deportee Reception",
+          "dialogueIds": ["dl-deport-001", "dl-deport-002", "dl-deport-003", "dl-deport-004", "dl-deport-005", "dl-deport-006"],
+          "keyPoints": ["文件交接", "优先登机", "通知机组"]
+        },
+        {
+          "id": "deportee-cockpit-comm",
+          "name": "遣返旅客-与驾驶舱沟通",
+          "nameEn": "Deportee - Cockpit Communication",
+          "dialogueIds": ["dl-cockdeport-001", "dl-cockdeport-002", "dl-cockdeport-003", "dl-cockdeport-004", "dl-cockdeport-005", "dl-cockdeport-006"],
+          "keyPoints": ["遣返信息", "座位安排", "程序确认"]
+        },
+        {
+          "id": "explosive-detector",
+          "name": "使用爆探检测",
+          "nameEn": "Explosive Detector Usage",
+          "dialogueIds": ["dl-detector-001", "dl-detector-002", "dl-detector-003", "dl-detector-004", "dl-detector-005"],
+          "keyPoints": ["检测准备", "检查比例", "报告程序"]
+        },
+        {
+          "id": "company-documents",
+          "name": "携带公司文件",
+          "nameEn": "Carrying Company Documents",
+          "dialogueIds": ["dl-docs-001", "dl-docs-002", "dl-docs-003", "dl-docs-004", "dl-docs-005"],
+          "keyPoints": ["文件审批", "安检确认", "携带许可"]
+        },
+        {
+          "id": "crew-coordination",
+          "name": "机组协同",
+          "nameEn": "Crew Coordination",
+          "dialogueIds": ["dl-crew-001", "dl-crew-002", "dl-crew-003", "dl-crew-004", "dl-crew-005", "dl-crew-006"],
+          "keyPoints": ["空防形势", "勤务等级", "检查单", "暗语暗号"]
+        },
+        {
+          "id": "electronic-device-report",
+          "name": "电子设备使用报告",
+          "nameEn": "Electronic Device Usage Report",
+          "dialogueIds": ["dl-elec-001", "dl-elec-002", "dl-elec-003", "dl-elec-004", "dl-elec-005", "dl-elec-006"],
+          "keyPoints": ["违规使用", "处置措施", "持续监控"]
+        },
+        {
+          "id": "mobile-phone-usage",
+          "name": "旅客使用手机",
+          "nameEn": "Passenger Mobile Phone Usage",
+          "dialogueIds": ["dl-phone-001", "dl-phone-002", "dl-phone-003", "dl-phone-004", "dl-phone-005"],
+          "keyPoints": ["飞行模式", "拒绝配合", "警告后果"]
+        },
+        {
+          "id": "seat-dispute",
+          "name": "抢占座位纠纷",
+          "nameEn": "Seat Dispute",
+          "dialogueIds": ["dl-seat-001", "dl-seat-002", "dl-seat-003", "dl-seat-004", "dl-seat-005", "dl-seat-006"],
+          "keyPoints": ["登机牌核对", "座位确认", "纠纷调解"]
+        },
+        {
+          "id": "escort-management",
+          "name": "押解人员管理",
+          "nameEn": "Escort Management",
+          "dialogueIds": ["dl-escort-001", "dl-escort-002", "dl-escort-003", "dl-escort-004", "dl-escort-005", "dl-escort-006"],
+          "keyPoints": ["押解要求", "座位安排", "餐食限制", "监控要求"]
+        },
+        {
+          "id": "security-check-complete",
+          "name": "安保检查完毕报告",
+          "nameEn": "Security Check Complete Report",
+          "dialogueIds": ["dl-complete-001", "dl-complete-002", "dl-complete-003", "dl-complete-004", "dl-complete-005", "dl-complete-006"],
+          "keyPoints": ["检查完成", "异常情况", "物品确认"]
+        }
+      ]
+    },
+    "emergencySituations": {
+      "id": "emergency-situations",
+      "name": "紧急情况对话",
+      "nameEn": "Emergency Situations Dialogues",
+      "description": "处理各类紧急和特殊安全事件的对话场景",
+      "icon": "AlertTriangle",
+      "subcategories": [
+        {
+          "id": "in-flight-incident",
+          "name": "飞行事故通信",
+          "nameEn": "In-flight Incident Communication",
+          "dialogueIds": ["dl005", "dl006", "dl007", "dl008"],
+          "keyPoints": ["Mayday呼叫", "液压泄漏", "优先降落"]
+        },
+        {
+          "id": "fighting-incident",
+          "name": "打架斗殴处置",
+          "nameEn": "Fighting Incident Handling",
+          "dialogueIds": ["dl-fight-001", "dl-fight-002", "dl-fight-003", "dl-fight-004", "dl-fight-005", "dl-fight-006"],
+          "keyPoints": ["冲突调解", "飞行安全", "报警威慑"]
+        },
+        {
+          "id": "smoking-cockpit-comm",
+          "name": "与驾驶舱沟通-旅客吸烟事件",
+          "nameEn": "Cockpit Communication - Smoking Incident",
+          "dialogueIds": ["dl-smoke-001", "dl-smoke-002", "dl-smoke-003", "dl-smoke-004", "dl-smoke-005", "dl-smoke-006", "dl-smoke-007"],
+          "keyPoints": ["事件报告", "控制措施", "文书填写", "监控要求"]
+        },
+        {
+          "id": "phone-cockpit-comm",
+          "name": "与驾驶舱沟通-违规使用手机",
+          "nameEn": "Cockpit Communication - Phone Violation",
+          "dialogueIds": ["dl-cockphone-001", "dl-cockphone-002", "dl-cockphone-003", "dl-cockphone-004", "dl-cockphone-005", "dl-cockphone-006", "dl-cockphone-007"],
+          "keyPoints": ["违规报告", "态度恶劣", "地面公安", "文书处理"]
+        },
+        {
+          "id": "explosive-threat",
+          "name": "爆炸物威胁",
+          "nameEn": "Explosive Threat",
+          "dialogueIds": ["dl-bomb-001", "dl-bomb-002", "dl-bomb-003", "dl-bomb-004"],
+          "keyPoints": ["爆炸物发现", "确认程序", "预案处置"]
+        },
+        {
+          "id": "hijacking-incident",
+          "name": "劫机事件",
+          "nameEn": "Hijacking Incident",
+          "dialogueIds": ["dl-hijack-001", "dl-hijack-002", "dl-hijack-003", "dl-hijack-004", "dl-hijack-005"],
+          "keyPoints": ["劫机报告", "胁迫情况", "制服处置", "控制状态"]
+        }
+      ]
+    }
+  },
+  "statistics": {
+    "totalCategories": 2,
+    "totalSubcategories": 22,
+    "totalDialogues": 119,
+    "dailyOperationsCount": 86,
+    "emergencySituationsCount": 33
+  }
+} 
