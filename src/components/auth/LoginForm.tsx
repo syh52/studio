@@ -1,6 +1,6 @@
 
 "use client";
-import { useState } from 'react';
+import { useState, useCallback } from 'react'; // Added useCallback
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { MessageCircleMore } from 'lucide-react'; // Using a generic chat icon for WeChat
+import { MessageCircleMore } from 'lucide-react';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -19,7 +19,7 @@ export default function LoginForm() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     const success = await login(email, password);
@@ -30,23 +30,19 @@ export default function LoginForm() {
       toast({ title: "登录失败", description: "邮箱或密码无效。", variant: "destructive" });
       setIsLoading(false);
     }
-  };
+  }, [email, password, login, toast, router]);
 
-  const handleWeChatLogin = async () => {
+  const handleWeChatLogin = useCallback(async () => {
     setIsLoading(true);
-    // Simulate WeChat login process
-    // In a real app, this would involve redirecting to WeChat, getting a code, exchanging for token, etc.
-    // For mock, we'll use a predefined mock WeChat user.
     const success = await login('wechat_user_placeholder@lexicon.app', 'mock_wechat_password');
     if (success) {
       toast({ title: "微信登录成功 (模拟)", description: "欢迎，微信用户！", className:"bg-green-600 text-white pixel-border" });
       router.push('/');
     } else {
-      // This case should ideally not happen if mock user is set up correctly
       toast({ title: "微信登录失败 (模拟)", description: "模拟微信用户配置错误。", variant: "destructive" });
       setIsLoading(false);
     }
-  };
+  }, [login, toast, router]);
 
   return (
     <Card className="w-full max-w-md mx-auto pixel-border shadow-lg">
@@ -84,9 +80,9 @@ export default function LoginForm() {
             {isLoading && !email.startsWith('wechat_') ? '登录中...' : '邮箱登录'}
           </Button>
         </form>
-        <Button 
-          variant="outline" 
-          className="w-full mt-4 btn-pixel bg-green-500 hover:bg-green-600 text-white border-green-700 focus:ring-green-400" 
+        <Button
+          variant="outline"
+          className="w-full mt-4 btn-pixel bg-green-500 hover:bg-green-600 text-white border-green-700 focus:ring-green-400"
           onClick={handleWeChatLogin}
           disabled={isLoading}
         >

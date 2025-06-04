@@ -1,5 +1,6 @@
+
 "use client";
-import { useState } from 'react';
+import { useState, useCallback } from 'react'; // Added useCallback
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,7 @@ export default function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     const success = await register(username, email, password);
@@ -29,7 +30,7 @@ export default function RegisterForm() {
       toast({ title: "注册失败", description: "用户可能已存在或数据无效。", variant: "destructive" });
       setIsLoading(false);
     }
-  };
+  }, [username, email, password, register, toast, router]);
 
   return (
     <Card className="w-full max-w-md mx-auto pixel-border shadow-lg">

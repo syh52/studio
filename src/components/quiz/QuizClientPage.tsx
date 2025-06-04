@@ -1,7 +1,8 @@
+
 "use client";
 
 import type { VocabularyPack, VocabularyItem } from '@/lib/data';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react'; // Added useCallback
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +23,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 export default function QuizClientPage({ pack }: QuizClientPageProps) {
-  const { user, isAuthenticated, isLoading: authLoading, addPoints } = useAuth(); // Added auth state for potential future use or immediate checks
+  const { user, isAuthenticated, isLoading: authLoading, addPoints } = useAuth();
   const router = useRouter();
 
   const [shuffledItems, setShuffledItems] = useState<VocabularyItem[]>([]);
@@ -32,9 +33,8 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
   const [score, setScore] = useState(0);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [currentOptions, setCurrentOptions] = useState<string[]>([]);
-  
+
   useEffect(() => {
-    // Initial auth check
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
@@ -49,9 +49,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
       setIsAnswerChecked(false);
       setSelectedAnswer(null);
     } else if (pack && pack.items.length === 0) {
-      // If pack exists but has no items, QuizClientPage handles this by showing a message.
-      // No need to shuffle or set quiz-specific state.
-      setShuffledItems([]); // Ensure shuffledItems is empty to trigger the "no items" message
+      setShuffledItems([]);
     }
   }, [pack]);
 
@@ -69,13 +67,13 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
         .filter(item => item.id !== currentItem.id)
         .map(item => item.chinese)
         .filter(translation => translation !== correctAnswer);
-      
+
       distractors = shuffleArray(distractors);
-      
+
       const uniqueDistractors = Array.from(new Set(distractors)).slice(0, TOTAL_OPTIONS - 1);
 
       let options = [correctAnswer, ...uniqueDistractors];
-      
+
       const genericDistractors = ["其他选项A", "其他选项B", "其他选项C", "另一个答案", "以上都不是"];
       let genericIndex = 0;
       while(options.length < TOTAL_OPTIONS && genericIndex < genericDistractors.length) {
@@ -85,18 +83,16 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
         genericIndex++;
       }
       options = shuffleArray(options.slice(0, TOTAL_OPTIONS));
-      
-      // Ensure we always have TOTAL_OPTIONS, even if some are duplicates or generic if pack is very small
+
       while(options.length < TOTAL_OPTIONS) {
-          options.push(`补充选项${options.length + 1}`); // Fallback for extremely small packs
+          options.push(`补充选项${options.length + 1}`);
       }
 
       setCurrentOptions(options);
     }
   }, [currentItem, pack.items]);
 
-
-  const handleAnswerSelect = (option: string) => {
+  const handleAnswerSelect = useCallback((option: string) => {
     if (isAnswerChecked || !currentItem) return;
 
     setSelectedAnswer(option);
@@ -104,13 +100,13 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
 
     if (option === currentItem.chinese) {
       setScore(prevScore => prevScore + POINTS_PER_CORRECT_ANSWER);
-      if (isAuthenticated) { // Only add points if authenticated
+      if (isAuthenticated) {
         addPoints(POINTS_PER_CORRECT_ANSWER);
       }
     }
-  };
+  }, [isAnswerChecked, currentItem, isAuthenticated, addPoints]);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     if (currentQuestionIndex < shuffledItems.length - 1) {
       setCurrentQuestionIndex(prevIndex => prevIndex + 1);
       setSelectedAnswer(null);
@@ -118,9 +114,9 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
     } else {
       setQuizCompleted(true);
     }
-  };
-  
-  const restartQuiz = () => {
+  }, [currentQuestionIndex, shuffledItems.length]);
+
+  const restartQuiz = useCallback(() => {
     if (pack && pack.items.length > 0) {
       setShuffledItems(shuffleArray([...pack.items]));
     } else {
@@ -131,7 +127,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
     setQuizCompleted(false);
     setIsAnswerChecked(false);
     setSelectedAnswer(null);
-  };
+  }, [pack]);
 
   if (authLoading) {
     return (
@@ -143,7 +139,6 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
   }
 
   if (!isAuthenticated && !authLoading) {
-     // This case should ideally be handled by the useEffect redirect, but as a fallback:
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <p className="ml-4 font-headline text-lg">请先登录以进行测验。正在跳转至登录页面...</p>
@@ -188,7 +183,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
       </Card>
     );
   }
-  
+
   if (!currentItem) {
      return (
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
@@ -216,13 +211,11 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
             <p className="text-sm text-muted-foreground mb-1">请选择以下英文单词的正确中文翻译：</p>
             <h2 className="font-headline text-4xl text-primary">{currentItem.english}</h2>
             {currentItem.pronunciationAudio && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="mt-2 text-accent hover:bg-accent/20"
                 onClick={() => {
-                  // const audio = new Audio(currentItem.pronunciationAudio);
-                  // audio.play().catch(e => console.error("Error playing audio:", e));
                   alert(`模拟播放音频: ${currentItem.english}`)
                 }}
               >
@@ -240,8 +233,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
                 } else if (option === selectedAnswer) {
                   buttonClass += " quiz-option-incorrect";
                 } else {
-                  // For non-selected, non-correct answers when an answer is checked
-                  buttonClass += " opacity-60 cursor-not-allowed"; 
+                  buttonClass += " opacity-60 cursor-not-allowed";
                 }
               }
               return (
@@ -250,7 +242,7 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
                   variant="outline"
                   className={buttonClass}
                   onClick={() => handleAnswerSelect(option)}
-                  disabled={isAnswerChecked} // Disable all options once an answer is checked
+                  disabled={isAnswerChecked}
                 >
                   {option}
                 </Button>
