@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import type { VocabularyItem } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { Volume2, Trash2 } from 'lucide-react';
@@ -8,14 +8,11 @@ import { Card } from '@/components/ui/card';
 
 interface FlashcardProps {
   item: VocabularyItem;
+  isFlipped: boolean;
+  onFlipCard: () => void;
 }
 
-export default function Flashcard({ item }: FlashcardProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
-
-  const handleFlip = useCallback(() => {
-    setIsFlipped(prev => !prev);
-  }, []);
+export default function Flashcard({ item, isFlipped, onFlipCard }: FlashcardProps) {
 
   const playAudio = useCallback((e: React.MouseEvent) => {
     e.stopPropagation(); 
@@ -33,8 +30,8 @@ export default function Flashcard({ item }: FlashcardProps) {
 
   return (
     <div 
-      className="w-full max-w-md h-64 sm:h-72 mx-auto perspective cursor-pointer" // Adjusted height
-      onClick={handleFlip}
+      className="w-full max-w-md h-64 sm:h-72 mx-auto perspective cursor-pointer"
+      onClick={onFlipCard} // Use the passed in flip handler
     >
       <Card 
         className={`relative w-full h-full pixel-border shadow-lg transition-all duration-500 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}
@@ -71,5 +68,4 @@ export default function Flashcard({ item }: FlashcardProps) {
     </div>
   );
 }
-
     

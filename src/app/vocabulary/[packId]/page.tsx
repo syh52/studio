@@ -19,6 +19,7 @@ export default function FlashcardPage() {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [shuffledItems, setShuffledItems] = useState<VocabularyItem[]>([]);
   const [isLoadingPack, setIsLoadingPack] = useState(true);
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
 
   const pack = useMemo(() => vocabularyPacks.find(p => p.id === packId), [packId]);
 
@@ -31,22 +32,27 @@ export default function FlashcardPage() {
   useEffect(() => {
     if (pack) {
       setShuffledItems([...pack.items].sort(() => Math.random() - 0.5));
-      setCurrentCardIndex(0); // Reset index when pack changes or loads
+      setCurrentCardIndex(0); 
       setIsLoadingPack(false);
     } else if (!authLoading && packId) {
         setIsLoadingPack(false);
     }
   }, [pack, packId, authLoading]);
 
+  useEffect(() => {
+    // Reset flip state whenever the card index changes
+    setIsCardFlipped(false);
+  }, [currentCardIndex]);
+
+  const flipCard = useCallback(() => {
+    setIsCardFlipped(prev => !prev);
+  }, []);
 
   const goToNextCard = useCallback(() => {
-    // Logic for what happens after "I know" or "I don't know"
-    // For now, just advance to the next card.
     setCurrentCardIndex(prev => (prev + 1) % (shuffledItems.length || 1) );
   }, [shuffledItems.length]);
 
   const handleKnow = useCallback(() => {
-    // Placeholder for potential future SRS logic
     if (shuffledItems.length > 0) {
       console.log("User knows:", shuffledItems[currentCardIndex]?.english);
     }
@@ -54,13 +60,18 @@ export default function FlashcardPage() {
   }, [goToNextCard, currentCardIndex, shuffledItems]);
 
   const handleDontKnow = useCallback(() => {
-    // Placeholder for potential future SRS logic
-    // Maybe ensure the card is flipped before advancing or re-add to queue
     if (shuffledItems.length > 0) {
       console.log("User doesn't know:", shuffledItems[currentCardIndex]?.english);
+      if (!isCardFlipped) {
+        setIsCardFlipped(true); // Flip to show answer
+      } else {
+        // If already flipped (they saw the answer), then advance
+        goToNextCard();
+      }
+    } else {
+      goToNextCard(); // Should not happen if items exist, but as a fallback
     }
-    goToNextCard();
-  }, [goToNextCard, currentCardIndex, shuffledItems]);
+  }, [goToNextCard, currentCardIndex, shuffledItems, isCardFlipped]);
 
 
   const goToPreviousCard = useCallback(() => {
@@ -121,7 +132,7 @@ export default function FlashcardPage() {
       </div>
 
       <div className="flex-grow flex items-center justify-center w-full max-w-md px-2">
-        {currentItem && <Flashcard item={currentItem} />}
+        {currentItem && <Flashcard item={currentItem} isFlipped={isCardFlipped} onFlipCard={flipCard} />}
       </div>
       
       <div className="w-full max-w-md px-2 space-y-3 pt-2 sm:pt-4">
@@ -138,14 +149,14 @@ export default function FlashcardPage() {
             <Button 
               onClick={handleDontKnow} 
               className="btn-pixel text-base sm:text-lg py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md"
-              aria-label="I don't know this word"
+              aria-label="I don't know this word, show answer or go next"
             >
               <XCircle size={20} className="mr-1 sm:mr-2 " /> 不认识
             </Button>
             <Button 
               onClick={handleKnow} 
               className="btn-pixel text-base sm:text-lg py-3 bg-green-600 hover:bg-green-700 text-white rounded-md"
-              aria-label="I know this word"
+              aria-label="I know this word, go next"
             >
               <CheckCircle2 size={20} className="mr-1 sm:mr-2 " /> 我认识
             </Button>
@@ -166,5 +177,4 @@ export default function FlashcardPage() {
     </div>
   );
 }
-
     
