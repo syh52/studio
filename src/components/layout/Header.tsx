@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -51,14 +51,25 @@ export default function Header() {
       </Link>
       
       <nav className="flex items-center gap-2 md:gap-3">
-        {isAuthenticated && navLinks.map(link => (
-          <Link key={link.href} href={link.href} legacyBehavior>
-            <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === link.href ? 'bg-accent text-accent-foreground' : ''}`}>
-              {link.icon}
-              <span className="hidden md:inline">{link.label}</span>
-            </a>
-          </Link>
-        ))}
+        {isAuthenticated && (
+          <>
+            {navLinks.map(link => (
+              <Link key={link.href} href={link.href} legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === link.href ? 'bg-accent text-accent-foreground' : ''}`}>
+                  {link.icon}
+                  <span className="hidden md:inline">{link.label}</span>
+                </a>
+              </Link>
+            ))}
+            {/* Admin Link - visible to any authenticated user for this prototype */}
+            <Link href="/admin" legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/admin' ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <LayoutDashboard size={18} />
+                  <span className="hidden md:inline">管理</span>
+                </a>
+            </Link>
+          </>
+        )}
       </nav>
 
       <div className="flex items-center gap-2 md:gap-4">
@@ -72,7 +83,7 @@ export default function Header() {
                     <AvatarImage
                       src={DEFAULT_AVATAR_PATH} 
                       alt={user.username || "User Avatar"}
-                      data-ai-hint="dinosaur avatar" 
+                      data-ai-hint="dinosaur avatar"
                     />
                     <AvatarFallback className="bg-secondary text-secondary-foreground font-headline">
                       {user.username ? user.username.charAt(0).toUpperCase() : "U"}
@@ -119,3 +130,5 @@ export default function Header() {
     </header>
   );
 }
+
+    
