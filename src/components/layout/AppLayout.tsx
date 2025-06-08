@@ -25,16 +25,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <PerspectiveProvider>
-      {/* Main Content Container */}
-      <div className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mx-auto bg-gray-900 min-h-screen relative overflow-hidden perspective-1000">
+      {/* Main Content Container - 桌面端使用更宽的布局 */}
+      <div className="w-full max-w-sm sm:max-w-md md:max-w-4xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-xl mx-auto bg-gray-900 min-h-screen relative overflow-hidden perspective-1000">
         {/* Simplified Status Bar - Empty spacer */}
         <div className="h-[34px] relative z-50"></div>
         
         {/* Header */}
         <MobileHeader />
         
-        {/* Main Content */}
-        <main className={`flex-grow px-4 sm:px-6 md:px-8 overflow-y-auto scrollbar-thin relative z-10 ${isHomePage ? 'pb-24' : 'pb-6'}`}>
+        {/* Main Content - 桌面端使用更合适的内边距 */}
+        <main className={`flex-grow px-4 sm:px-6 md:px-8 lg:px-12 xl:px-16 overflow-y-auto scrollbar-thin relative z-10 ${isHomePage ? 'pb-24' : 'pb-6'}`}>
           {children}
         </main>
       </div>

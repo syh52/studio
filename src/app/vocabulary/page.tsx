@@ -45,8 +45,8 @@ export default function VocabularyPage() {
         </div>
       </div> */}
 
-      {/* Vocabulary Packs Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 animate-blur-in animate-delay-400">
+      {/* Vocabulary Packs Grid - 优化桌面端布局 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6 md:gap-8 animate-blur-in animate-delay-400">
         {vocabularyPacks.map(pack => (
           <VocabularyPackCard key={pack.id} pack={pack} />
         ))}

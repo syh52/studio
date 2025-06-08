@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexicon - 词汇学习界面</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Custom CSS Variables */
+        :root {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --primary: 262.1 83.3% 57.8%;
+            --accent: 217.2 91.2% 59.8%;
+        }
+
+        /* Modern smooth font rendering */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: hsl(222.2 84% 4.9%);
+            color: hsl(210 40% 98%);
+        }
+
+        /* Glass morphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-card-strong {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Gradient buttons */
+        .gradient-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+        }
+
+        .gradient-secondary {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%);
+        }
+
+        /* Modern shadows */
+        .shadow-glow {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Perspective element */
+        .perspective-element {
+            transform-style: preserve-3d;
+            transition: transform 0.2s ease-out;
+        }
+
+        /* Animations */
+        @keyframes blur-in {
+            from {
+                filter: blur(8px);
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                filter: blur(0px);
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-blur-in {
+            animation: blur-in 0.4s ease-out forwards;
+            opacity: 0;
+        }
+
+        /* Button hover effects */
+        button {
+            position: relative;
+            overflow: hidden;
+            pointer-events: auto !important;
+            z-index: 10;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        button:active::after {
+            width: 300px;
+            height: 300px;
+        }
+
+        /* Focus styles */
+        .modern-focus:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5), 0 0 0 4px rgba(139, 92, 246, 0.2);
+        }
+
+        /* Mobile container */
+        .mobile-container {
+            max-width: 428px;
+            margin: 0 auto;
+            background: #111827;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Custom scrollbar */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'gray-900': '#111827',
+                        'purple-400': '#a855f7',
+                        'purple-500': '#8b5cf6',
+                        'purple-600': '#7c3aed',
+                        'blue-400': '#60a5fa',
+                        'blue-500': '#3b82f6',
+                        'blue-600': '#2563eb',
+                        'yellow-400': '#fbbf24',
+                        'gray-300': '#d1d5db',
+                        'gray-400': '#9ca3af',
+                        'gray-700': '#374151',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="dark">
+    <div class="mobile-container">
+        <!-- Header -->
+        <header class="glass-card sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
+            <button onclick="goBack()" class="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                <span>返回</span>
+            </button>
+            
+            <div class="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="px-4 py-6">
+            <div class="min-h-[calc(100vh-200px)]">
+                <!-- Top Navigation -->
+                <div class="max-w-2xl mx-auto mb-6">
+                    <div class="flex items-center justify-between">
+                        <button onclick="goToVocabulary()" class="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors glass-card px-3 py-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            返回
+                        </button>
+                        
+                        <div class="text-center">
+                            <h1 class="text-xl font-semibold text-white">飞行基础与客舱安全</h1>
+                            <p class="text-sm text-gray-400">学习进度：1 / 20</p>
+                        </div>
+
+                        <button onclick="showStats()" class="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors glass-card px-3 py-2 rounded-lg">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            统计
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Word Card -->
+                <div class="w-full max-w-lg mx-auto perspective-element transform transition-transform duration-200 ease-out animate-blur-in">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-3xl blur-sm"></div>
+                        <div class="relative glass-card rounded-3xl p-8 sm:p-10">
+                            <div class="space-y-6">
+                                <!-- Word Status Badge -->
+                                <div class="flex justify-between items-center">
+                                    <div class="flex items-center gap-2 glass-card-strong px-4 py-2 rounded-xl">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                        </svg>
+                                        <span class="text-sm text-yellow-400 font-medium">新词</span>
+                                    </div>
+                                </div>
+
+                                <!-- Word Display -->
+                                <div class="text-center space-y-4">
+                                    <h2 class="text-4xl font-semibold text-white flex items-center justify-center gap-3">
+                                        Emergency Exit
+                                        <button 
+                                            onclick="playAudio()"
+                                            class="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 active:scale-95"
+                                            aria-label="播放单词发音"
+                                            title="播放单词发音"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                            </svg>
+                                        </button>
+                                    </h2>
+
+                                    <!-- Example Sentence -->
+                                    <div class="glass-card-strong p-4 rounded-xl space-y-2 text-left">
+                                        <p class="text-sm font-medium text-white">Familiarize yourself with the nearest emergency exit.</p>
+                                        <p class="text-xs text-gray-400">请熟悉离您最近的紧急出口。</p>
+                                    </div>
+                                </div>
+
+                                <!-- Hint Text -->
+                                <p class="text-center text-sm text-gray-400">
+                                    这是一个新单词，你认识它吗？
+                                </p>
+
+                                <!-- Action Buttons -->
+                                <div class="grid grid-cols-2 gap-4">
+                                    <button 
+                                        onclick="handleDontKnow()"
+                                        class="gradient-secondary text-white py-3 px-6 rounded-xl text-base font-medium modern-focus cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                        不认识
+                                    </button>
+                                    <button 
+                                        onclick="handleKnow()"
+                                        class="gradient-primary text-white py-3 px-6 rounded-xl text-base font-medium modern-focus cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        认识
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript for interactions -->
+    <script>
+        // Audio playback
+        function playAudio() {
+            const utterance = new SpeechSynthesisUtterance('Emergency Exit');
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+            
+            // Visual feedback
+            const button = event.currentTarget;
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Navigation functions
+        function goBack() {
+            alert('返回到主页');
+        }
+
+        function goToVocabulary() {
+            alert('返回到词汇包列表');
+        }
+
+        function showStats() {
+            alert('显示学习统计');
+        }
+
+        // Learning functions
+        function handleKnow() {
+            showFeedback('great', '很棒！你认识这个单词');
+            setTimeout(() => {
+                nextWord();
+            }, 1500);
+        }
+
+        function handleDontKnow() {
+            showDetailedLearning();
+        }
+
+        // Show feedback
+        function showFeedback(type, message) {
+            const card = document.querySelector('.glass-card.rounded-3xl');
+            const originalContent = card.innerHTML;
+            
+            card.innerHTML = `
+                <div class="text-center py-12 space-y-4 animate-blur-in">
+                    ${type === 'great' ? 
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>' :
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-yellow-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>'
+                    }
+                    <h3 class="text-2xl font-semibold text-white">${message}</h3>
+                </div>
+            `;
+        }
+
+        // Show detailed learning
+        function showDetailedLearning() {
+            const card = document.querySelector('.glass-card.rounded-3xl');
+            
+            card.innerHTML = `
+                <div class="space-y-6 animate-blur-in">
+                    <!-- Word Header -->
+                    <div class="text-center space-y-2">
+                        <h2 class="text-4xl font-semibold text-white flex items-center justify-center gap-3">
+                            Emergency Exit
+                            <button onclick="playAudio()" class="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 active:scale-95">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                                </svg>
+                            </button>
+                        </h2>
+                        <p class="text-lg text-gray-400">/ɪˈmɜːdʒənsi ˈeksɪt/</p>
+                    </div>
+
+                    <!-- Chinese Meaning -->
+                    <div class="glass-card-strong rounded-xl p-4 flex items-start gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-purple-400 mb-1">中文释义</h3>
+                            <p class="text-lg text-white">紧急出口</p>
+                        </div>
+                    </div>
+
+                    <!-- Example -->
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                            </svg>
+                            <div class="flex-1 space-y-3">
+                                <h3 class="font-semibold text-green-400">例句</h3>
+                                <div class="glass-card-strong rounded-xl p-4 space-y-2">
+                                    <p class="font-medium text-white">Familiarize yourself with the nearest emergency exit.</p>
+                                    <p class="text-sm text-gray-400">请熟悉离您最近的紧急出口。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Learning Tip -->
+                    <div class="glass-card-strong rounded-xl p-4">
+                        <p class="text-sm text-white">
+                            💡 学习提示：仔细阅读例句，理解单词在实际语境中的用法。试着用这个单词造一个句子！
+                        </p>
+                    </div>
+
+                    <!-- Continue Button -->
+                    <div class="flex justify-center pt-4">
+                        <button 
+                            onclick="nextWord()"
+                            class="gradient-primary text-white py-3 px-8 rounded-xl text-base font-medium modern-focus cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+                        >
+                            我记住了，继续学习
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Next word
+        function nextWord() {
+            // Simulate loading next word
+            showFeedback('loading', '加载下一个单词...');
+            setTimeout(() => {
+                location.reload();
+            }, 500);
+        }
+
+        // Add ripple effect to buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    const ripple = document.createElement('span');
+                    const rect = this.getBoundingClientRect();
+                    const size = Math.max(rect.width, rect.height);
+                    const x = e.clientX - rect.left - size / 2;
+                    const y = e.clientY - rect.top - size / 2;
+                    
+                    ripple.style.width = ripple.style.height = size + 'px';
+                    ripple.style.left = x + 'px';
+                    ripple.style.top = y + 'px';
+                    ripple.classList.add('ripple');
+                    
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => {
+                        ripple.remove();
+                    }, 600);
+                });
+            });
+        });
+    </script>
+
+    <!-- Ripple Effect Style -->
+    <style>
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+    </style>
+</body>
+</html> 

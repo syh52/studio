@@ -1,0 +1,409 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lexicon - 词汇学习</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Glass morphism effects */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-card-strong {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Gradient backgrounds */
+        .gradient-primary {
+            background: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 100%);
+        }
+
+        .gradient-secondary {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(245, 101, 101, 0.2) 100%);
+        }
+
+        /* Animations */
+        @keyframes blur-in {
+            from {
+                opacity: 0;
+                filter: blur(8px);
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                filter: blur(0);
+                transform: translateY(0);
+            }
+        }
+
+        .animate-blur-in {
+            animation: blur-in 0.4s ease-out forwards;
+        }
+
+        .animate-delay-200 {
+            animation-delay: 0.2s;
+        }
+
+        .animate-delay-300 {
+            animation-delay: 0.3s;
+        }
+
+        /* Mobile container */
+        .mobile-container {
+            max-width: 428px;
+            margin: 0 auto;
+            background: #111827;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Button effects */
+        .btn-flashcard {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-flashcard:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+
+        .btn-flashcard:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Card flip animation */
+        .flip-card {
+            perspective: 1000px;
+        }
+
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+        }
+
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=IBM+Plex+Serif:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@300;400;500;600;700&amp;family=Inter&amp;display=swap" rel="stylesheet">
+</head>
+
+<body class="bg-gray-900 text-white">
+    <div class="mobile-container">
+        <!-- Header -->
+        
+
+        <!-- Main Content -->
+        <main class="px-4 py-6">
+            <!-- Progress Bar -->
+            <div class="w-full glass-card rounded-full h-2 mb-8 animate-blur-in animate-delay-200">
+                <div class="gradient-primary h-2 rounded-full transition-all duration-300" style="width: 5%"></div>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div class="w-full max-w-lg mx-auto animate-blur-in animate-delay-300">
+                <div id="flashcard" class="flip-card">
+                    <div class="flip-card-inner">
+                        <!-- Front of card -->
+                        <div class="flip-card-front">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-3xl blur-sm"></div>
+                                <div class="relative glass-card rounded-3xl p-8 min-h-[500px] flex flex-col">
+                                    <!-- Status Badge -->
+                                    <div class="flex justify-between items-start mb-6">
+                                        <div class="glass-card-strong px-4 py-2 rounded-xl">
+                                            <div class="flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                                </svg>
+                                                <span class="text-sm text-yellow-400 font-medium">新词</span>
+                                            </div>
+                                        </div>
+                                        <div class="text-xs text-gray-400">1/20</div>
+                                    </div>
+
+                                    <!-- Word Display -->
+                                    <div class="flex-1 flex flex-col justify-center text-center space-y-6">
+                                        <div class="space-y-4">
+                                            <h2 class="text-5xl font-semibold text-white tracking-tight">Lavatory</h2>
+                                            <button onclick="playAudio()" class="inline-flex items-center gap-2 px-4 py-2 glass-card-strong rounded-xl hover:bg-white/10 transition-all duration-200">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                                                </svg>
+                                                <span class="text-sm text-purple-400">/ˈlævətri/</span>
+                                            </button>
+                                        </div>
+
+                                        <!-- Example Sentence -->
+                                        <div class="glass-card-strong p-4 rounded-xl space-y-2">
+                                            <p class="text-base text-white font-medium">The lavatory is located at the rear of the aircraft.</p>
+                                            <p class="text-sm text-gray-400">洗手间位于飞机的后部。</p>
+                                        </div>
+
+                                        <!-- Hint -->
+                                        <p class="text-sm text-gray-400">你认识这个单词吗？</p>
+                                    </div>
+
+                                    <!-- Action Buttons -->
+                                    <div class="grid grid-cols-2 gap-4 mt-6">
+                                        <button onclick="handleDontKnow()" class="btn-flashcard gradient-secondary text-white py-4 px-6 rounded-xl text-base font-medium flex items-center justify-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            </svg>
+                                            不认识
+                                        </button>
+                                        <button onclick="handleKnow()" class="btn-flashcard gradient-primary text-white py-4 px-6 rounded-xl text-base font-medium flex items-center justify-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                            </svg>
+                                            认识
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Back of card (detailed view) -->
+                        <div class="flip-card-back">
+                            <div class="relative">
+                                <div class="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-blue-500/20 rounded-3xl blur-sm"></div>
+                                <div class="relative glass-card rounded-3xl p-8 min-h-[500px]">
+                                    <div class="space-y-6">
+                                        <!-- Word Header -->
+                                        <div class="text-center space-y-2">
+                                            <h2 class="text-4xl font-semibold text-white tracking-tight">Lavatory</h2>
+                                            <p class="text-lg text-purple-400">/ˈlævətri/</p>
+                                        </div>
+
+                                        <!-- Chinese Meaning -->
+                                        <div class="glass-card-strong rounded-xl p-4">
+                                            <div class="flex items-start gap-3">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-purple-400 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                                </svg>
+                                                <div>
+                                                    <h3 class="font-semibold text-purple-400 mb-1 text-base">中文释义</h3>
+                                                    <p class="text-xl text-white">洗手间，盥洗室</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Example Sentences -->
+                                        <div class="space-y-4">
+                                            <h3 class="font-semibold text-green-400 text-base flex items-center gap-2">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                                                </svg>
+                                                例句
+                                            </h3>
+                                            <div class="space-y-3">
+                                                <div class="glass-card-strong rounded-xl p-4 space-y-2">
+                                                    <p class="font-medium text-white text-base">The lavatory is located at the rear of the aircraft.</p>
+                                                    <p class="text-sm text-gray-400">洗手间位于飞机的后部。</p>
+                                                </div>
+                                                <div class="glass-card-strong rounded-xl p-4 space-y-2">
+                                                    <p class="font-medium text-white text-base">Please return to your seat, the lavatory is occupied.</p>
+                                                    <p class="text-sm text-gray-400">请回到您的座位，洗手间有人使用。</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Learning Tip -->
+                                        <div class="glass-card-strong rounded-xl p-4">
+                                            <p class="text-sm text-blue-400">
+                                                💡 学习提示：Lavatory 是航空业中对飞机洗手间的正式称呼，比 bathroom 或 toilet 更加专业和礼貌。
+                                            </p>
+                                        </div>
+
+                                        <!-- Continue Button -->
+                                        <button onclick="nextWord()" class="w-full gradient-primary text-white py-4 px-8 rounded-xl text-base font-medium btn-flashcard">
+                                            我记住了，继续学习
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Audio playback
+        function playAudio() {
+            const utterance = new SpeechSynthesisUtterance('Lavatory');
+            utterance.lang = 'en-US';
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+            
+            // Visual feedback
+            const button = event.currentTarget;
+            button.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                button.style.transform = 'scale(1)';
+            }, 200);
+        }
+
+        // Navigation functions
+        function goBack() {
+            showMessage('返回到主页');
+        }
+
+        function showStats() {
+            showMessage('显示学习统计');
+        }
+
+        // Learning functions
+        function handleKnow() {
+            showFeedback('great');
+            setTimeout(() => {
+                nextWord();
+            }, 1500);
+        }
+
+        function handleDontKnow() {
+            flipCard();
+        }
+
+        function flipCard() {
+            document.getElementById('flashcard').classList.add('flipped');
+        }
+
+        function nextWord() {
+            // Reset card
+            document.getElementById('flashcard').classList.remove('flipped');
+            
+            // Update progress
+            updateProgress();
+            
+            showMessage('加载下一个单词...');
+            
+            // Simulate next word loading
+            setTimeout(() => {
+                // In real app, load next word data
+                location.reload();
+            }, 1000);
+        }
+
+        function updateProgress() {
+            const progressBar = document.querySelector('.gradient-primary');
+            const currentWidth = parseInt(progressBar.style.width) || 5;
+            const newWidth = Math.min(currentWidth + 5, 100);
+            progressBar.style.width = newWidth + '%';
+        }
+
+        function showFeedback(type) {
+            const messages = {
+                great: '很棒！你认识这个单词 🎉',
+                loading: '加载中...'
+            };
+            
+            showMessage(messages[type] || '继续加油！');
+        }
+
+        function showMessage(message) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 glass-card text-white px-6 py-3 rounded-xl z-50 text-sm font-medium';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Animate in
+            toast.style.opacity = '0';
+            toast.style.transform = 'translate(-50%, -20px)';
+            setTimeout(() => {
+                toast.style.transition = 'all 0.3s ease';
+                toast.style.opacity = '1';
+                toast.style.transform = 'translate(-50%, 0)';
+            }, 10);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => {
+                    if (document.body.contains(toast)) {
+                        document.body.removeChild(toast);
+                    }
+                }, 300);
+            }, 2000);
+        }
+
+        // Add ripple effect to buttons
+        document.addEventListener('DOMContentLoaded', function() {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    if (!this.querySelector('.ripple')) {
+                        const ripple = document.createElement('span');
+                        const rect = this.getBoundingClientRect();
+                        const size = Math.max(rect.width, rect.height);
+                        const x = e.clientX - rect.left - size / 2;
+                        const y = e.clientY - rect.top - size / 2;
+                        
+                        ripple.style.width = ripple.style.height = size + 'px';
+                        ripple.style.left = x + 'px';
+                        ripple.style.top = y + 'px';
+                        ripple.classList.add('ripple');
+                        
+                        this.appendChild(ripple);
+                        
+                        setTimeout(() => {
+                            if (this.contains(ripple)) {
+                                ripple.remove();
+                            }
+                        }, 600);
+                    }
+                });
+            });
+        });
+    </script>
+
+</body></html>
