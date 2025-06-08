@@ -124,7 +124,7 @@ body {
   }
   
   .gradient-secondary {
-    @apply bg-gradient-to-r from-purple-500/20 to-blue-500/20;
+    @apply bg-gradient-to-r from-red-500/20 to-pink-500/20;
   }
   
   /* Modern shadows */

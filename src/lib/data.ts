@@ -3,9 +3,19 @@ export interface VocabularyItem {
   id: string;
   english: string;
   chinese: string;
+  partOfSpeech?: string; // 词性：noun, verb, adjective, adverb, etc.
   pronunciationAudio?: string; // URL
   exampleSentenceEn: string;
   exampleSentenceZh: string;
+  additionalExamples?: Array<{
+    english: string;
+    chinese: string;
+  }>;
+  commonUsages?: Array<{
+    phrase: string;
+    translation: string;
+    example?: string;
+  }>;
 }
 
 export interface VocabularyPack {
@@ -40,11 +50,113 @@ export const vocabularyPacks: VocabularyPack[] = [
     icon: "PlaneTakeoff",
     items: [
       // Basic Aviation Terms
-      { id: "vt001", english: "Altitude", chinese: "高度", exampleSentenceEn: "The aircraft is cruising at an altitude of 30,000 feet.", exampleSentenceZh: "飞机正在30,000英尺的高度巡航。" },
-      { id: "vt002", english: "Runway", chinese: "跑道", exampleSentenceEn: "The pilot aligned the plane with the runway for landing.", exampleSentenceZh: "飞行员将飞机对准跑道准备降落。" },
+      { 
+        id: "vt001", 
+        english: "Altitude", 
+        chinese: "高度", 
+        partOfSpeech: "noun",
+        exampleSentenceEn: "The aircraft is cruising at an altitude of 30,000 feet.", 
+        exampleSentenceZh: "飞机正在30,000英尺的高度巡航。",
+        additionalExamples: [
+          {
+            english: "We need to maintain this altitude for safety.",
+            chinese: "为了安全，我们需要保持这个高度。"
+          },
+          {
+            english: "The pilot adjusted the altitude to avoid turbulence.",
+            chinese: "飞行员调整了高度以避免颠簸。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "cruising altitude",
+            translation: "巡航高度",
+            example: "We have reached our cruising altitude of 35,000 feet."
+          },
+          {
+            phrase: "altitude sickness",
+            translation: "高原反应",
+            example: "Some passengers may experience altitude sickness."
+          },
+          {
+            phrase: "lose altitude",
+            translation: "失去高度/下降",
+            example: "The aircraft began to lose altitude rapidly."
+          }
+        ]
+      },
+      { 
+        id: "vt002", 
+        english: "Runway", 
+        chinese: "跑道", 
+        partOfSpeech: "noun",
+        exampleSentenceEn: "The pilot aligned the plane with the runway for landing.", 
+        exampleSentenceZh: "飞行员将飞机对准跑道准备降落。",
+        additionalExamples: [
+          {
+            english: "The runway is clear for takeoff.",
+            chinese: "跑道已清空，可以起飞。"
+          },
+          {
+            english: "Due to strong winds, we changed to a different runway.",
+            chinese: "由于强风，我们改用了另一条跑道。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "runway lights",
+            translation: "跑道灯",
+            example: "The runway lights guide pilots during night landings."
+          },
+          {
+            phrase: "clear the runway",
+            translation: "清空跑道",
+            example: "All aircraft must clear the runway immediately."
+          },
+          {
+            phrase: "runway approach",
+            translation: "跑道进近",
+            example: "Begin your runway approach at 2,000 feet."
+          }
+        ]
+      },
       { id: "vt003", english: "Cockpit", chinese: "驾驶舱", exampleSentenceEn: "The captain and first officer are in the cockpit.", exampleSentenceZh: "机长和副驾驶在驾驶舱内。" },
       { id: "vt004", english: "Air Traffic Control (ATC)", chinese: "空中交通管制", exampleSentenceEn: "Pilots must follow instructions from Air Traffic Control.", exampleSentenceZh: "飞行员必须听从空中交通管制的指令。" },
-      { id: "vt005", english: "Turbulence", chinese: "颠簸", exampleSentenceEn: "Passengers were asked to fasten their seatbelts due to turbulence.", exampleSentenceZh: "由于颠簸，乘客被要求系好安全带。" },
+      { 
+        id: "vt005", 
+        english: "Turbulence", 
+        chinese: "颠簸", 
+        partOfSpeech: "noun",
+        exampleSentenceEn: "Passengers were asked to fasten their seatbelts due to turbulence.", 
+        exampleSentenceZh: "由于颠簸，乘客被要求系好安全带。",
+        additionalExamples: [
+          {
+            english: "The aircraft encountered severe turbulence over the mountains.",
+            chinese: "飞机在山区上空遇到了严重颠簸。"
+          },
+          {
+            english: "Light turbulence is expected during the first hour of flight.",
+            chinese: "预计飞行第一小时会有轻微颠簸。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "severe turbulence",
+            translation: "严重颠簸",
+            example: "We are experiencing severe turbulence, please remain seated."
+          },
+          {
+            phrase: "clear air turbulence",
+            translation: "晴空颠簸",
+            example: "Clear air turbulence is difficult to predict."
+          },
+          {
+            phrase: "turbulence ahead",
+            translation: "前方颠簸",
+            example: "There is turbulence ahead, please fasten your seatbelts."
+          }
+        ]
+      },
       // Safety Equipment
       { id: "vt006", english: "Life Vest", chinese: "救生衣", exampleSentenceEn: "Locate your life vest under your seat.", exampleSentenceZh: "救生衣在您的座位下方。" },
       { id: "vt007", english: "Oxygen Mask", chinese: "氧气面罩", exampleSentenceEn: "In case of cabin depressurization, oxygen masks will drop automatically.", exampleSentenceZh: "如果机舱失压，氧气面罩会自动落下。" },
@@ -78,7 +190,41 @@ export const vocabularyPacks: VocabularyPack[] = [
       { id: "vt061", english: "Board", chinese: "登机", exampleSentenceEn: "Please let the deportees board first.", exampleSentenceZh: "请让遣返旅客先登机。" },
       { id: "vt062", english: "Disembark", chinese: "下机/下飞机", exampleSentenceEn: "Please be the last to disembark.", exampleSentenceZh: "请你在落地后最后一个下机。" },
       { id: "vt046", english: "Calm Down", chinese: "冷静", exampleSentenceEn: "Calm down, both of you!", exampleSentenceZh: "你们两个冷静一下！" },
-      { id: "vt056", english: "Cooperate", chinese: "配合", exampleSentenceEn: "Please cooperate.", exampleSentenceZh: "请配合！" },
+      { 
+        id: "vt056", 
+        english: "Cooperate", 
+        chinese: "配合", 
+        partOfSpeech: "verb",
+        exampleSentenceEn: "Please cooperate.", 
+        exampleSentenceZh: "请配合！",
+        additionalExamples: [
+          {
+            english: "We need all passengers to cooperate during the security check.",
+            chinese: "我们需要所有乘客在安全检查期间配合。"
+          },
+          {
+            english: "The passenger refused to cooperate with the crew instructions.",
+            chinese: "该乘客拒绝配合机组人员的指示。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "cooperate with",
+            translation: "与...配合",
+            example: "Please cooperate with our security procedures."
+          },
+          {
+            phrase: "refuse to cooperate",
+            translation: "拒绝配合",
+            example: "The passenger refused to cooperate with safety instructions."
+          },
+          {
+            phrase: "full cooperation",
+            translation: "全力配合",
+            example: "We appreciate your full cooperation during this investigation."
+          }
+        ]
+      },
       { id: "vt058", english: "Attitude", chinese: "态度", exampleSentenceEn: "His attitude is very poor.", exampleSentenceZh: "这位旅客态度很差。" },
       { id: "vt059", english: "Reject", chinese: "拒绝", exampleSentenceEn: "He rejected our advice.", exampleSentenceZh: "拒绝我们的劝告。" },
       { id: "vt060", english: "Manage Behavior", chinese: "控制自己", exampleSentenceEn: "Can you manage your behavior?", exampleSentenceZh: "您能控制好自己吗？" },
@@ -94,7 +240,41 @@ export const vocabularyPacks: VocabularyPack[] = [
       // Security Operations Terms
       { id: "vt009", english: "Security Officer", chinese: "安全员", exampleSentenceEn: "I'm the security officer of this flight.", exampleSentenceZh: "我是本次航班的安全员。" },
       { id: "vt010", english: "Surveillance", chinese: "监控", exampleSentenceEn: "Please keep this passenger closely under surveillance.", exampleSentenceZh: "请对该旅客持续做好监控。" },
-      { id: "vt011", english: "Confiscate", chinese: "没收", exampleSentenceEn: "I have confiscated his cigarettes and lighter.", exampleSentenceZh: "我已经没收了该乘客的香烟及打火机。" },
+      { 
+        id: "vt011", 
+        english: "Confiscate", 
+        chinese: "没收", 
+        partOfSpeech: "verb",
+        exampleSentenceEn: "I have confiscated his cigarettes and lighter.", 
+        exampleSentenceZh: "我已经没收了该乘客的香烟及打火机。",
+        additionalExamples: [
+          {
+            english: "Security will confiscate any prohibited items.",
+            chinese: "安保人员将没收任何违禁物品。"
+          },
+          {
+            english: "The officer had to confiscate the passenger's electronic device.",
+            chinese: "安全员不得不没收该乘客的电子设备。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "confiscate items",
+            translation: "没收物品",
+            example: "We need to confiscate all dangerous items."
+          },
+          {
+            phrase: "confiscation procedure",
+            translation: "没收程序",
+            example: "Follow the standard confiscation procedure."
+          },
+          {
+            phrase: "temporarily confiscate",
+            translation: "临时没收",
+            example: "We will temporarily confiscate this device."
+          }
+        ]
+      },
       { id: "vt013", english: "Security Check", chinese: "安保检查", exampleSentenceEn: "The cabin security check is finished.", exampleSentenceZh: "客舱安保检查完毕。" },
       { id: "vt014", english: "Aircraft Security Check List", chinese: "航空器安保检查单", exampleSentenceEn: "Please follow the Aircraft Security Check List.", exampleSentenceZh: "请大家按照《航空器安保检查单》进行检查。" },
       { id: "vt015", english: "Information Reminder Form", chinese: "信息提示单", exampleSentenceEn: "Please complete the Information Reminder Form.", exampleSentenceZh: "请写好《信息提示单》后交给我。" },
@@ -111,7 +291,41 @@ export const vocabularyPacks: VocabularyPack[] = [
       { id: "vt049", english: "Swear", chinese: "说脏话", exampleSentenceEn: "He swore at me!", exampleSentenceZh: "他向我说脏话！" },
       { id: "vt050", english: "Beat Up", chinese: "动手/打", exampleSentenceEn: "I will beat him up.", exampleSentenceZh: "我还会动手！" },
       { id: "vt051", english: "Smoking", chinese: "吸烟", exampleSentenceEn: "A passenger was smoking in the lavatory.", exampleSentenceZh: "一名旅客在厕所吸烟。" },
-      { id: "vt052", english: "Intoxicated", chinese: "醉酒", exampleSentenceEn: "May I ask if you have been drinking?", exampleSentenceZh: "请问您是不是喝酒了？" },
+      { 
+        id: "vt052", 
+        english: "Intoxicated", 
+        chinese: "醉酒", 
+        partOfSpeech: "adjective",
+        exampleSentenceEn: "May I ask if you have been drinking?", 
+        exampleSentenceZh: "请问您是不是喝酒了？",
+        additionalExamples: [
+          {
+            english: "The passenger appears to be intoxicated and disruptive.",
+            chinese: "该乘客似乎醉酒并且有破坏性行为。"
+          },
+          {
+            english: "Intoxicated passengers are not allowed to board the aircraft.",
+            chinese: "醉酒的乘客不允许登机。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "heavily intoxicated",
+            translation: "严重醉酒",
+            example: "The passenger was heavily intoxicated and causing disturbance."
+          },
+          {
+            phrase: "appear intoxicated",
+            translation: "看起来醉酒",
+            example: "Several passengers appear intoxicated after the party."
+          },
+          {
+            phrase: "intoxicated behavior",
+            translation: "醉酒行为",
+            example: "We cannot tolerate intoxicated behavior on this flight."
+          }
+        ]
+      },
       { id: "vt053", english: "Deportee", chinese: "遣返旅客", exampleSentenceEn: "We have two deportees.", exampleSentenceZh: "有两名遣返旅客。" },
       { id: "vt054", english: "Escort", chinese: "押解", exampleSentenceEn: "A suspect escorted by three police officers.", exampleSentenceZh: "一名嫌疑人，由三名警官押解。" },
       { id: "vt055", english: "Suspect", chinese: "嫌疑人", exampleSentenceEn: "There will be a suspect escorted.", exampleSentenceZh: "本次航班将有一名嫌疑人。" },
