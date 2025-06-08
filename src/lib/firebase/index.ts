@@ -27,4 +27,16 @@ export {
   batchUpdateVocabularyProgress,
   batchUpdateDialogueProgress,
   syncQueue
-} from './sync'; 
+} from './sync';
+
+// 词汇操作
+export {
+  addLexiconEntry,
+  getAllVocabulary,
+  getVocabularyByCategory,
+  subscribeToVocabulary,
+  updateVocabulary,
+  deleteVocabulary,
+  batchImportVocabulary,
+  type VocabularyEntry
+} from './vocabulary'; 
