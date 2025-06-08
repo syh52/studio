@@ -4,6 +4,20 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { User as FirebaseUser } from 'firebase/auth';
+import { doc, onSnapshot, updateDoc, increment } from 'firebase/firestore';
+import { 
+  auth, 
+  db, 
+  loginWithEmail, 
+  registerUser, 
+  loginWithGoogle,
+  logout as firebaseLogout,
+  onAuthChange,
+  migrateLocalDataToFirebase,
+  enableOfflineSupport
+} from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface User {
   id: string;
@@ -11,7 +25,7 @@ interface User {
   username: string;
   indexPoints: number;
   lastCheckIn: string | null; // YYYY-MM-DD
-  photoURL?: string; // 添加头像URL字段
+  photoURL?: string;
 }
 
 interface AuthContextType {
@@ -20,125 +34,246 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, pass: string) => Promise<boolean>;
   register: (username: string, email: string, pass: string) => Promise<boolean>;
+  loginWithProvider: (provider: 'google') => Promise<boolean>;
   logout: () => void;
-  dailyCheckIn: () => boolean;
-  addPoints: (points: number) => void;
+  dailyCheckIn: () => Promise<boolean>;
+  addPoints: (points: number) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const MOCK_USERS: Record<string, Omit<User, 'id' | 'indexPoints' | 'lastCheckIn' > & {password: string}> = {
-  "user@example.com": { email: "user@example.com", username: "TestUser", password: "password123" },
-  "wechat_user_placeholder@lexicon.app": { email: "wechat_user_placeholder@lexicon.app", username: "微信用户", password: "mock_wechat_password" },
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
 
+  // 初始化离线支持
   useEffect(() => {
-    const storedUser = localStorage.getItem('aviationLexiconUser');
-    if (storedUser) {
-      const parsedUser = JSON.parse(storedUser);
-      // Ensure any old avatarStyle is removed if present from previous versions
-      delete parsedUser.avatarStyle; 
-      setUser(parsedUser);
-    }
-    setIsLoading(false);
+    enableOfflineSupport();
   }, []);
 
-  const updateLocalStorage = (updatedUser: User | null) => {
-    if (updatedUser) {
-      // Ensure avatarStyle is not part of the stored user object
-      const userToStore = { ...updatedUser };
-      delete (userToStore as any).avatarStyle;
-      localStorage.setItem('aviationLexiconUser', JSON.stringify(userToStore));
-    } else {
-      localStorage.removeItem('aviationLexiconUser');
-    }
-  };
+  // 监听 Firebase 认证状态
+  useEffect(() => {
+    const unsubscribe = onAuthChange(async (fbUser) => {
+      setFirebaseUser(fbUser);
+      
+      if (fbUser) {
+        // 订阅用户数据实时更新
+        const userRef = doc(db, 'users', fbUser.uid);
+        const unsubscribeUser = onSnapshot(
+          userRef, 
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              setUser({
+                id: fbUser.uid,
+                email: fbUser.email!,
+                username: data.profile?.username || fbUser.displayName || '用户',
+                indexPoints: data.progress?.indexPoints || 0,
+                lastCheckIn: data.progress?.lastCheckIn || null,
+                photoURL: data.profile?.photoURL || fbUser.photoURL || undefined
+              });
+            }
+            setIsLoading(false);
+          },
+          (error) => {
+            console.error('用户数据订阅错误:', error);
+            toast({
+              title: "数据同步错误",
+              description: "无法获取用户数据，请检查网络连接",
+              variant: "destructive"
+            });
+            setIsLoading(false);
+          }
+        );
+        
+        // 尝试迁移本地数据
+        try {
+          await migrateLocalDataToFirebase(fbUser.uid, fbUser.email!);
+        } catch (error) {
+          console.error('数据迁移失败:', error);
+        }
+        
+        return () => unsubscribeUser();
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    });
 
+    return () => unsubscribe();
+  }, [toast]);
+
+  // 邮箱密码登录
   const login = async (email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const mockUser = MOCK_USERS[email];
-    if (mockUser && mockUser.password === pass) {
-      const storedUserRaw = localStorage.getItem('aviationLexiconUser');
-      let existingUserData: Partial<User> = {};
-      if (storedUserRaw) {
-          const tempUser = JSON.parse(storedUserRaw);
-          if (tempUser.email === email) {
-              existingUserData = tempUser;
-          }
-      }
-      
-      const points = parseInt(localStorage.getItem(`${email}_points`) || "0");
-      const lastCheckIn = localStorage.getItem(`${email}_lastCheckIn`) || null;
-
-      const loggedInUser: User = {
-        id: existingUserData.id || Date.now().toString(),
-        email: mockUser.email,
-        username: mockUser.username,
-        indexPoints: points,
-        lastCheckIn: lastCheckIn,
-      };
-      setUser(loggedInUser);
-      updateLocalStorage(loggedInUser);
-      setIsLoading(false);
+    const result = await loginWithEmail(email, pass);
+    
+    if (result.success) {
+      toast({
+        title: "登录成功",
+        description: "欢迎回来！",
+        className: "bg-green-600 text-white border-green-700"
+      });
       return true;
+    } else {
+      toast({
+        title: "登录失败",
+        description: result.error || "请检查您的邮箱和密码",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return false;
     }
-    setIsLoading(false);
-    return false;
   };
 
+  // 注册新用户
   const register = async (username: string, email: string, pass: string): Promise<boolean> => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (MOCK_USERS[email]) {
+    const result = await registerUser(username, email, pass);
+    
+    if (result.success) {
+      toast({
+        title: "注册成功",
+        description: "欢迎加入 Lexicon！",
+        className: "bg-green-600 text-white border-green-700"
+      });
+      return true;
+    } else {
+      toast({
+        title: "注册失败",
+        description: result.error || "请稍后重试",
+        variant: "destructive"
+      });
       setIsLoading(false);
-      return false; 
+      return false;
     }
-    MOCK_USERS[email] = { email, username, password: pass };
-    localStorage.setItem(`${email}_points`, "0");
-    localStorage.removeItem(`${email}_lastCheckIn`);
-    // No avatarStyle to set for new users
-    setIsLoading(false);
-    return true;
   };
 
-  const logout = () => {
-    if (user) { 
-        localStorage.setItem(`${user.email}_points`, user.indexPoints.toString());
-        if(user.lastCheckIn) localStorage.setItem(`${user.email}_lastCheckIn`, user.lastCheckIn);
+  // 第三方登录
+  const loginWithProvider = async (provider: 'google'): Promise<boolean> => {
+    setIsLoading(true);
+    
+    let result;
+    switch (provider) {
+      case 'google':
+        result = await loginWithGoogle();
+        break;
+      default:
+        result = { success: false, error: '不支持的登录方式' };
     }
-    setUser(null);
-    updateLocalStorage(null); 
-    router.push('/login');
+    
+    if (result.success) {
+      toast({
+        title: "登录成功",
+        description: "欢迎回来！",
+        className: "bg-green-600 text-white border-green-700"
+      });
+      return true;
+    } else {
+      toast({
+        title: "登录失败",
+        description: result.error || "请稍后重试",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return false;
+    }
+  };
+
+  // 登出
+  const logout = async () => {
+    setIsLoading(true);
+    const result = await firebaseLogout();
+    
+    if (result.success) {
+      setUser(null);
+      router.push('/login');
+      toast({
+        title: "已退出登录",
+        description: "期待您的再次光临！",
+      });
+    } else {
+      toast({
+        title: "退出失败",
+        description: "请稍后重试",
+        variant: "destructive"
+      });
+    }
+    setIsLoading(false);
   };
   
-  const dailyCheckIn = () => {
-    if (!user) return false;
-    const today = new Date().toISOString().split('T')[0]; 
+  // 每日签到
+  const dailyCheckIn = async (): Promise<boolean> => {
+    if (!user || !firebaseUser) return false;
+    
+    const today = new Date().toISOString().split('T')[0];
     if (user.lastCheckIn === today) {
-      return false; 
+      toast({
+        title: "今日已签到",
+        description: "您今天已经签到过了，明天再来吧！",
+      });
+      return false;
     }
-    const pointsEarned = 10; 
-    const updatedUser = { ...user, indexPoints: user.indexPoints + pointsEarned, lastCheckIn: today };
-    setUser(updatedUser);
-    updateLocalStorage(updatedUser);
-    return true;
+    
+    try {
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userRef, {
+        'progress.indexPoints': increment(10),
+        'progress.lastCheckIn': today,
+        'progress.totalCheckIns': increment(1)
+      });
+      
+      toast({
+        title: "签到成功！",
+        description: `您已获得10点"指数"！当前指数：${user.indexPoints + 10}。`,
+        className: "bg-green-600 text-white border-green-700"
+      });
+      return true;
+    } catch (error) {
+      console.error('签到失败:', error);
+      toast({
+        title: "签到失败",
+        description: "请检查网络连接后重试",
+        variant: "destructive"
+      });
+      return false;
+    }
   };
 
-  const addPoints = (points: number) => {
-    if (!user) return;
-    const updatedUser = { ...user, indexPoints: user.indexPoints + points };
-    setUser(updatedUser);
-    updateLocalStorage(updatedUser);
+  // 添加积分
+  const addPoints = async (points: number) => {
+    if (!user || !firebaseUser) return;
+    
+    try {
+      const userRef = doc(db, 'users', firebaseUser.uid);
+      await updateDoc(userRef, {
+        'progress.indexPoints': increment(points)
+      });
+    } catch (error) {
+      console.error('添加积分失败:', error);
+      toast({
+        title: "积分更新失败",
+        description: "请检查网络连接",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout, dailyCheckIn, addPoints }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: !!user, 
+      isLoading, 
+      login, 
+      register,
+      loginWithProvider,
+      logout, 
+      dailyCheckIn, 
+      addPoints 
+    }}>
       {children}
     </AuthContext.Provider>
   );

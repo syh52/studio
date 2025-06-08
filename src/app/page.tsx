@@ -10,7 +10,7 @@ export default function HomePage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleDailyCheckIn = () => {
+  const handleDailyCheckIn = async () => {
     if (!isAuthenticated) {
       toast({ 
         title: "尚未登录", 
@@ -19,20 +19,8 @@ export default function HomePage() {
       });
       return;
     }
-    const success = dailyCheckIn();
-    if (success) {
-      toast({ 
-        title: "签到成功！", 
-        description: `您已获得10点"指数"！当前指数：${user?.indexPoints}。`,
-        className: "bg-green-600 text-white border-green-700"
-      });
-    } else {
-      toast({ 
-        title: "今日已签到", 
-        description: "您今天已经签到过了。明天再来吧！", 
-        variant: "default" 
-      });
-    }
+    // dailyCheckIn 已经在 AuthContext 中处理了 toast 通知
+    await dailyCheckIn();
   };
 
   const navigateToLogin = () => {
