@@ -23,8 +23,31 @@ export default function ProfilePage() {
 
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+      <div className="max-w-2xl mx-auto py-8 space-y-6">
+        <Card className="pixel-border shadow-lg">
+          <CardHeader className="text-center">
+            <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gray-700 skeleton"></div>
+            <div className="h-8 w-48 mx-auto bg-gray-700 rounded skeleton mb-2"></div>
+            <div className="h-4 w-32 mx-auto bg-gray-700 rounded skeleton"></div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-card-foreground/5 rounded-sm pixel-border">
+              <div className="w-6 h-6 bg-gray-700 rounded skeleton"></div>
+              <div className="flex-1">
+                <div className="h-3 w-16 bg-gray-700 rounded skeleton mb-1"></div>
+                <div className="h-5 w-32 bg-gray-700 rounded skeleton"></div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-card-foreground/5 rounded-sm pixel-border">
+              <div className="w-6 h-6 bg-gray-700 rounded skeleton"></div>
+              <div className="flex-1">
+                <div className="h-3 w-16 bg-gray-700 rounded skeleton mb-1"></div>
+                <div className="h-5 w-48 bg-gray-700 rounded skeleton"></div>
+              </div>
+            </div>
+            <div className="h-12 w-full bg-gray-700 rounded skeleton mt-6"></div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

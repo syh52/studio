@@ -10,99 +10,94 @@
   font-display: swap;
 }
 
+/* Modern smooth font rendering for Inter */
 body {
- font-family: 'Zpix', 'sans-serif'; 
- -webkit-font-smoothing: none;
+  font-family: 'Inter', sans-serif; 
+  -webkit-font-smoothing: antialiased;
  -moz-osx-font-smoothing: grayscale;
- image-rendering: pixelated;
- image-rendering: crisp-edges;
- font-smooth: never;
 }
 
 @layer base {
   :root {
-    --background: 210 0% 20%; /* Dark Gray #333333 */
-    --foreground: 0 0% 87.8%; /* Light Gray #E0E0E0 */
+    --background: 222.2 84% 4.9%; /* Very dark background */
+    --foreground: 210 40% 98%; /* Light foreground */
 
-    --card: 210 0% 26.7%; /* Darker Gray #444444 */
-    --card-foreground: 0 0% 87.8%; /* Light Gray #E0E0E0 */
+    --card: 222.2 84% 4.9%; /* Same as background */
+    --card-foreground: 210 40% 98%; /* Light foreground */
 
-    --popover: 210 0% 20%; /* Dark Gray */
-    --popover-foreground: 0 0% 87.8%; /* Light Gray */
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 210 100% 20%; /* Dark Blue #003366 */
-    --primary-foreground: 0 0% 100%; /* White #FFFFFF */
+    --primary: 217.2 91.2% 59.8%; /* Blue */
+    --primary-foreground: 222.2 84% 4.9%;
 
-    --secondary: 210 100% 30%; /* Lighter Dark Blue */
-    --secondary-foreground: 0 0% 100%; /* White */
+    --secondary: 217.2 32.6% 17.5%; /* Dark blue-gray */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 210 0% 30%; /* Medium Gray */
-    --muted-foreground: 0 0% 60%; /* Lighter Medium Gray */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 35 100% 64%; /* Yellow-Orange #FFB347 */
-    --accent-foreground: 210 100% 10%; /* Very Dark Blue for text on accent */
+    --accent: 262.1 83.3% 57.8%; /* Purple */
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 72% 51%; /* Red */
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%; /* Red */
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 210 0% 33.3%; /* Gray #555555, or use accent for more pop */
-    --input: 210 0% 33.3%; /* Gray #555555 */
-    --ring: 35 100% 64%; /* Yellow-Orange for focus rings */
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
 
-    --radius: 0rem; /* Sharp corners for pixel art style */
+    --radius: 0.5rem;
 
-    --chart-1: 210 100% 50%;
-    --chart-2: 35 100% 50%;
-    --chart-3: 120 60% 50%;
-    --chart-4: 300 70% 50%;
-    --chart-5: 60 80% 50%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
 
-    --sidebar-background: 210 0% 15%;
-    --sidebar-foreground: 0 0% 87.8%;
-    --sidebar-primary: 35 100% 64%;
-    --sidebar-primary-foreground: 210 100% 10%;
-    --sidebar-accent: 210 0% 25%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 210 0% 30%;
-    --sidebar-ring: 35 100% 64%;
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 224.3 76.3% 94.1%;
+    --sidebar-primary-foreground: 220.9 39.3% 11%;
+    --sidebar-accent: 220 14.3% 95.9%;
+    --sidebar-accent-foreground: 220.9 39.3% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 224.3 76.3% 94.1%;
   }
 
   .dark {
-    /* Dark theme is default, so .dark variables are same as :root */
-    --background: 210 0% 20%;
-    --foreground: 0 0% 87.8%;
-    --card: 210 0% 26.7%;
-    --card-foreground: 0 0% 87.8%;
-    --popover: 210 0% 20%;
-    --popover-foreground: 0 0% 87.8%;
-    --primary: 210 100% 20%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 100% 30%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 210 0% 30%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 35 100% 64%;
-    --accent-foreground: 210 100% 10%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 0% 33.3%;
-    --input: 210 0% 33.3%;
-    --ring: 35 100% 64%;
-
-    --chart-1: 210 100% 50%;
-    --chart-2: 35 100% 50%;
-    --chart-3: 120 60% 50%;
-    --chart-4: 300 70% 50%;
-    --chart-5: 60 80% 50%;
-
-    --sidebar-background: 210 0% 15%;
-    --sidebar-foreground: 0 0% 87.8%;
-    --sidebar-primary: 35 100% 64%;
-    --sidebar-primary-foreground: 210 100% 10%;
-    --sidebar-accent: 210 0% 25%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 210 0% 30%;
-    --sidebar-ring: 35 100% 64%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 262.1 83.3% 57.8%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 224.3 76.3% 94.1%;
+    --sidebar-primary-foreground: 220.9 39.3% 11%;
+    --sidebar-accent: 220 14.3% 95.9%;
+    --sidebar-accent-foreground: 220.9 39.3% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 224.3 76.3% 94.1%;
   }
 }
 
@@ -113,60 +108,199 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-  svg {
-    shape-rendering: crispEdges;
+  
+  /* Glass morphism utilities */
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-xl border border-white/20;
   }
-  .shadow-md { box-shadow: 3px 3px 0px 0px hsl(var(--border)); }
-  .shadow-lg { box-shadow: 4px 4px 0px 0px hsl(var(--border)); }
-  .shadow-xl { box-shadow: 6px 6px 0px 0px hsl(var(--border)); }
+  
+  .glass-card-strong {
+    @apply bg-white/15 backdrop-blur-2xl border border-white/30;
+  }
+  
+  /* Modern gradient buttons */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-purple-600 to-blue-600;
+  }
+  
+  .gradient-secondary {
+    @apply bg-gradient-to-r from-purple-500/20 to-blue-500/20;
+  }
+  
+  /* Modern shadows */
+  .shadow-glow {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  
+  .shadow-glow-blue {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  }
+  
+  /* Perspective and 3D utilities - 简化以避免点击问题 */
+  .perspective-container {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+  
+  .perspective-element {
+    /* 移除可能导致点击问题的transform-style */
+    pointer-events: auto !important;
+  }
+  
+  /* Mobile-first responsive design helpers */
+  .mobile-container {
+    @apply w-full max-w-sm mx-auto bg-gray-900 min-h-screen relative;
+  }
+  
+  /* Modern focus styles */
+  .modern-focus {
+    @apply focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-gray-900;
+  }
 
-  .pixel-border {
-    border: 2px solid hsl(var(--border));
+  /* 确保所有交互元素正常工作 - 加强版 */
+  button, [role="button"], .cursor-pointer, a {
+    pointer-events: auto !important;
+    -webkit-user-select: none;
+    user-select: none;
+    position: relative;
+    z-index: 10;
   }
-  .btn-pixel, .input-pixel {
-    border-width: 2px;
-    box-shadow: 2px 2px 0px 0px hsl(var(--border));
+
+  /* 防止任何动画阻挡交互 */
+  .perspective-element {
+    pointer-events: auto !important;
   }
-  .btn-pixel:active, .input-pixel:active {
-    transform: translate(1px, 1px);
-    box-shadow: 1px 1px 0px 0px hsl(var(--border));
+  
+  .animate-blur-in {
+    pointer-events: auto !important;
   }
-  .font-pixelated {
-    -moz-osx-font-smoothing: grayscale;
-    image-rendering: pixelated; 
-    image-rendering: crisp-edges; 
+  
+  /* 确保按钮始终可点击 */
+  .gradient-primary, .glass-card-strong {
+    pointer-events: auto !important;
+    z-index: 10;
+    position: relative;
   }
 }
 
 @layer utilities {
-  .perspective {
-    perspective: 1000px;
+  /* Animation delays */
+  .animate-delay-100 {
+    animation-delay: 0.1s;
   }
-  .transform-style-preserve-3d {
-    transform-style: preserve-3d;
+  .animate-delay-200 {
+    animation-delay: 0.2s;
   }
-  .backface-hidden {
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden; /* Safari */
+  .animate-delay-300 {
+    animation-delay: 0.3s;
   }
-  .rotate-y-180 {
-    transform: rotateY(180deg);
+  .animate-delay-400 {
+    animation-delay: 0.4s;
+  }
+  .animate-delay-500 {
+    animation-delay: 0.5s;
+  }
+  .animate-delay-600 {
+    animation-delay: 0.6s;
   }
 
-  /* Quiz Option Button Styles */
-  .quiz-option:not(:disabled):hover {
-    @apply bg-accent/20 border-accent;
+  /* Custom scrollbar for webkit browsers */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
   }
-  .quiz-option-correct {
-    @apply bg-green-500 text-white border-green-700 hover:bg-green-600 hover:border-green-800;
-    box-shadow: 2px 2px 0px 0px hsl(var(--border)); /* maintain pixel shadow */
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
   }
-  .quiz-option-incorrect {
-    @apply bg-red-500 text-white border-red-700 hover:bg-red-600 hover:border-red-800;
-    box-shadow: 2px 2px 0px 0px hsl(var(--border)); /* maintain pixel shadow */
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
   }
-  .quiz-option:disabled:not(.quiz-option-correct):not(.quiz-option-incorrect) {
-     @apply opacity-60; /* For other options when one is selected */
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
   }
+  
+  /* Blur-in animation for modern entrance effect - 优化为更快速度 */
+  @keyframes blur-in {
+    from {
+      filter: blur(8px);
+      opacity: 0;
+      transform: translateY(15px);
+    }
+    to {
+      filter: blur(0px);
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-blur-in {
+    animation: blur-in 0.4s ease-out forwards;
+    opacity: 0;
+  }
+  
+  .animate-blur-in-fast {
+    animation: blur-in 0.2s ease-out forwards;
+    opacity: 0;
+  }
+}
+
+/* 页面转场动画 */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+/* 简化的加载动画 - 移除shimmer以避免点击问题 */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* 改进按钮反馈 */
+.btn-enhanced {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-enhanced::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-enhanced:active::after {
+  width: 300px;
+  height: 300px;
 }
 

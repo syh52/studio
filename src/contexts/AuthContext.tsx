@@ -11,6 +11,7 @@ interface User {
   username: string;
   indexPoints: number;
   lastCheckIn: string | null; // YYYY-MM-DD
+  photoURL?: string; // 添加头像URL字段
 }
 
 interface AuthContextType {

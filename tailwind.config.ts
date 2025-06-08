@@ -10,7 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Zpix', 'VT323', 'Arial', 'sans-serif', 'monospace'],
+        'inter': ['Inter', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
         code: ['Zpix', 'VT323', 'monospace'],
       },
       colors: {
@@ -66,18 +67,27 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)', // Will be 0rem
-        md: 'var(--radius)', // Will be 0rem
-        sm: 'var(--radius)', // Will be 0rem
+        lg: '12px',
+        md: '8px',
+        sm: '6px',
+        xl: '16px',
+        '2xl': '20px',
+        '3xl': '24px',
       },
-      boxShadow: { // Custom pixelated shadows
-        sm: '2px 2px 0px 0px hsl(var(--border))',
-        DEFAULT: '3px 3px 0px 0px hsl(var(--border))',
-        md: '3px 3px 0px 0px hsl(var(--border))',
-        lg: '4px 4px 0px 0px hsl(var(--border))',
-        xl: '6px 6px 0px 0px hsl(var(--border))',
-        'hard-accent': '3px 3px 0px 0px hsl(var(--accent))',
+      boxShadow: {
+        sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+        DEFAULT: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+        md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+        lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+        xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+        '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
         none: 'none',
+      },
+      animation: {
+        'accordion-down': 'accordion-down 0.2s ease-out',
+        'accordion-up': 'accordion-up 0.2s ease-out',
+        'blur-in': 'blur-in 0.8s ease-out forwards',
+        'fade-in': 'fade-in 0.6s ease-out forwards',
       },
       keyframes: {
         'accordion-down': {
@@ -96,12 +106,68 @@ export default {
             height: '0',
           },
         },
+        'blur-in': {
+          '0%': { 
+            opacity: '0', 
+            filter: 'blur(10px)', 
+            transform: 'translateY(20px)' 
+          },
+          '100%': { 
+            opacity: '1', 
+            filter: 'blur(0px)', 
+            transform: 'translateY(0)' 
+          },
+        },
+        'blur-in-fast': {
+          '0%': { 
+            opacity: '0', 
+            filter: 'blur(8px)', 
+            transform: 'translateY(15px)' 
+          },
+          '100%': { 
+            opacity: '1', 
+            filter: 'blur(0px)', 
+            transform: 'translateY(0)' 
+          },
+        },
+        'fade-in': {
+          '0%': { 
+            opacity: '0', 
+            transform: 'translateY(10px)' 
+          },
+          '100%': { 
+            opacity: '1', 
+            transform: 'translateY(0)' 
+          },
+        },
       },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
+      perspective: {
+        '1000': '1000px',
+      },
+      backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        md: '8px',
+        lg: '12px',
+        xl: '16px',
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    function({ addUtilities }) {
+      const newUtilities = {
+        '.perspective-1000': {
+          perspective: '1000px',
+        },
+        '.transform-style-preserve-3d': {
+          'transform-style': 'preserve-3d',
+        },
+        '.backface-hidden': {
+          'backface-visibility': 'hidden',
+        },
+      }
+      addUtilities(newUtilities)
+    }
+  ],
 } satisfies Config;

@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { vocabularyPacks } from '@/lib/data';
 import VocabularyPackCard from '@/components/vocabulary/VocabularyPackCard';
 import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 
 export default function VocabularyPage() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -20,7 +19,7 @@ export default function VocabularyPage() {
   if (isLoading || !isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -32,30 +31,34 @@ export default function VocabularyPage() {
   // );
 
   return (
-    <div className="space-y-8">
-      <section className="text-center">
-        <h1 className="text-3xl font-headline text-accent mb-2">词汇包</h1>
-        <p className="text-lg text-muted-foreground">选择一个词汇包开始学习航空术语。</p>
-      </section>
-      
+    <div className="space-y-6 sm:space-y-8 md:space-y-10 py-4 sm:py-6">
+
       {/* Search bar - future enhancement */}
-      {/* <div className="relative w-full max-w-lg mx-auto">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-        <Input 
-          type="search" 
-          placeholder="搜索词汇包..." 
-          className="pl-10 input-pixel"
-          // onChange={(e) => setSearchTerm(e.target.value)} 
-        />
+      {/* <div className="relative w-full max-w-lg mx-auto animate-blur-in animate-delay-300">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <div className="glass-card rounded-2xl">
+          <input 
+            type="search" 
+            placeholder="搜索词汇包..." 
+            className="w-full bg-transparent border-0 pl-12 pr-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 rounded-2xl"
+          />
+        </div>
       </div> */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Vocabulary Packs Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-8 animate-blur-in animate-delay-400">
         {vocabularyPacks.map(pack => (
           <VocabularyPackCard key={pack.id} pack={pack} />
         ))}
       </div>
+      
       {vocabularyPacks.length === 0 && (
-        <p className="text-center text-muted-foreground">目前没有可用的词汇包。请稍后再回来查看！</p>
+        <div className="text-center py-12 sm:py-16">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+            <Search className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+          </div>
+          <p className="text-gray-400 text-sm sm:text-base">目前没有可用的词汇包。请稍后再回来查看！</p>
+        </div>
       )}
     </div>
   );

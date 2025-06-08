@@ -1,7 +1,5 @@
 "use client";
 import { VocabularyItemWithProgress } from '@/lib/vocabulary-learning';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Volume2, CheckCircle } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -28,64 +26,68 @@ export default function QuickReview({ item, onContinue }: QuickReviewProps) {
   }, [item.english]);
 
   return (
-    <Card className="w-full max-w-lg mx-auto p-6 pixel-border">
-      <div className="space-y-6">
-        {/* 成功标识 */}
-        <div className="flex justify-center">
-          <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
-            <CheckCircle className="text-green-600 dark:text-green-400" size={32} />
+    <div className="w-full max-w-lg mx-auto perspective-element transform transition-transform duration-200 ease-out animate-blur-in">
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-blue-500/20 rounded-3xl blur-sm"></div>
+        <div className="relative glass-card rounded-3xl p-8 sm:p-10">
+          <div className="space-y-6">
+            {/* 成功标识 */}
+            <div className="flex justify-center">
+              <div className="glass-card-strong p-3 rounded-full">
+                <CheckCircle className="text-green-400" size={32} />
+              </div>
+            </div>
+
+            {/* 单词 */}
+            <div className="text-center space-y-3">
+              <h2 className="text-3xl font-inter font-semibold text-white flex items-center justify-center gap-3">
+                {item.english}
+                <button 
+                  onClick={playAudio}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-all duration-200 active:scale-95"
+                  aria-label="播放单词发音"
+                  title="播放单词发音"
+                >
+                  <Volume2 className="h-5 w-5 text-purple-400" />
+                </button>
+              </h2>
+
+              {/* 中文释义（渐显） */}
+              <div className={`transition-opacity duration-500 ${showChinese ? 'opacity-100' : 'opacity-0'}`}>
+                <p className="text-xl text-gray-300">{item.chinese}</p>
+              </div>
+            </div>
+
+            {/* 核心例句 */}
+            <div className="glass-card-strong rounded-xl p-4 space-y-2">
+              <p className="font-medium text-sm text-white">{item.exampleSentenceEn}</p>
+              <p className="text-sm text-gray-400">{item.exampleSentenceZh}</p>
+            </div>
+
+            {/* 学习进度信息 */}
+            {item.progress && (
+              <div className="text-center text-sm text-gray-400">
+                <p>
+                  已复习 <span className="text-purple-400">{item.progress.reviewCount}</span> 次 · 
+                  正确率 <span className="text-green-400">{item.progress.correctCount > 0 
+                    ? Math.round((item.progress.correctCount / item.progress.reviewCount) * 100) 
+                    : 0}%</span>
+                </p>
+              </div>
+            )}
+
+            {/* 继续按钮 */}
+            <div className="flex justify-center">
+              <button 
+                onClick={onContinue}
+                className="gradient-primary text-white py-3 px-8 rounded-xl text-base font-medium modern-focus cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+              >
+                继续学习
+              </button>
+            </div>
           </div>
-        </div>
-
-        {/* 单词 */}
-        <div className="text-center space-y-3">
-          <h2 className="text-3xl font-headline text-accent flex items-center justify-center gap-3">
-            {item.english}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={playAudio}
-              className="text-accent hover:bg-accent/20"
-            >
-              <Volume2 size={20} />
-            </Button>
-          </h2>
-
-          {/* 中文释义（渐显） */}
-          <div className={`transition-opacity duration-500 ${showChinese ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-xl">{item.chinese}</p>
-          </div>
-        </div>
-
-        {/* 核心例句 */}
-        <div className="bg-secondary/50 p-4 rounded-md space-y-2">
-          <p className="font-medium text-sm">{item.exampleSentenceEn}</p>
-          <p className="text-sm text-muted-foreground">{item.exampleSentenceZh}</p>
-        </div>
-
-        {/* 学习进度信息 */}
-        {item.progress && (
-          <div className="text-center text-sm text-muted-foreground">
-            <p>
-              已复习 {item.progress.reviewCount} 次 · 
-              正确率 {item.progress.correctCount > 0 
-                ? Math.round((item.progress.correctCount / item.progress.reviewCount) * 100) 
-                : 0}%
-            </p>
-          </div>
-        )}
-
-        {/* 继续按钮 */}
-        <div className="flex justify-center">
-          <Button 
-            onClick={onContinue}
-            className="btn-pixel bg-green-600 text-white hover:bg-green-700"
-            size="lg"
-          >
-            继续学习
-          </Button>
         </div>
       </div>
-    </Card>
+    </div>
   );
 } 
