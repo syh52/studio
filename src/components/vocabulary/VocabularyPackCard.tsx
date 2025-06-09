@@ -11,10 +11,13 @@ interface VocabularyPackCardProps {
 // 计算学习进度的函数
 function calculatePackProgress(packId: string) {
   const stats = getLearningStats(packId);
-  const percentage = Math.round((stats.learned / stats.total) * 100) || 0;
+  // 计算已学习的单词数（学习中 + 复习中 + 已掌握）
+  const learnedWords = stats.learningWords + stats.reviewingWords + stats.masteredWords;
+  const totalWords = stats.totalWords;
+  const percentage = totalWords > 0 ? Math.round((learnedWords / totalWords) * 100) : 0;
   return {
     percentage,
-    reviewCount: stats.review
+    reviewCount: stats.dueForReview
   };
 }
 

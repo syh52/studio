@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
-import { MessageCircleMore, Mail, Lock } from 'lucide-react';
+import { Mail, Lock, Chrome } from 'lucide-react';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const { login, loginWithProvider } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -22,29 +23,21 @@ export default function LoginForm() {
     setIsLoading(true);
     const success = await login(email, password);
     if (success) {
-      toast({ title: "登录成功", description: "欢迎回来！" });
       router.push('/');
     } else {
-      toast({ title: "登录失败", description: "邮箱或密码无效。", variant: "destructive" });
       setIsLoading(false);
     }
-  }, [email, password, login, toast, router]);
+  }, [email, password, login, router]);
 
-  const handleWeChatLogin = useCallback(async () => {
-    setIsLoading(true);
-    const success = await login('wechat_user_placeholder@lexicon.app', 'mock_wechat_password');
+  const handleGoogleLogin = useCallback(async () => {
+    setIsGoogleLoading(true);
+    const success = await loginWithProvider('google');
     if (success) {
-      toast({ 
-        title: "微信登录成功 (模拟)", 
-        description: "欢迎，微信用户！", 
-        className: "bg-green-600 text-white border-green-700"
-      });
       router.push('/');
     } else {
-      toast({ title: "微信登录失败 (模拟)", description: "模拟微信用户配置错误。", variant: "destructive" });
-      setIsLoading(false);
+      setIsGoogleLoading(false);
     }
-  }, [login, toast, router]);
+  }, [loginWithProvider, router]);
 
   return (
     <div className="glass-card rounded-3xl p-8 w-full max-w-md mx-auto animate-blur-in">
@@ -99,9 +92,9 @@ export default function LoginForm() {
         <Button 
           type="submit" 
           className="w-full gradient-primary text-white py-3 px-4 rounded-xl text-sm font-medium modern-focus h-12 cursor-pointer" 
-          disabled={isLoading}
+          disabled={isLoading || isGoogleLoading}
         >
-            {isLoading && !email.startsWith('wechat_') ? '登录中...' : '邮箱登录'}
+            {isLoading ? '登录中...' : '邮箱登录'}
           </Button>
         </form>
 
@@ -112,19 +105,19 @@ export default function LoginForm() {
         <div className="flex-1 h-px bg-white/20"></div>
       </div>
 
-      {/* WeChat Login */}
+      {/* Google Login */}
         <Button
           variant="outline"
-          className="w-full glass-card border-green-500/30 bg-green-500/10 hover:bg-green-500/20 text-white modern-focus rounded-xl h-12 cursor-pointer"
-          onClick={handleWeChatLogin}
-          disabled={isLoading}
+          className="w-full glass-card border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-white modern-focus rounded-xl h-12 cursor-pointer"
+          onClick={handleGoogleLogin}
+          disabled={isLoading || isGoogleLoading}
         >
-          {isLoading && email.startsWith('wechat_') ? (
-            '微信登录中...'
+          {isGoogleLoading ? (
+            '登录中...'
           ) : (
             <>
-              <MessageCircleMore size={20} className="mr-2" />
-              微信一键登录 (模拟)
+              <Chrome size={20} className="mr-2" />
+              使用 Google 账号登录
             </>
           )}
         </Button>

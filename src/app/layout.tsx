@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from "@/components/ui/toaster";
 import AppLayout from '@/components/layout/AppLayout';
 import PerformanceMonitor from '@/components/shared/PerformanceMonitor';
+import FirebaseCheck from '@/components/shared/FirebaseCheck';
+import Providers from '@/components/shared/Providers';
 
 export const metadata: Metadata = {
   title: 'Lexicon - 部门英语学习',
@@ -22,13 +23,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-inter antialiased bg-gray-900 min-h-screen">
-        <AuthProvider>
+        <Providers>
           <AppLayout>
             {children}
           </AppLayout>
           <Toaster />
           <PerformanceMonitor />
-        </AuthProvider>
+          <FirebaseCheck />
+        </Providers>
       </body>
     </html>
   );
