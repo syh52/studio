@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User } from "lucide-react";
+import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Settings, Upload } from "lucide-react";
 
 export default function HomePage() {
   const { user, isAuthenticated, dailyCheckIn, isLoading } = useAuth();
@@ -49,6 +49,10 @@ export default function HomePage() {
 
   const navigateToQuizzes = () => {
     router.push(isAuthenticated ? "/quizzes" : "/login");
+  };
+
+  const navigateToAdmin = () => {
+    router.push(isAuthenticated ? "/admin/import" : "/login");
   };
 
   if (isLoading) {
@@ -101,7 +105,7 @@ export default function HomePage() {
           <button className="text-sm sm:text-base text-purple-400 font-medium cursor-pointer hover:text-purple-300 transition-colors">查看全部</button>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400">
+        <div className={`grid grid-cols-2 ${isAuthenticated ? 'md:grid-cols-4' : 'md:grid-cols-3'} gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400`}>
           {/* Vocabulary Learning */}
           <div 
             onClick={navigateToVocabulary}
@@ -129,7 +133,7 @@ export default function HomePage() {
           {/* Testing Module */}
           <div 
             onClick={navigateToQuizzes}
-            className="col-span-2 md:col-span-1 glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced"
+            className={`${isAuthenticated ? 'col-span-2 md:col-span-1' : 'col-span-2 md:col-span-1'} glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced`}
           >
             <div className="flex md:flex-col items-center md:items-start">
               <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-green-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mr-4 md:mr-0 mb-0 md:mb-4 sm:md:mb-6">
@@ -144,6 +148,27 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* Admin Management - Only visible to authenticated users */}
+          {isAuthenticated && (
+            <div 
+              onClick={navigateToAdmin}
+              className="col-span-2 md:col-span-1 glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced border border-orange-500/20"
+            >
+              <div className="flex md:flex-col items-center md:items-start">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-orange-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mr-4 md:mr-0 mb-0 md:mb-4 sm:md:mb-6">
+                  <Upload className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-orange-400" />
+                </div>
+                <div className="flex-1 md:flex-none">
+                  <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-1 sm:mb-2 md:mb-3 tracking-tight">数据管理</h4>
+                  <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">批量导入词汇和对话数据</p>
+                </div>
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:hidden bg-gray-700/50 rounded-full flex items-center justify-center ml-4">
+                  <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
