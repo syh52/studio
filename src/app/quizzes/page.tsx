@@ -1,11 +1,11 @@
 
 "use client";
 import { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { vocabularyPacks, type VocabularyPack } from '@/lib/data';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { vocabularyPacks, type VocabularyPack } from '../../lib/data'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card'
+import { Button } from '../../components/ui/button'
 import Link from 'next/link';
 import * as LucideIcons from 'lucide-react'; // For dynamic icons
 

@@ -1,7 +1,7 @@
 
-import { vocabularyPacks, type VocabularyPack } from '@/lib/data';
+import { vocabularyPacks, type VocabularyPack } from '../../../../lib/data'
 import { redirect } from 'next/navigation';
-import QuizClientPage from '@/components/quiz/QuizClientPage';
+import QuizClientPage from '../../../../components/quiz/QuizClientPage'
 
 export default async function VocabularyQuizPage(props: { params: { packId: string } }) {
   const packId = props.params.packId;

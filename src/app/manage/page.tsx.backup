@@ -1,0 +1,4358 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  getCustomDialogues, 
+  getCustomVocabularyPacks, 
+  deleteCustomDialogue, 
+  deleteCustomVocabularyPack,
+  updateCustomDialogue,
+  updateCustomVocabularyPack
+} from '@/lib/firestore-service';
+import { VocabularyPack, Dialogue } from '@/lib/data';
+import { 
+  Trash2, 
+  Edit, 
+  Upload, 
+  FileText, 
+  Book, 
+  Calendar,
+  MessageSquare,
+  Volume2,
+  Search,
+  Filter,
+  Plus,
+  Sparkles,
+  Eye,
+  MoreVertical,
+  ChevronDown,
+  Play
+} from 'lucide-react';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+
+export default function ManagePage() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
+  const { toast } = useToast();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [dialogues, setDialogues] = useState<Dialogue[]>([]);
+  const [vocabularyPacks, setVocabularyPacks] = useState<VocabularyPack[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('dialogues');
+  
+  // 编辑状态
+  const [editingDialogue, setEditingDialogue] = useState<Dialogue | null>(null);
+  const [editingVocabulary, setEditingVocabulary] = useState<VocabularyPack | null>(null);
+  
+  // 加载数据
+  const loadData = useCallback(async () => {
+    if (!user) return;
+    
+    setDataLoading(true);
+    try {
+      const [dialoguesData, vocabularyData] = await Promise.all([
+        getCustomDialogues(user.id),
+        getCustomVocabularyPacks(user.id)
+      ]);
+      
+      setDialogues(dialoguesData);
+      setVocabularyPacks(vocabularyData);
+    } catch (error) {
+      console.error('加载数据失败:', error);
+      toast({
+        title: "加载失败",
+        description: "无法加载您的学习资料",
+        variant: "destructive"
+      });
+    } finally {
+      setDataLoading(false);
+    }
+  }, [user, toast]);
+  
+  // 认证检查
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+      return;
+    }
+    
+    if (!isLoading && isAuthenticated && user) {
+      loadData();
+    }
+  }, [isLoading, isAuthenticated, user, router, loadData]);
+  
+  // 显示加载状态
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center py-20">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-inter text-xl text-white">验证身份中...</p>
+      </div>
+    );
+  }
+
+  // 未认证时返回null（重定向已经在useEffect中处理）
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+  
+  // 删除对话
+  const handleDeleteDialogue = async (dialogueId: string) => {
+    if (!user) return;
+    
+    try {
+      await deleteCustomDialogue(user.id, dialogueId);
+      setDialogues(prev => prev.filter(d => d.id !== dialogueId));
+      toast({
+        title: "删除成功",
+        description: "对话已从云端删除",
+      });
+    } catch (error) {
+      toast({
+        title: "删除失败",
+        description: "无法删除对话",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // 删除词汇包
+  const handleDeleteVocabulary = async (packId: string) => {
+    if (!user) return;
+    
+    try {
+      await deleteCustomVocabularyPack(user.id, packId);
+      setVocabularyPacks(prev => prev.filter(p => p.id !== packId));
+      toast({
+        title: "删除成功",
+        description: "词汇包已从云端删除",
+      });
+    } catch (error) {
+      toast({
+        title: "删除失败",
+        description: "无法删除词汇包",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // 更新对话
+  const handleUpdateDialogue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !editingDialogue) return;
+    
+    try {
+      await updateCustomDialogue(user.id, editingDialogue.id, {
+        title: editingDialogue.title,
+        description: editingDialogue.description,
+        lines: editingDialogue.lines
+      });
+      
+      setDialogues(prev => prev.map(d => 
+        d.id === editingDialogue.id ? editingDialogue : d
+      ));
+      
+      setEditingDialogue(null);
+      toast({
+        title: "更新成功",
+        description: "对话已更新",
+      });
+    } catch (error) {
+      toast({
+        title: "更新失败",
+        description: "无法更新对话",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // 更新词汇包
+  const handleUpdateVocabulary = async () => {
+    if (!user || !editingVocabulary) return;
+    
+    try {
+      await updateCustomVocabularyPack(user.id, editingVocabulary.id, {
+        name: editingVocabulary.name,
+        description: editingVocabulary.description,
+        items: editingVocabulary.items
+      });
+      
+      setVocabularyPacks(prev => prev.map(p => 
+        p.id === editingVocabulary.id ? editingVocabulary : p
+      ));
+      
+      setEditingVocabulary(null);
+      toast({
+        title: "更新成功",
+        description: "词汇包已更新",
+      });
+    } catch (error) {
+      toast({
+        title: "更新失败",
+        description: "无法更新词汇包",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  // 过滤数据
+  const filteredDialogues = dialogues.filter(dialogue =>
+    dialogue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    dialogue.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const filteredVocabularyPacks = vocabularyPacks.filter(pack =>
+    pack.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pack.description.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  return (
+    <div className="container max-w-6xl mx-auto py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="animate-blur-in animate-delay-200">
+          <h1 className="text-3xl font-inter font-semibold text-white tracking-tight">管理学习资料</h1>
+          <p className="text-gray-400 mt-2">
+            查看、编辑和删除您上传的对话和词汇
+          </p>
+        </div>
+        <Button 
+          onClick={() => router.push('/upload')} 
+          className="gradient-primary text-white hover:scale-105 transition-all duration-200 modern-focus animate-blur-in animate-delay-300"
+        >
+          <Upload className="h-4 w-4 mr-2" />
+          上传新内容
+        </Button>
+      </div>
+      
+      {/* 搜索框 */}
+      <div className="mb-6 relative animate-blur-in animate-delay-400">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <Input
+          placeholder="搜索对话或词汇..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400 transition-all duration-200"
+        />
+      </div>
+      
+      <div className="glass-card-strong rounded-2xl overflow-hidden animate-blur-in animate-delay-500">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 bg-white/5 border-b border-white/10">
+            <TabsTrigger 
+              value="dialogues" 
+              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+            >
+              <FileText className="h-4 w-4" />
+              对话管理 ({filteredDialogues.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="vocabulary" 
+              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+            >
+              <Book className="h-4 w-4" />
+              词汇管理 ({filteredVocabularyPacks.length})
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="dialogues" className="mt-6">
+            {dataLoading ? (
+              <div className="grid gap-4">
+                {[1, 2, 3].map(i => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-2/3 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredDialogues.length === 0 ? (
+              <Card className="glass-card border-white/20 bg-white/5">
+                <CardContent className="text-center py-12">
+                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400">
+                    {searchTerm ? '没有找到匹配的对话' : '您还没有上传任何对话'}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 glass-card border-white/30 text-white hover:bg-white/10 transition-all duration-200"
+                    onClick={() => router.push('/upload')}
+                  >
+                    上传对话
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {filteredDialogues.map(dialogue => (
+                  <Card key={dialogue.id} className="glass-card border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-200 perspective-element">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl text-white font-inter">{dialogue.title}</CardTitle>
+                          <CardDescription className="mt-1 text-gray-400">
+                            {dialogue.description}
+                          </CardDescription>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <MessageSquare className="h-3 w-3" />
+                              {dialogue.lines.length} 条对话
+                            </span>
+                            {(dialogue as any).audio && (
+                              <span className="flex items-center gap-1">
+                                <Volume2 className="h-3 w-3" />
+                                包含音频
+                              </span>
+                            )}
+                            {(dialogue as any).uploadedAt && (
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date((dialogue as any).uploadedAt).toLocaleDateString('zh-CN')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingDialogue(dialogue)}
+                            className="glass-card border-white/30 text-white hover:bg-white/10 hover:scale-105 transition-all duration-200"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10 hover:scale-105 transition-all duration-200"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-card-strong border-white/30 bg-gray-900/95">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">确认删除</AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-400">
+                                  您确定要删除对话"{dialogue.title}"吗？此操作无法撤销。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="glass-card border-white/30 text-white hover:bg-white/10">取消</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteDialogue(dialogue.id)}
+                                  className="bg-red-600 text-white hover:bg-red-700 transition-all duration-200"
+                                >
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {dialogue.lines.slice(0, 3).map((line, index) => (
+                          <div key={index} className="text-sm">
+                            <span className="font-medium text-white">{line.speaker}:</span>
+                            {' '}
+                            <span className="text-gray-400">{line.english}</span>
+                          </div>
+                        ))}
+                        {dialogue.lines.length > 3 && (
+                          <p className="text-sm text-gray-500">
+                            ... 还有 {dialogue.lines.length - 3} 条对话
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="vocabulary" className="mt-6">
+            {dataLoading ? (
+              <div className="grid gap-4">
+                {[1, 2, 3].map(i => (
+                  <Card key={i}>
+                    <CardHeader>
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-2/3 mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                      <Skeleton className="h-20 w-full" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : filteredVocabularyPacks.length === 0 ? (
+              <Card className="glass-card border-white/20 bg-white/5">
+                <CardContent className="text-center py-12">
+                  <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-400">
+                    {searchTerm ? '没有找到匹配的词汇包' : '您还没有上传任何词汇包'}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4 glass-card border-white/30 text-white hover:bg-white/10 transition-all duration-200"
+                    onClick={() => router.push('/upload')}
+                  >
+                    上传词汇包
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4">
+                {filteredVocabularyPacks.map(pack => (
+                  <Card key={pack.id} className="glass-card border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-200 perspective-element">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl text-white font-inter">{pack.name}</CardTitle>
+                          <CardDescription className="mt-1 text-gray-400">
+                            {pack.description}
+                          </CardDescription>
+                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <Book className="h-3 w-3" />
+                              {pack.items.length} 个词汇
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Volume2 className="h-3 w-3" />
+                              {pack.items.filter(item => item.pronunciationAudio).length} 个有音频
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingVocabulary(pack)}
+                            className="glass-card border-white/30 text-white hover:bg-white/10 hover:scale-105 transition-all duration-200"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10 hover:scale-105 transition-all duration-200"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="glass-card-strong border-white/30 bg-gray-900/95">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-white">确认删除</AlertDialogTitle>
+                                <AlertDialogDescription className="text-gray-400">
+                                  您确定要删除词汇包"{pack.name}"吗？此操作无法撤销。
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="glass-card border-white/30 text-white hover:bg-white/10">取消</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteVocabulary(pack.id)}
+                                  className="bg-red-600 text-white hover:bg-red-700 transition-all duration-200"
+                                >
+                                  删除
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {pack.items.slice(0, 5).map((item, index) => (
+                          <div key={index} className="flex items-center gap-2 text-sm">
+                            <span className="font-medium text-white min-w-20">{item.english}</span>
+                            <span className="text-gray-400 flex-1">{item.chinese}</span>
+                            {item.pronunciationAudio && (
+                              <Volume2 className="h-3 w-3 text-green-400" />
+                            )}
+                          </div>
+                        ))}
+                        {pack.items.length > 5 && (
+                          <p className="text-sm text-gray-500 pt-2">
+                            ... 还有 {pack.items.length - 5} 个词汇
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {/* 编辑对话对话框 */}
+      {editingDialogue && (
+        <Dialog open={!!editingDialogue} onOpenChange={() => setEditingDialogue(null)}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto glass-card-strong border-white/30 bg-gray-900/95">
+            <DialogHeader>
+              <DialogTitle className="text-white font-inter">编辑对话</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                修改对话的标题、描述和内容
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateDialogue} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <Label htmlFor="dialogue-title" className="text-white">标题</Label>
+                  <Input
+                    id="dialogue-title"
+                    value={editingDialogue.title}
+                    onChange={(e) => setEditingDialogue({
+                      ...editingDialogue,
+                      title: e.target.value
+                    })}
+                    required
+                    className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="dialogue-description" className="text-white">描述</Label>
+                <Textarea
+                  id="dialogue-description"
+                  value={editingDialogue.description}
+                  onChange={(e) => setEditingDialogue({
+                    ...editingDialogue,
+                    description: e.target.value
+                  })}
+                  className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400"
+                />
+              </div>
+              
+              <div>
+                <Label className="text-white">对话内容</Label>
+                <div className="space-y-3 max-h-80 overflow-y-auto bg-white/5 rounded-lg p-4 border border-white/20">
+                  {editingDialogue.lines.map((line, index) => (
+                    <div key={line.id} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-300 min-w-20">说话人:</span>
+                        <Input
+                          value={line.speaker}
+                          onChange={(e) => {
+                            const newLines = [...editingDialogue.lines];
+                            newLines[index] = { ...line, speaker: e.target.value };
+                            setEditingDialogue({ ...editingDialogue, lines: newLines });
+                          }}
+                          className="flex-1 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-300 min-w-20">英文:</span>
+                        <Input
+                          value={line.english}
+                          onChange={(e) => {
+                            const newLines = [...editingDialogue.lines];
+                            newLines[index] = { ...line, english: e.target.value };
+                            setEditingDialogue({ ...editingDialogue, lines: newLines });
+                          }}
+                          className="flex-1 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-300 min-w-20">中文:</span>
+                        <Input
+                          value={line.chinese}
+                          onChange={(e) => {
+                            const newLines = [...editingDialogue.lines];
+                            newLines[index] = { ...line, chinese: e.target.value };
+                            setEditingDialogue({ ...editingDialogue, lines: newLines });
+                          }}
+                          className="flex-1 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newLines = editingDialogue.lines.filter((_, i) => i !== index);
+                            setEditingDialogue({ ...editingDialogue, lines: newLines });
+                          }}
+                          className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const newLines = [...editingDialogue.lines, { 
+                      id: `line-${Date.now()}`, 
+                      speaker: '', 
+                      english: '', 
+                      chinese: '' 
+                    }];
+                    setEditingDialogue({ ...editingDialogue, lines: newLines });
+                  }}
+                  className="mt-2 glass-card border-white/30 text-white hover:bg-white/10"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  添加对话行
+                </Button>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setEditingDialogue(null)}
+                  className="glass-card border-white/30 text-white hover:bg-white/10"
+                >
+                  取消
+                </Button>
+                <Button 
+                  type="submit"
+                  className="gradient-primary text-white hover:scale-105 transition-all duration-200"
+                >
+                  保存更改
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+      
+      {/* 编辑词汇包对话框 */}
+      {editingVocabulary && (
+        <Dialog open={!!editingVocabulary} onOpenChange={() => setEditingVocabulary(null)}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden glass-card-strong border-white/30 bg-gray-900/95">
+            <DialogHeader>
+              <DialogTitle className="text-white font-inter">编辑词汇包 - {editingVocabulary.name}</DialogTitle>
+              <DialogDescription className="text-gray-400">
+                修改词汇包信息和管理词汇内容 - 共 {editingVocabulary.items.length} 个单词
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 overflow-y-auto flex-1">
+              {/* 基本信息编辑 */}
+              <div className="grid grid-cols-2 gap-4 border-b border-white/20 pb-4">
+                <div>
+                  <Label htmlFor="vocabulary-name" className="text-white">词汇包名称</Label>
+                  <Input
+                    id="vocabulary-name"
+                    value={editingVocabulary.name}
+                    onChange={(e) => setEditingVocabulary({
+                      ...editingVocabulary,
+                      name: e.target.value
+                    })}
+                    className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="vocabulary-description" className="text-white">描述</Label>
+                  <Input
+                    id="vocabulary-description"
+                    value={editingVocabulary.description}
+                    onChange={(e) => setEditingVocabulary({
+                      ...editingVocabulary,
+                      description: e.target.value
+                    })}
+                    className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400"
+                  />
+                </div>
+              </div>
+
+              {/* 词汇编辑界面 */}
+              <VocabularyEditingInterface 
+                vocabulary={editingVocabulary}
+                onUpdate={setEditingVocabulary}
+                toast={toast}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4 border-t border-white/20">
+              <Button 
+                variant="outline" 
+                onClick={() => setEditingVocabulary(null)}
+                className="glass-card border-white/30 text-white hover:bg-white/10"
+              >
+                取消
+              </Button>
+              <Button 
+                onClick={handleUpdateVocabulary}
+                className="gradient-primary text-white hover:scale-105 transition-all duration-200"
+              >
+                保存更改
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+  );
+}
+
+// 词汇编辑界面组件
+interface VocabularyEditingInterfaceProps {
+  vocabulary: VocabularyPack;
+  onUpdate: (vocab: VocabularyPack) => void;
+  toast: any;
+}
+
+function VocabularyEditingInterface({ vocabulary, onUpdate, toast }: VocabularyEditingInterfaceProps) {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedWords, setSelectedWords] = useState<number[]>([]);
+  const [showExampleSentences, setShowExampleSentences] = useState(true);
+  const itemsPerPage = 15;
+
+  // 过滤和分页逻辑
+  const filteredItems = vocabulary.items.filter(item =>
+    item.english.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.chinese.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (item.exampleSentenceEn && item.exampleSentenceEn.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (item.exampleSentenceZh && item.exampleSentenceZh.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + itemsPerPage);
+
+  // 更新单个词汇项
+  const updateItem = (index: number, updatedItem: any) => {
+    const originalIndex = vocabulary.items.findIndex(item => item.id === updatedItem.id);
+    const newItems = [...vocabulary.items];
+    newItems[originalIndex] = updatedItem;
+    onUpdate({ ...vocabulary, items: newItems });
+  };
+
+  // 删除词汇项
+  const deleteItem = (index: number) => {
+    const itemToDelete = paginatedItems[index];
+    const newItems = vocabulary.items.filter(item => item.id !== itemToDelete.id);
+    onUpdate({ ...vocabulary, items: newItems });
+    setEditingIndex(null);
+  };
+
+  // 添加新词汇
+  const addNewWord = () => {
+    const newItem = {
+      id: `new-word-${Date.now()}`,
+      english: '',
+      chinese: '',
+      exampleSentenceEn: '',
+      exampleSentenceZh: '',
+      pronunciationAudio: ''
+    };
+    const newItems = [...vocabulary.items, newItem];
+    onUpdate({ ...vocabulary, items: newItems });
+    setEditingIndex(newItems.length - 1);
+  };
+
+  // 批量生成例句
+  const batchGenerateExamples = () => {
+    const newItems = vocabulary.items.map(item => ({
+      ...item,
+      exampleSentenceEn: item.exampleSentenceEn || generateBetterExampleSentence(item.english, item.chinese),
+      exampleSentenceZh: item.exampleSentenceZh || generateBetterChineseExampleSentence(item.chinese, item.english)
+    }));
+    onUpdate({ ...vocabulary, items: newItems });
+    toast({
+      title: "批量生成完成",
+      description: `已为 ${newItems.filter(item => !vocabulary.items.find(orig => orig.id === item.id && orig.exampleSentenceEn)).length} 个单词生成例句`,
+    });
+  };
+
+  // 工具栏
+  const renderToolbar = () => (
+    <div className="glass-card bg-white/5 border-white/20 rounded-xl p-4 space-y-4">
+      {/* 搜索和控制栏 */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="搜索词汇..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
+            className="glass-card border-white/30 text-white hover:bg-white/10"
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            {viewMode === 'table' ? '卡片视图' : '表格视图'}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowExampleSentences(!showExampleSentences)}
+            className="glass-card border-white/30 text-white hover:bg-white/10"
+          >
+            {showExampleSentences ? '隐藏例句' : '显示例句'}
+          </Button>
+        </div>
+      </div>
+
+      {/* 批量操作栏 */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={batchGenerateExamples}
+          className="glass-card border-green-500/30 text-green-400 hover:bg-green-500/10 hover:scale-105 transition-all duration-200"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          批量生成例句
+        </Button>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={addNewWord}
+          className="glass-card border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:scale-105 transition-all duration-200"
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          添加新词汇
+        </Button>
+        
+        {selectedWords.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              selectedWords.forEach(index => deleteItem(index));
+              setSelectedWords([]);
+            }}
+            className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            删除选中 ({selectedWords.length})
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  // 表格视图
+  const renderTableView = () => (
+    <div className="glass-card bg-white/5 border-white/20 rounded-xl overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="border-white/20 hover:bg-white/5">
+            <TableHead className="text-gray-300 font-medium">英文</TableHead>
+            <TableHead className="text-gray-300 font-medium">中文</TableHead>
+            {showExampleSentences && (
+              <>
+                <TableHead className="text-gray-300 font-medium">英文例句</TableHead>
+                <TableHead className="text-gray-300 font-medium">中文例句</TableHead>
+              </>
+            )}
+            <TableHead className="text-gray-300 font-medium">音频</TableHead>
+            <TableHead className="text-gray-300 font-medium w-32">操作</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedItems.map((item, index) => {
+            const actualIndex = startIndex + index;
+            const isEditing = editingIndex === actualIndex;
+            
+            return (
+              <TableRow key={item.id} className="border-white/20 hover:bg-white/5 transition-colors">
+                <TableCell className="text-white">
+                  {isEditing ? (
+                    <Input
+                      value={item.english}
+                      onChange={(e) => updateItem(actualIndex, { ...item, english: e.target.value })}
+                      className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                    />
+                  ) : (
+                    <span className="font-medium">{item.english}</span>
+                  )}
+                </TableCell>
+                
+                <TableCell className="text-gray-300">
+                  {isEditing ? (
+                    <Input
+                      value={item.chinese}
+                      onChange={(e) => updateItem(actualIndex, { ...item, chinese: e.target.value })}
+                      className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                    />
+                  ) : (
+                    item.chinese
+                  )}
+                </TableCell>
+
+                {showExampleSentences && (
+                  <>
+                    <TableCell className="text-gray-400 text-sm max-w-xs">
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={item.exampleSentenceEn || ''}
+                            onChange={(e) => updateItem(actualIndex, { ...item, exampleSentenceEn: e.target.value })}
+                            className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                            rows={2}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newSentence = generateExampleSentence(item.english, '');
+                              updateItem(actualIndex, { ...item, exampleSentenceEn: newSentence });
+                            }}
+                            className="w-full glass-card border-green-500/30 text-green-400 hover:bg-green-500/10"
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            生成
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="line-clamp-2">{item.exampleSentenceEn}</div>
+                      )}
+                    </TableCell>
+                    
+                    <TableCell className="text-gray-400 text-sm max-w-xs">
+                      {isEditing ? (
+                        <div className="space-y-2">
+                          <Textarea
+                            value={item.exampleSentenceZh || ''}
+                            onChange={(e) => updateItem(actualIndex, { ...item, exampleSentenceZh: e.target.value })}
+                            className="glass-card border-white/20 bg-white/10 text-white placeholder-gray-400"
+                            rows={2}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const newSentence = generateChineseExampleSentence(item.chinese, '');
+                              updateItem(actualIndex, { ...item, exampleSentenceZh: newSentence });
+                            }}
+                            className="w-full glass-card border-green-500/30 text-green-400 hover:bg-green-500/10"
+                          >
+                            <Sparkles className="h-3 w-3 mr-1" />
+                            生成
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="line-clamp-2">{item.exampleSentenceZh}</div>
+                      )}
+                    </TableCell>
+                  </>
+                )}
+
+                <TableCell>
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <Input
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              updateItem(actualIndex, { ...item, pronunciationAudio: reader.result as string });
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="glass-card border-white/20 bg-white/10 text-white file:border-0 file:bg-white/10 file:text-white"
+                      />
+                      {item.pronunciationAudio && (
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              try {
+                                const audio = new Audio(item.pronunciationAudio);
+                                audio.play().catch(console.error);
+                              } catch (error) {
+                                toast({
+                                  title: "播放失败",
+                                  description: "无法播放音频文件",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                            className="flex-1 glass-card border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                          >
+                            <Play className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateItem(actualIndex, { ...item, pronunciationAudio: undefined })}
+                            className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    item.pronunciationAudio ? (
+                      <div className="flex items-center gap-1">
+                        <Volume2 className="h-4 w-4 text-green-400" />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            try {
+                              const audio = new Audio(item.pronunciationAudio);
+                              audio.play().catch(console.error);
+                            } catch (error) {
+                              toast({
+                                title: "播放失败",
+                                description: "无法播放音频文件",
+                                variant: "destructive"
+                              });
+                            }
+                          }}
+                          className="h-6 w-6 p-0 hover:bg-white/10 text-blue-400"
+                        >
+                          <Play className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-gray-500 text-sm">无音频</span>
+                    )
+                  )}
+                </TableCell>
+
+                <TableCell>
+                  <div className="flex gap-1">
+                    {isEditing ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingIndex(null)}
+                          className="glass-card border-green-500/30 text-green-400 hover:bg-green-500/10"
+                        >
+                          ✓
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingIndex(null)}
+                          className="glass-card border-gray-500/30 text-gray-400 hover:bg-gray-500/10"
+                        >
+                          ✕
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setEditingIndex(actualIndex)}
+                          className="glass-card border-white/30 text-white hover:bg-white/10"
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteItem(actualIndex)}
+                          className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  // 分页控件
+  const renderPagination = () => (
+    <div className="flex items-center justify-between mt-6">
+      <div className="text-sm text-gray-400">
+        显示 {startIndex + 1}-{Math.min(startIndex + itemsPerPage, filteredItems.length)} / 共 {filteredItems.length} 个词汇
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          disabled={currentPage === 1}
+          className="glass-card border-white/30 text-white hover:bg-white/10 disabled:opacity-50"
+        >
+          上一页
+        </Button>
+        
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(page => 
+              page === 1 || 
+              page === totalPages || 
+              Math.abs(page - currentPage) <= 2
+            )
+            .map((page, index, pages) => (
+              <div key={page} className="flex items-center gap-1">
+                {index > 0 && pages[index - 1] < page - 1 && (
+                  <span className="text-gray-400">...</span>
+                )}
+                <Button
+                  variant={currentPage === page ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(page)}
+                  className={
+                    currentPage === page 
+                      ? "gradient-primary text-white" 
+                      : "glass-card border-white/30 text-white hover:bg-white/10"
+                  }
+                >
+                  {page}
+                </Button>
+              </div>
+            ))}
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+          disabled={currentPage === totalPages}
+          className="glass-card border-white/30 text-white hover:bg-white/10 disabled:opacity-50"
+        >
+          下一页
+        </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-4">
+      {renderToolbar()}
+      {renderTableView()}
+      {totalPages > 1 && renderPagination()}
+    </div>
+  );
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: { [key: string]: string[] } = {
+    '高度': [
+      '我们正在三万五千英尺的高度巡航。',
+      '请保持指定的飞行高度。',
+      '由于天气原因，我们需要调整飞行高度。',
+      '飞机正在爬升至巡航高度。'
+    ],
+    '跑道': [
+      '123号航班获准在24号跑道起飞。',
+      '跑道暂时关闭进行维护。',
+      '我们在跑道外等待。',
+      '请经由A滑行道滑行至06号跑道。'
+    ],
+    '颠簸': [
+      '我们正在经历轻微的气流颠簸。',
+      '前方有颠簸，请系好安全带。',
+      '颠簸应该会在几分钟内结束。',
+      '我们会寻找更平稳的高度以避开颠簸。'
+    ],
+    '紧急': [
+      '这是紧急降落程序。',
+      '紧急情况下，氧气面罩会自动掉落。',
+      '请找到离您最近的紧急出口。',
+      '机组人员接受过处理紧急情况的训练。'
+    ],
+    '乘客': [
+      '起飞期间所有乘客必须坐好。',
+      '有乘客需要医疗救助。',
+      '请协助有特殊需要的乘客。',
+      '乘客正在通过A12登机口登机。'
+    ],
+    '驾驶舱': [
+      '飞行员简报后返回驾驶舱。',
+      '只有授权人员才能进入驾驶舱。',
+      '驾驶舱机组正在准备起飞。',
+      '所有驾驶舱系统运行正常。'
+    ],
+    '降落': [
+      '我们正在准备在北京首都机场降落。',
+      '起落架已经放下。',
+      '请保持坐好直到飞机完全停稳。',
+      '天气条件适合降落。'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[chineseWord]) {
+    return contextualExamples[chineseWord][Math.floor(Math.random() * contextualExamples[chineseWord].length)];
+  }
+  
+  // 基于词汇特征的智能模板
+  const wordPatterns = [
+    {
+      condition: (word: string) => ['检查', '验证', '监控', '检验', '查看'].includes(word),
+      templates: [
+        `起飞前我们需要${chineseWord}所有安全设备。`,
+        `请${chineseWord}您的登机牌和身份证件。`,
+        `技术人员将${chineseWord}飞机系统。`,
+        `飞行前${chineseWord}天气条件很重要。`
+      ]
+    },
+    {
+      condition: (word: string) => ['报告', '宣布', '通知', '告知', '提醒'].includes(word),
+      templates: [
+        `飞行员将向乘客${chineseWord}到达时间。`,
+        `请向机组人员${chineseWord}任何可疑活动。`,
+        `空中交通管制将${chineseWord}我们的起飞许可。`,
+        `我们必须向当局${chineseWord}所有事件。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('设备') || word.includes('系统') || word.includes('装置'),
+      templates: [
+        `${chineseWord}在正常参数范围内运行。`,
+        `请确保${chineseWord}已正确固定。`,
+        `${chineseWord}需要定期维护。`,
+        `如果需要，备用${chineseWord}将启动。`
+      ]
+    },
+    {
+      condition: (word: string) => word.includes('安全') || word.includes('紧急') || word.includes('保安'),
+      templates: [
+        `${chineseWord}是我们的首要任务。`,
+        `必须严格遵循所有${chineseWord}程序。`,
+        `${chineseWord}简报即将开始。`,
+        `请查看座椅后袋中的${chineseWord}说明。`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.condition(chineseWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的中文模板
+  const naturalTemplates = [
+    `${chineseWord}在航空安全中发挥着重要作用。`,
+    `每个机组成员都必须了解${chineseWord}的含义。`,
+    `${chineseWord}在我们的飞行前检查中会被检查。`,
+    `乘客应该熟悉${chineseWord}程序。`,
+    `训练期间清楚地解释了${chineseWord}。`,
+    `${chineseWord}要求因飞机类型而异。`,
+    `在实际操作中，${chineseWord}是必不可少的。`,
+    `${chineseWord}的正确使用关系到飞行安全。`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 生成英文例句的辅助函数
+function generateExampleSentence(word: string, explanation: string): string {
+  if (!word) return '';
+  
+  // 航空词汇例句模板
+  const aviationTemplates = [
+    `The pilot reported ${word} to air traffic control.`,
+    `Please check the ${word} before takeoff.`,
+    `We need to monitor the ${word} during flight.`,
+    `The ${word} is functioning normally.`,
+    `Attention passengers, we are experiencing ${word}.`,
+    `The crew will handle the ${word} procedure.`,
+    `Flight attendants, prepare for ${word}.`,
+    `The aircraft ${word} requires immediate attention.`,
+    `According to regulations, ${word} must be checked.`,
+    `The captain announced the ${word} to passengers.`
+  ];
+  
+  // 通用例句模板
+  const generalTemplates = [
+    `The ${word} is important for safety.`,
+    `Please ensure the ${word} is secure.`,
+    `We must follow ${word} procedures.`,
+    `The ${word} has been verified.`,
+    `Check the ${word} carefully.`,
+    `The ${word} meets all requirements.`,
+    `Staff will handle the ${word} process.`,
+    `The ${word} is now complete.`,
+    `Please be aware of the ${word}.`,
+    `The ${word} system is operational.`
+  ];
+  
+  // 根据单词特征选择模板
+  const word_lower = word.toLowerCase();
+  if (word_lower.includes('pilot') || word_lower.includes('captain') || 
+      word_lower.includes('crew') || word_lower.includes('flight') ||
+      word_lower.includes('aircraft') || word_lower.includes('runway') ||
+      word_lower.includes('altitude') || word_lower.includes('landing')) {
+    const template = aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  } else {
+    const template = generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+    return template.replace(new RegExp(`\\b${word}\\b`, 'gi'), word);
+  }
+}
+
+// 生成中文例句的辅助函数
+function generateChineseExampleSentence(chineseWord: string, explanation: string): string {
+  if (!chineseWord) return '';
+  
+  // 航空中文例句模板
+  const aviationTemplates = [
+    `飞行员向塔台报告了${chineseWord}的情况。`,
+    `请在起飞前检查${chineseWord}。`,
+    `我们需要在飞行过程中监控${chineseWord}。`,
+    `${chineseWord}运行正常。`,
+    `各位乘客，我们正在处理${chineseWord}。`,
+    `机组人员将执行${chineseWord}程序。`,
+    `空乘人员，请准备${chineseWord}。`,
+    `飞机${chineseWord}需要立即关注。`,
+    `根据规定，必须检查${chineseWord}。`,
+    `机长向乘客宣布了${chineseWord}的情况。`
+  ];
+  
+  // 通用中文例句模板
+  const generalTemplates = [
+    `${chineseWord}对安全很重要。`,
+    `请确保${chineseWord}安全可靠。`,
+    `我们必须遵循${chineseWord}程序。`,
+    `${chineseWord}已经得到验证。`,
+    `请仔细检查${chineseWord}。`,
+    `${chineseWord}符合所有要求。`,
+    `工作人员将处理${chineseWord}流程。`,
+    `${chineseWord}现在已完成。`,
+    `请注意${chineseWord}。`,
+    `${chineseWord}系统运行正常。`
+  ];
+  
+  // 根据词汇特征选择模板（简单的关键词匹配）
+  if (chineseWord.includes('飞') || chineseWord.includes('机') || 
+      chineseWord.includes('航') || chineseWord.includes('空') ||
+      chineseWord.includes('乘客') || chineseWord.includes('跑道') ||
+      chineseWord.includes('高度') || chineseWord.includes('降落')) {
+    return aviationTemplates[Math.floor(Math.random() * aviationTemplates.length)];
+  } else {
+    return generalTemplates[Math.floor(Math.random() * generalTemplates.length)];
+  }
+}
+
+// 改进版：生成更自然的英文例句
+function generateBetterExampleSentence(englishWord: string, chineseWord: string): string {
+  if (!englishWord) return '';
+  
+  const word = englishWord.toLowerCase().trim();
+  
+  // 真实情境的航空例句库 - 更自然、更实用
+  const contextualExamples: { [key: string]: string[] } = {
+    // 高频航空词汇的专业例句
+    'altitude': [
+      'We are cruising at an altitude of 35,000 feet.',
+      'Please maintain your assigned altitude.',
+      'Due to weather, we need to change our altitude.',
+      'The aircraft is climbing to its cruising altitude.'
+    ],
+    'runway': [
+      'Flight 123 is cleared for takeoff on runway 24.',
+      'The runway is temporarily closed for maintenance.',
+      'We are holding short of the runway.',
+      'Please taxi to runway 06 via taxiway Alpha.'
+    ],
+    'turbulence': [
+      'We are experiencing some light turbulence.',
+      'Please fasten your seatbelts due to turbulence ahead.',
+      'The turbulence should clear up in a few minutes.',
+      'We will try to find a smoother altitude to avoid turbulence.'
+    ],
+    'emergency': [
+      'This is an emergency landing procedure.',
+      'In case of emergency, oxygen masks will drop down.',
+      'Please locate your nearest emergency exit.',
+      'The crew is trained to handle emergency situations.'
+    ],
+    'passenger': [
+      'All passengers must remain seated during takeoff.',
+      'A passenger is requesting medical assistance.',
+      'Please assist the passenger with special needs.',
+      'Passengers are boarding through gate A12.'
+    ],
+    'cockpit': [
+      'The pilot returned to the cockpit after the briefing.',
+      'Only authorized personnel are allowed in the cockpit.',
+      'The cockpit crew is preparing for departure.',
+      'All cockpit systems are functioning normally.'
+    ],
+    'landing': [
+      'We are preparing for landing at Beijing Capital Airport.',
+      'The landing gear has been extended.',
+      'Please remain seated until the aircraft comes to a complete stop after landing.',
+      'Weather conditions are good for landing.'
+    ]
+  };
+  
+  // 检查是否有特定的例句
+  if (contextualExamples[word]) {
+    return contextualExamples[word][Math.floor(Math.random() * contextualExamples[word].length)];
+  }
+  
+  // 基于词汇类型的智能模板
+  const wordPatterns = [
+    {
+      pattern: /^(check|verify|monitor|inspect|examine)$/i,
+      templates: [
+        `We need to ${englishWord} all safety equipment before departure.`,
+        `Please ${englishWord} your boarding pass and identification.`,
+        `The technician will ${englishWord} the aircraft systems.`,
+        `It's important to ${englishWord} weather conditions before flying.`
+      ]
+    },
+    {
+      pattern: /^(report|announce|inform|notify|alert)$/i,
+      templates: [
+        `The pilot will ${englishWord} our arrival time to passengers.`,
+        `Please ${englishWord} any suspicious activity to the crew.`,
+        `Air traffic control will ${englishWord} our departure clearance.`,
+        `We must ${englishWord} all incidents to the authorities.`
+      ]
+    },
+    {
+      pattern: /(equipment|system|device|instrument|control)/i,
+      templates: [
+        `The ${englishWord} is functioning within normal parameters.`,
+        `Please ensure the ${englishWord} is properly secured.`,
+        `This ${englishWord} requires regular maintenance.`,
+        `The backup ${englishWord} will activate if needed.`
+      ]
+    },
+    {
+      pattern: /(safety|security|emergency|precaution)/i,
+      templates: [
+        `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is our top priority.`,
+        `All ${englishWord} procedures must be followed strictly.`,
+        `The ${englishWord} briefing will begin shortly.`,
+        `Please review the ${englishWord} instructions in your seat pocket.`
+      ]
+    }
+  ];
+  
+  // 尝试匹配模式
+  for (const pattern of wordPatterns) {
+    if (pattern.pattern.test(englishWord)) {
+      return pattern.templates[Math.floor(Math.random() * pattern.templates.length)];
+    }
+  }
+  
+  // 通用但自然的模板
+  const naturalTemplates = [
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} plays a crucial role in aviation safety.`,
+    `Every crew member must understand what ${englishWord} means.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} is checked during our pre-flight inspection.`,
+    `Passengers should be familiar with ${englishWord} procedures.`,
+    `The ${englishWord} was clearly explained during training.`,
+    `${englishWord.charAt(0).toUpperCase() + englishWord.slice(1)} requirements vary by aircraft type.`
+  ];
+  
+  return naturalTemplates[Math.floor(Math.random() * naturalTemplates.length)];
+}
+
+// 改进版：生成更自然的中文例句
+function generateBetterChineseExampleSentence(chineseWord: string, englishWord: string): string {
+  if (!chineseWord) return '';
+  
+  // 真实情境的中文例句库
+  const contextualExamples: {

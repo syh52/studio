@@ -1,10 +1,10 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard } from 'lucide-react';
-import IndexDisplay from '@/components/shared/IndexDisplay';
+import { useAuth } from '../../contexts/AuthContext'
+import { Button } from '../../components/ui/button'
+import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard, Database, MessageSquare, Brain } from 'lucide-react';
+import IndexDisplay from '../../components/shared/IndexDisplay'
 import { useRouter, usePathname } from 'next/navigation';
 import {
   DropdownMenu,
@@ -13,8 +13,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+} from "../../components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar"
 import { useState, useEffect } from 'react';
 
 const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; 
@@ -33,6 +33,7 @@ export default function Header() {
     { href: "/vocabulary", label: "词汇", icon: <BookOpen size={18} /> },
     { href: "/dialogues", label: "对话", icon: <Plane size={18} /> },
     { href: "/quizzes", label: "测验", icon: <CheckSquare size={18} /> },
+    { href: "/chat", label: "智能对话", icon: <MessageSquare size={18} /> },
   ];
 
   if (!isMounted || authIsLoading) {
@@ -66,6 +67,20 @@ export default function Header() {
                 <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/admin' ? 'bg-accent text-accent-foreground' : ''}`}>
                   <LayoutDashboard size={18} />
                   <span className="hidden md:inline">管理</span>
+                </a>
+            </Link>
+            {/* Knowledge Base Link */}
+            <Link href="/knowledge" legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/knowledge' ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Brain size={18} />
+                  <span className="hidden md:inline">知识库</span>
+                </a>
+            </Link>
+            {/* Database Test Link - for debugging */}
+            <Link href="/test-firestore" legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/test-firestore' ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Database size={18} />
+                  <span className="hidden md:inline">数据测试</span>
                 </a>
             </Link>
           </>
