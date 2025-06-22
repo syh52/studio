@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title Lexicon 航空安全英语学习应用
 echo ========================================
 echo       启动 Lexicon 学习应用
