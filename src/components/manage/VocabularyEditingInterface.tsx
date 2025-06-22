@@ -6,6 +6,7 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { VocabularyPack } from '../../lib/data'
+import { LexiconAIService } from '../../lib/ai-service';
 import { 
   Search, 
   Sparkles, 
@@ -29,6 +30,8 @@ export default function VocabularyEditingInterface({
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [generatingExamples, setGeneratingExamples] = useState<{ [key: string]: boolean }>({});
+  const [batchGenerating, setBatchGenerating] = useState(false);
   const itemsPerPage = 10;
 
   // 过滤和分页逻辑
@@ -81,53 +84,142 @@ export default function VocabularyEditingInterface({
     setTimeout(() => setEditingIndex(newItems.length - 1), 100);
   };
 
-  // 生成更好的例句
-  const generateExampleSentences = (item: any) => {
-    const englishExamples = [
-      `${item.english} is essential for aviation safety.`,
-      `Please check the ${item.english} before departure.`,
-      `The crew will handle ${item.english} procedures.`,
-      `We need to monitor ${item.english} carefully.`
-    ];
-    
-    const chineseExamples = [
-      `${item.chinese}对飞行安全很重要。`,
-      `请在起飞前检查${item.chinese}。`,
-      `机组人员将处理${item.chinese}程序。`,
-      `我们需要仔细监控${item.chinese}。`
-    ];
+  // 使用AI生成自然例句
+  const generateExampleSentences = async (item: any, index: number) => {
+    // 确保英文和中文单词存在
+    if (!item.english || !item.chinese) {
+      toast({
+        title: "生成失败",
+        description: "请先填写英文单词和中文翻译",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    return {
-      exampleSentenceEn: englishExamples[Math.floor(Math.random() * englishExamples.length)],
-      exampleSentenceZh: chineseExamples[Math.floor(Math.random() * chineseExamples.length)]
-    };
+    const itemKey = `${item.id}-${index}`;
+    setGeneratingExamples(prev => ({ ...prev, [itemKey]: true }));
+
+    try {
+      const response = await LexiconAIService.generateNaturalExampleSentences(
+        item.english,
+        item.chinese
+      );
+
+      if (response.success && response.data) {
+        const parsed = JSON.parse(response.data);
+        const updatedItem = {
+          ...item,
+          exampleSentenceEn: parsed.exampleSentenceEn,
+          exampleSentenceZh: parsed.exampleSentenceZh
+        };
+        
+        updateItem(index, updatedItem);
+        
+        toast({
+          title: "生成成功",
+          description: "AI例句生成完成",
+        });
+      } else {
+        throw new Error(response.error || '生成失败');
+      }
+    } catch (error) {
+      console.error('AI例句生成失败:', error);
+      toast({
+        title: "生成失败",
+        description: error instanceof Error ? error.message : '未知错误',
+        variant: "destructive"
+      });
+    } finally {
+      setGeneratingExamples(prev => ({ ...prev, [itemKey]: false }));
+    }
   };
 
   // 批量生成例句
-  const batchGenerateExamples = () => {
-    const newItems = vocabulary.items.map(item => {
-      if (!item.exampleSentenceEn || !item.exampleSentenceZh) {
-        const examples = generateExampleSentences(item);
-        return {
-          ...item,
-          exampleSentenceEn: item.exampleSentenceEn || examples.exampleSentenceEn,
-          exampleSentenceZh: item.exampleSentenceZh || examples.exampleSentenceZh
-        };
-      }
-      return item;
-    });
+  const batchGenerateExamples = async () => {
+    console.log('开始批量AI生成例句...'); 
     
-    onUpdate({ ...vocabulary, items: newItems });
-    toast({
-      title: "批量生成完成",
-      description: "已为缺少例句的单词生成例句",
+    // 筛选需要生成例句的单词
+    const itemsToGenerate = vocabulary.items.filter(item => {
+      const needsEnglishExample = !item.exampleSentenceEn || item.exampleSentenceEn.trim() === '';
+      const needsChineseExample = !item.exampleSentenceZh || item.exampleSentenceZh.trim() === '';
+      return (needsEnglishExample || needsChineseExample) && item.english && item.chinese;
     });
+
+    if (itemsToGenerate.length === 0) {
+      toast({
+        title: "无需生成",
+        description: "所有单词都已有完整的例句",
+        variant: "default"
+      });
+      return;
+    }
+
+    setBatchGenerating(true);
+    
+    try {
+      const batchItems = itemsToGenerate.map(item => ({
+        id: item.id,
+        english: item.english,
+        chinese: item.chinese
+      }));
+
+      toast({
+        title: "正在生成",
+        description: `正在为 ${itemsToGenerate.length} 个单词生成AI例句，请稍候...`,
+      });
+
+      const results = await LexiconAIService.generateBatchExampleSentences(
+        batchItems,
+        (completed, total) => {
+          console.log(`批量生成进度: ${completed}/${total}`);
+        }
+      );
+
+      // 更新成功生成的例句
+      let updatedItems = [...vocabulary.items];
+      results.success.forEach(result => {
+        const itemIndex = updatedItems.findIndex(item => item.id === result.id);
+        if (itemIndex !== -1) {
+          const item = updatedItems[itemIndex];
+          const needsEnglishExample = !item.exampleSentenceEn || item.exampleSentenceEn.trim() === '';
+          const needsChineseExample = !item.exampleSentenceZh || item.exampleSentenceZh.trim() === '';
+          
+          updatedItems[itemIndex] = {
+            ...item,
+            exampleSentenceEn: needsEnglishExample ? result.exampleSentenceEn : item.exampleSentenceEn,
+            exampleSentenceZh: needsChineseExample ? result.exampleSentenceZh : item.exampleSentenceZh
+          };
+        }
+      });
+
+      onUpdate({ ...vocabulary, items: updatedItems });
+
+      toast({
+        title: "批量生成完成",
+        description: `成功生成 ${results.success.length} 个单词的例句${results.errors.length > 0 ? `，${results.errors.length} 个失败` : ''}`,
+        variant: results.errors.length > 0 ? "default" : "default"
+      });
+
+      if (results.errors.length > 0) {
+        console.error('批量生成错误:', results.errors);
+      }
+
+    } catch (error) {
+      console.error('批量生成例句失败:', error);
+      toast({
+        title: "批量生成失败",
+        description: error instanceof Error ? error.message : '未知错误',
+        variant: "destructive"
+      });
+    } finally {
+      setBatchGenerating(false);
+    }
   };
 
   return (
     <div className="space-y-6">
-      {/* 搜索和操作栏 */}
-      <div className="glass-card bg-white/5 border-white/20 rounded-xl p-4">
+      {/* 搜索和操作栏 - 粘性定位 */}
+      <div className="sticky top-0 z-10 glass-card bg-white/5 border-white/20 rounded-xl p-4 backdrop-blur-sm">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -148,9 +240,10 @@ export default function VocabularyEditingInterface({
               size="sm"
               onClick={batchGenerateExamples}
               className="glass-card border-green-500/30 text-green-400 hover:bg-green-500/10 hover:scale-105 transition-all duration-200"
+              disabled={vocabulary.items.length === 0 || batchGenerating}
             >
-              <Sparkles className="h-4 w-4 mr-2" />
-              生成例句
+              <Sparkles className={`h-4 w-4 mr-2 ${batchGenerating ? 'animate-spin' : ''}`} />
+              {batchGenerating ? 'AI生成中...' : 'AI生成例句'}
             </Button>
             
             <Button
@@ -221,16 +314,12 @@ export default function VocabularyEditingInterface({
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              if (item.english) {
-                                const examples = generateExampleSentences(item);
-                                updateItem(index, { ...item, exampleSentenceEn: examples.exampleSentenceEn });
-                              }
-                            }}
+                            onClick={() => generateExampleSentences(item, index)}
+                            disabled={generatingExamples[`${item.id}-${index}`] || !item.english || !item.chinese}
                             className="glass-card border-green-500/30 text-green-400 hover:bg-green-500/10 text-xs px-2 py-1 hover:scale-105 transition-all duration-200"
                           >
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            生成
+                            <Sparkles className={`h-3 w-3 mr-1 ${generatingExamples[`${item.id}-${index}`] ? 'animate-spin' : ''}`} />
+                            {generatingExamples[`${item.id}-${index}`] ? 'AI生成中' : 'AI生成'}
                           </Button>
                         </div>
                         <Textarea
@@ -249,16 +338,12 @@ export default function VocabularyEditingInterface({
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => {
-                              if (item.chinese) {
-                                const examples = generateExampleSentences(item);
-                                updateItem(index, { ...item, exampleSentenceZh: examples.exampleSentenceZh });
-                              }
-                            }}
+                            onClick={() => generateExampleSentences(item, index)}
+                            disabled={generatingExamples[`${item.id}-${index}`] || !item.english || !item.chinese}
                             className="glass-card border-green-500/30 text-green-400 hover:bg-green-500/10 text-xs px-2 py-1 hover:scale-105 transition-all duration-200"
                           >
-                            <Sparkles className="h-3 w-3 mr-1" />
-                            生成
+                            <Sparkles className={`h-3 w-3 mr-1 ${generatingExamples[`${item.id}-${index}`] ? 'animate-spin' : ''}`} />
+                            {generatingExamples[`${item.id}-${index}`] ? 'AI生成中' : 'AI生成'}
                           </Button>
                         </div>
                         <Textarea

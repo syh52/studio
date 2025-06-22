@@ -341,7 +341,7 @@ export default function AIAssistant({ className }: AIAssistantProps) {
                       <Sparkles className="h-4 w-4 text-purple-400" />
                       AI 回复
                       <Badge variant="secondary" className="bg-purple-500/20 text-purple-300">
-                        Gemini 2.5 Flash
+                        Gemini 2.5 Pro
                       </Badge>
                     </CardTitle>
                   </CardHeader>

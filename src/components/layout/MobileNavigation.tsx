@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, BookOpen, MessageCircle, User } from 'lucide-react';
+import { Home, BookOpen, MessageSquare, User } from 'lucide-react';
 
 export default function MobileNavigation() {
   const pathname = usePathname();
@@ -21,10 +21,10 @@ export default function MobileNavigation() {
       isActive: pathname.startsWith('/vocabulary'),
     },
     {
-      label: '对话',
-      href: '/dialogues',
-      icon: MessageCircle,
-      isActive: pathname.startsWith('/dialogues'),
+      label: '智能对话',
+      href: '/chat',
+      icon: MessageSquare,
+      isActive: pathname.startsWith('/chat'),
     },
     {
       label: '我的',

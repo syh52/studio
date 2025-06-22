@@ -15,8 +15,9 @@ import { Textarea } from '../components/ui/textarea'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/AuthContext'
-import { saveCustomVocabularyPack, saveMultipleDialogues } from '../lib/firestore-service'
+import { savePublicVocabularyPack, savePublicDialogue } from '../lib/firestore-service'
 import { VocabularyPack, Dialogue } from '../lib/data'
+import { LexiconAIService } from '../lib/ai-service'
 import { useToast } from '../hooks/use-toast'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
@@ -270,20 +271,23 @@ export function BulkUpload() {
         audio: audioMap.get(dialogue.audioFileName || '') || undefined
       }));
       
-      // 保存到 Firestore
+      // 保存到公共空间
       setProgress(75);
-      await saveMultipleDialogues(user.id, newDialogues);
-      setProgress(100);
+      
+      for (let i = 0; i < newDialogues.length; i++) {
+        await savePublicDialogue(newDialogues[i], user.id);
+        setProgress(75 + ((i + 1) / newDialogues.length) * 25);
+      }
       
       setResults([{
         success: true,
-        message: `成功上传 ${newDialogues.length} 个对话到云端`,
+        message: `成功上传 ${newDialogues.length} 个对话到公共对话库`,
         data: newDialogues
       }]);
       
       toast({
         title: "上传成功",
-        description: `${newDialogues.length} 个对话已保存到云端`,
+        description: `${newDialogues.length} 个对话已保存到公共对话库，所有用户都可访问`,
       });
       
       // 清空表单
@@ -347,39 +351,68 @@ export function BulkUpload() {
           const file = vocabularyFiles[i];
           const base64 = await fileToBase64(file);
           audioMap.set(file.name, base64);
-          setProgress(25 + (i + 1) / vocabularyFiles.length * 25);
+          setProgress(25 + (i + 1) / vocabularyFiles.length * 15); // 调整进度条占比
         }
       }
       
-      // 创建词汇包
+      setProgress(40);
+      
+      // 使用AI批量生成例句
+      toast({
+        title: "正在生成AI例句",
+        description: `为 ${vocabulary.length} 个词汇生成自然例句，请稍候...`,
+      });
+      
+      const vocabularyItems = vocabulary.map(word => ({
+        id: `custom-word-${Date.now()}-${Math.random()}`,
+        english: word.english,
+        chinese: word.chinese
+      }));
+      
+      const exampleResults = await LexiconAIService.generateBatchExampleSentences(
+        vocabularyItems,
+        (completed, total) => {
+          const progressValue = 40 + (completed / total) * 30; // 40-70%
+          setProgress(progressValue);
+        }
+      );
+      
+      setProgress(70);
+      
+      // 创建词汇包，使用AI生成的例句
       const vocabularyPack: VocabularyPack = {
         id: `custom-pack-${Date.now()}`,
         name: '自定义词汇包',
-        description: `包含 ${vocabulary.length} 个词汇`,
-        items: vocabulary.map((word, index) => ({
-          id: `custom-word-${Date.now()}-${index}`,
-          english: word.english,
-          chinese: word.chinese,
-          exampleSentenceEn: word.explanation || `Example sentence with ${word.english}.`,
-          exampleSentenceZh: word.explanation || `包含 ${word.chinese} 的例句。`,
-          pronunciationAudio: audioMap.get(word.audioFileName || '') || undefined
-        }))
+        description: `包含 ${vocabulary.length} 个词汇，配有AI生成的自然例句`,
+        items: vocabulary.map((word, index) => {
+          const itemId = vocabularyItems[index].id;
+          const exampleResult = exampleResults.success.find(r => r.id === itemId);
+          
+          return {
+            id: itemId,
+            english: word.english,
+            chinese: word.chinese,
+            exampleSentenceEn: exampleResult?.exampleSentenceEn || word.explanation || `Please check the ${word.english} carefully.`,
+            exampleSentenceZh: exampleResult?.exampleSentenceZh || `请仔细检查${word.chinese}。`,
+            pronunciationAudio: audioMap.get(word.audioFileName || '') || undefined
+          };
+        })
       };
       
-      // 保存到 Firestore
-      setProgress(75);
-      await saveCustomVocabularyPack(user.id, vocabularyPack);
+      // 保存到公共空间
+      setProgress(80);
+      await savePublicVocabularyPack(vocabularyPack, user.id);
       setProgress(100);
       
       setResults([{
         success: true,
-        message: `成功创建词汇包，包含 ${vocabulary.length} 个单词，已保存到云端`,
+        message: `成功创建词汇包，包含 ${vocabulary.length} 个单词，已保存到公共词库。${exampleResults.success.length} 个词汇使用了AI生成的例句${exampleResults.errors.length > 0 ? `，${exampleResults.errors.length} 个使用了备用例句` : ''}。`,
         data: vocabularyPack
       }]);
       
       toast({
         title: "上传成功",
-        description: `词汇包已保存到云端`,
+        description: `词汇包已保存到公共词库，配有AI生成的自然例句，所有用户都可访问`,
       });
       
       // 清空表单
@@ -416,7 +449,7 @@ export function BulkUpload() {
                 </Badge>
               </CardTitle>
               <CardDescription>
-                🤖 AI智能导入：粘贴任意文本，自动识别格式化 | 📊 传统上传：Excel模板和文本格式
+                🤖 AI智能导入：粘贴任意文本，自动识别格式化 | 📊 传统上传：Excel模板和文本格式 | 🌍 所有内容保存到公共空间，供所有用户学习
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -556,7 +589,7 @@ Officer: Thank you. Please place all metal items in the tray.
                   className="w-full"
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  上传对话到云端
+                  上传对话到公共库
                 </Button>
               </div>
             </TabsContent>
@@ -650,7 +683,7 @@ runway | 跑道 | A strip of ground for aircraft takeoff and landing | runway.mp
                   className="w-full"
                 >
                   <Upload className="mr-2 h-4 w-4" />
-                  上传词汇到云端
+                  上传词汇到公共库
                 </Button>
               </div>
             </TabsContent>

@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { useToast } from "../hooks/use-toast"
 import { useRouter } from "next/navigation";
 import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Upload } from "lucide-react";
-import AIAssistant from '../components/ai/AIAssistant'
+
 
 export default function HomePage() {
   const { user, isAuthenticated, dailyCheckIn, isLoading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
-  const handleDailyCheckIn = () => {
+  const handleDailyCheckIn = async () => {
     if (!isAuthenticated) {
       toast({ 
         title: "尚未登录", 
@@ -20,7 +20,7 @@ export default function HomePage() {
       });
       return;
     }
-    const success = dailyCheckIn();
+    const success = await dailyCheckIn();
     if (success) {
       toast({ 
         title: "签到成功！", 
@@ -167,12 +167,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* AI Assistant Section - Show for authenticated users */}
-      {isAuthenticated && (
-        <div className="animate-blur-in animate-delay-500">
-          <AIAssistant />
-        </div>
-      )}
+
 
       {/* Learning Progress */}
       {isAuthenticated && (

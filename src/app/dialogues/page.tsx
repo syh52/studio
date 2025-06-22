@@ -2,28 +2,16 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { getAllDialogues, deleteCustomDialogue, type Dialogue } from '../../lib/data'
+import { getAllDialogues, type Dialogue } from '../../lib/data'
 import Link from 'next/link';
 import * as LucideIcons from 'lucide-react';
-import { Button } from '../../components/ui/button'
 import { useToast } from '../../hooks/use-toast'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "../../components/ui/alert-dialog";
 
 interface DialogueCardProps {
   dialogue: Dialogue;
-  onDelete?: (dialogue: Dialogue) => void;
 }
 
-const DialogueCard = ({ dialogue, onDelete }: DialogueCardProps) => {
+const DialogueCard = ({ dialogue }: DialogueCardProps) => {
   const IconComponent = dialogue.icon ? (LucideIcons[dialogue.icon as keyof typeof LucideIcons] as React.ElementType) : LucideIcons.MessageCircle;
 
   return (
@@ -52,20 +40,6 @@ const DialogueCard = ({ dialogue, onDelete }: DialogueCardProps) => {
           </div>
         </div>
       </Link>
-      {dialogue.id.startsWith('custom-') && onDelete && (
-        <Button
-          variant="destructive"
-          size="icon"
-          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete(dialogue);
-          }}
-        >
-          <LucideIcons.Trash2 className="h-4 w-4" />
-        </Button>
-      )}
     </div>
   );
 };
@@ -76,8 +50,6 @@ export default function DialoguesPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [dialogues, setDialogues] = useState<Dialogue[]>([]);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [dialogueToDelete, setDialogueToDelete] = useState<Dialogue | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   // const [searchTerm, setSearchTerm] = useState('');
 
@@ -88,7 +60,7 @@ export default function DialoguesPage() {
   }, [isAuthenticated, isLoading, router]);
 
   useEffect(() => {
-    // 加载对话数据
+    // 加载公共对话数据
     const loadDialogues = async () => {
       if (isAuthenticated && user) {
         setDataLoading(true);
@@ -99,7 +71,7 @@ export default function DialoguesPage() {
           console.error('Failed to load dialogues:', error);
           toast({
             title: "加载失败",
-            description: "无法加载对话",
+            description: "无法加载公共对话",
             variant: "destructive",
           });
         } finally {
@@ -110,42 +82,6 @@ export default function DialoguesPage() {
     
     loadDialogues();
   }, [isAuthenticated, user, toast]);
-
-  const handleDeleteDialogue = (dialogue: Dialogue) => {
-    setDialogueToDelete(dialogue);
-    setDeleteDialogOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (dialogueToDelete && dialogueToDelete.id.startsWith('custom-') && user) {
-      try {
-        const success = await deleteCustomDialogue(user.id, dialogueToDelete.id);
-        if (success) {
-          // 重新加载数据
-          const allDialogues = await getAllDialogues(user.id);
-          setDialogues(allDialogues);
-          toast({
-            title: "删除成功",
-            description: "自定义对话已删除",
-          });
-        } else {
-          toast({
-            title: "删除失败",
-            description: "无法删除对话",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        toast({
-          title: "删除失败",
-          description: "发生错误，请稍后再试",
-          variant: "destructive",
-        });
-      }
-    }
-    setDeleteDialogOpen(false);
-    setDialogueToDelete(null);
-  };
 
   if (isLoading || !isAuthenticated || dataLoading) {
     return (
@@ -191,35 +127,19 @@ export default function DialoguesPage() {
         {dialogues.map(dialogue => (
           <DialogueCard 
             key={dialogue.id} 
-            dialogue={dialogue} 
-            onDelete={handleDeleteDialogue}
+            dialogue={dialogue}
           />
         ))}
       </div>
       {dialogues.length === 0 && (
         <div className="text-center py-12 sm:py-16">
           <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
-            <LucideIcons.MessageCircle className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
+            <LucideIcons.Users className="h-8 w-8 sm:h-10 sm:w-10 text-gray-400" />
           </div>
-          <p className="text-gray-400 text-sm sm:text-base">目前没有可用的情景对话。请稍后再回来查看！</p>
+          <p className="text-gray-400 text-sm sm:text-base mb-2">暂无公共对话内容</p>
+          <p className="text-gray-500 text-xs sm:text-sm">社区用户上传的对话将在这里显示，请稍后再回来查看！</p>
         </div>
       )}
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              您确定要删除自定义对话 "{dialogueToDelete?.title}" 吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>删除</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

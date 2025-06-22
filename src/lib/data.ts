@@ -629,44 +629,40 @@ export const dialogues: Dialogue[] = [
   }
 ];
 
-// 获取包含自定义内容的词汇包
+// 获取包含公共内容的词汇包
 export async function getAllVocabularyPacks(userId?: string): Promise<VocabularyPack[]> {
   if (typeof window === 'undefined') {
     return vocabularyPacks;
   }
   
   try {
-    // 如果提供了 userId，尝试从 Firestore 加载自定义内容
-    let customPacks: VocabularyPack[] = [];
-    if (userId) {
-      const { getCustomVocabularyPacks } = await import('./firestore-service');
-      customPacks = await getCustomVocabularyPacks(userId);
-    }
+    // 加载公共词汇包内容
+    let publicPacks: VocabularyPack[] = [];
+    const { getPublicVocabularyPacks } = await import('./firestore-service');
+    publicPacks = await getPublicVocabularyPacks();
     
-    return [...vocabularyPacks, ...customPacks];
+    return [...vocabularyPacks, ...publicPacks];
   } catch (error) {
-    console.error('Error loading custom vocabulary packs:', error);
+    console.error('Error loading public vocabulary packs:', error);
     return vocabularyPacks;
   }
 }
 
-// 获取包含自定义内容的对话
+// 获取包含公共内容的对话
 export async function getAllDialogues(userId?: string): Promise<Dialogue[]> {
   if (typeof window === 'undefined') {
     return dialogues;
   }
   
   try {
-    // 如果提供了 userId，尝试从 Firestore 加载自定义内容
-    let customDialogues: Dialogue[] = [];
-    if (userId) {
-      const { getCustomDialogues } = await import('./firestore-service');
-      customDialogues = await getCustomDialogues(userId);
-    }
+    // 加载公共对话内容
+    let publicDialogues: Dialogue[] = [];
+    const { getPublicDialogues } = await import('./firestore-service');
+    publicDialogues = await getPublicDialogues();
     
-    return [...dialogues, ...customDialogues];
+    return [...dialogues, ...publicDialogues];
   } catch (error) {
-    console.error('Error loading custom dialogues:', error);
+    console.error('Error loading public dialogues:', error);
     return dialogues;
   }
 }

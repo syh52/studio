@@ -8,12 +8,12 @@ import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { useToast } from '../../hooks/use-toast'
 import { 
-  getCustomDialogues, 
-  getCustomVocabularyPacks, 
-  deleteCustomDialogue, 
-  deleteCustomVocabularyPack,
-  updateCustomDialogue,
-  updateCustomVocabularyPack
+  getPublicDialogues, 
+  getPublicVocabularyPacks, 
+  deletePublicDialogue, 
+  deletePublicVocabularyPack,
+  updatePublicDialogue,
+  updatePublicVocabularyPack
 } from '../../lib/firestore-service';
 import { VocabularyPack, Dialogue } from '../../lib/data'
 import { Upload, Search, FileText, Book } from 'lucide-react';
@@ -38,15 +38,15 @@ export default function ManagePage() {
   const [editingDialogue, setEditingDialogue] = useState<Dialogue | null>(null);
   const [editingVocabulary, setEditingVocabulary] = useState<VocabularyPack | null>(null);
   
-  // 加载数据
+  // 加载公共数据
   const loadData = useCallback(async () => {
     if (!user) return;
     
     setDataLoading(true);
     try {
       const [dialoguesData, vocabularyData] = await Promise.all([
-        getCustomDialogues(user.id),
-        getCustomVocabularyPacks(user.id)
+        getPublicDialogues(),
+        getPublicVocabularyPacks()
       ]);
       
       setDialogues(dialoguesData);
@@ -55,7 +55,7 @@ export default function ManagePage() {
       console.error('加载数据失败:', error);
       toast({
         title: "加载失败",
-        description: "无法加载您的学习资料",
+        description: "无法加载公共学习资料",
         variant: "destructive"
       });
     } finally {
@@ -90,57 +90,57 @@ export default function ManagePage() {
     return null;
   }
   
-  // 删除对话
+  // 删除公共对话
   const handleDeleteDialogue = async (dialogueId: string) => {
     if (!user) return;
     
     try {
-      await deleteCustomDialogue(user.id, dialogueId);
+      await deletePublicDialogue(dialogueId);
       setDialogues(prev => prev.filter(d => d.id !== dialogueId));
       toast({
         title: "删除成功",
-        description: "对话已从云端删除",
+        description: "公共对话已删除",
       });
     } catch (error) {
       toast({
         title: "删除失败",
-        description: "无法删除对话",
+        description: "无法删除公共对话",
         variant: "destructive"
       });
     }
   };
   
-  // 删除词汇包
+  // 删除公共词汇包
   const handleDeleteVocabulary = async (packId: string) => {
     if (!user) return;
     
     try {
-      await deleteCustomVocabularyPack(user.id, packId);
+      await deletePublicVocabularyPack(packId);
       setVocabularyPacks(prev => prev.filter(p => p.id !== packId));
       toast({
         title: "删除成功",
-        description: "词汇包已从云端删除",
+        description: "公共词汇包已删除",
       });
     } catch (error) {
       toast({
         title: "删除失败",
-        description: "无法删除词汇包",
+        description: "无法删除公共词汇包",
         variant: "destructive"
       });
     }
   };
   
-  // 更新对话
+  // 更新公共对话
   const handleUpdateDialogue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !editingDialogue) return;
     
     try {
-      await updateCustomDialogue(user.id, editingDialogue.id, {
+      await updatePublicDialogue(editingDialogue.id, {
         title: editingDialogue.title,
         description: editingDialogue.description,
         lines: editingDialogue.lines
-      });
+      }, user.id);
       
       setDialogues(prev => prev.map(d => 
         d.id === editingDialogue.id ? editingDialogue : d
@@ -149,27 +149,27 @@ export default function ManagePage() {
       setEditingDialogue(null);
       toast({
         title: "更新成功",
-        description: "对话已更新",
+        description: "公共对话已更新",
       });
     } catch (error) {
       toast({
         title: "更新失败",
-        description: "无法更新对话",
+        description: "无法更新公共对话",
         variant: "destructive"
       });
     }
   };
   
-  // 更新词汇包
+  // 更新公共词汇包
   const handleUpdateVocabulary = async () => {
     if (!user || !editingVocabulary) return;
     
     try {
-      await updateCustomVocabularyPack(user.id, editingVocabulary.id, {
+      await updatePublicVocabularyPack(editingVocabulary.id, {
         name: editingVocabulary.name,
         description: editingVocabulary.description,
         items: editingVocabulary.items
-      });
+      }, user.id);
       
       setVocabularyPacks(prev => prev.map(p => 
         p.id === editingVocabulary.id ? editingVocabulary : p
@@ -178,12 +178,12 @@ export default function ManagePage() {
       setEditingVocabulary(null);
       toast({
         title: "更新成功",
-        description: "词汇包已更新",
+        description: "公共词汇包已更新",
       });
     } catch (error) {
       toast({
         title: "更新失败",
-        description: "无法更新词汇包",
+        description: "无法更新公共词汇包",
         variant: "destructive"
       });
     }
@@ -205,9 +205,9 @@ export default function ManagePage() {
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-8 animate-blur-in animate-delay-200">
         <div>
-          <h1 className="text-3xl font-inter font-semibold text-white tracking-tight">管理学习资料</h1>
+          <h1 className="text-3xl font-inter font-semibold text-white tracking-tight">管理公共学习资料</h1>
           <p className="text-gray-400 mt-2 leading-relaxed">
-            查看、编辑和删除您上传的对话和词汇
+            查看、编辑和管理社区共享的对话和词汇内容
           </p>
         </div>
         <Button 

@@ -14,7 +14,7 @@ import { Label } from '../components/ui/label'
 import { Textarea } from '../components/ui/textarea'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/AuthContext'
-import { saveCustomVocabularyPack, saveMultipleDialogues } from '../lib/firestore-service'
+import { savePublicVocabularyPack, savePublicDialogue } from '../lib/firestore-service'
 import { VocabularyPack, Dialogue } from '../lib/data'
 import { LexiconAIService } from '../lib/ai-service'
 import { useToast } from '../hooks/use-toast'
@@ -97,7 +97,7 @@ export function AISmartImport() {
     }
   };
 
-  // 导入到云端
+  // 导入到云端（使用AI生成例句和公共内容保存）
   const handleImport = async () => {
     if (!parsedData || !user) return;
 
@@ -109,48 +109,92 @@ export function AISmartImport() {
       
       // 导入词汇
       if (parsedData.vocabulary && parsedData.vocabulary.length > 0) {
-        setProgress(25);
+        setProgress(10);
         
         // 生成带编号的词汇包名称
         const timestamp = Date.now();
-        const packNumber = Math.floor(timestamp / 1000) % 10000; // 使用时间戳生成4位编号
+        const packNumber = Math.floor(timestamp / 1000) % 10000;
         
+        toast({
+          title: "正在生成AI例句",
+          description: `为 ${parsedData.vocabulary.length} 个词汇生成自然例句，请稍候...`,
+        });
+        
+        setProgress(20);
+        
+        // 使用AI批量生成例句
+        const vocabularyItems = parsedData.vocabulary.map(word => ({
+          id: `ai-word-${Date.now()}-${Math.random()}`,
+          english: word.english,
+          chinese: word.chinese
+        }));
+        
+        const exampleResults = await LexiconAIService.generateBatchExampleSentences(
+          vocabularyItems,
+          (completed, total) => {
+            const progressValue = 20 + (completed / total) * 30; // 20-50%
+            setProgress(progressValue);
+          }
+        );
+        
+        setProgress(50);
+        
+        // 构建词汇包，使用AI生成的例句
         const vocabularyPack: VocabularyPack = {
           id: `ai-parsed-vocab-${timestamp}`,
-          name: `新词包 #${packNumber}`,
-          description: `包含 ${parsedData.vocabulary.length} 个AI解析的词汇`,
-          items: parsedData.vocabulary.map((word, index) => ({
-            id: `ai-word-${Date.now()}-${index}`,
-            english: word.english,
-            chinese: word.chinese,
-            exampleSentenceEn: generateExampleSentence(word.english, word.explanation),
-            exampleSentenceZh: generateChineseExampleSentence(word.chinese, word.explanation),
-          }))
+          name: `AI导入词包 #${packNumber}`,
+          description: `包含 ${parsedData.vocabulary.length} 个AI解析的词汇，配有AI生成的自然例句`,
+          items: parsedData.vocabulary.map((word, index) => {
+            const itemId = vocabularyItems[index].id;
+            const exampleResult = exampleResults.success.find(r => r.id === itemId);
+            
+            return {
+              id: itemId,
+              english: word.english,
+              chinese: word.chinese,
+              exampleSentenceEn: exampleResult?.exampleSentenceEn || `Please check the ${word.english} carefully.`,
+              exampleSentenceZh: exampleResult?.exampleSentenceZh || `请仔细检查${word.chinese}。`,
+            };
+          })
         };
         
-        await saveCustomVocabularyPack(user.id, vocabularyPack);
-        results.push(`✅ 成功导入 ${parsedData.vocabulary.length} 个词汇`);
-        setProgress(50);
+        // 保存到公共空间
+        await savePublicVocabularyPack(vocabularyPack, user.id);
+        results.push(`✅ 成功导入 ${parsedData.vocabulary.length} 个词汇到公共词库`);
+        
+        if (exampleResults.errors.length > 0) {
+          results.push(`⚠️ ${exampleResults.errors.length} 个词汇使用了备用例句`);
+        }
+        
+        setProgress(60);
       }
       
       // 导入对话
       if (parsedData.dialogues && parsedData.dialogues.length > 0) {
-        setProgress(75);
+        setProgress(70);
         
-        const dialogues: Dialogue[] = parsedData.dialogues.map((dialogue, index) => ({
-          id: `ai-parsed-dialogue-${Date.now()}-${index}`,
-          title: dialogue.title,
-          description: dialogue.description,
-          lines: dialogue.lines.map((line, lineIndex) => ({
-            id: `ai-line-${lineIndex}`,
-            speaker: line.speaker,
-            english: line.english,
-            chinese: line.chinese
-          }))
-        }));
+        for (let i = 0; i < parsedData.dialogues.length; i++) {
+          const dialogue = parsedData.dialogues[i];
+          
+          const dialogueData: Dialogue = {
+            id: `ai-parsed-dialogue-${Date.now()}-${i}`,
+            title: dialogue.title,
+            description: dialogue.description,
+            lines: dialogue.lines.map((line, lineIndex) => ({
+              id: `ai-line-${lineIndex}`,
+              speaker: line.speaker,
+              english: line.english,
+              chinese: line.chinese
+            }))
+          };
+          
+          // 保存到公共空间
+          await savePublicDialogue(dialogueData, user.id);
+          
+          setProgress(70 + ((i + 1) / parsedData.dialogues.length) * 20); // 70-90%
+        }
         
-        await saveMultipleDialogues(user.id, dialogues);
-        results.push(`✅ 成功导入 ${parsedData.dialogues.length} 个对话`);
+        results.push(`✅ 成功导入 ${parsedData.dialogues.length} 个对话到公共对话库`);
         setProgress(90);
       }
       
@@ -158,7 +202,7 @@ export function AISmartImport() {
       
       toast({
         title: "导入成功！",
-        description: results.join('\n'),
+        description: results.join('\n') + "\n\n所有内容已保存到公共空间，所有用户都可访问。",
       });
       
       // 清空数据
@@ -168,6 +212,7 @@ export function AISmartImport() {
       setActiveTab('input');
       
     } catch (error: any) {
+      console.error('导入失败:', error);
       toast({
         title: "导入失败",
         description: error.message,

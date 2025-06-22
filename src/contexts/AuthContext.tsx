@@ -34,6 +34,7 @@ interface User {
   emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
+  bio?: string; // 用户个人简介
 }
 
 interface AuthContextType {
@@ -52,6 +53,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 用户数据缓存
+const userDataCache = new Map<string, User>();
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,60 +63,118 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const { toast } = useToast();
 
-  // 监听认证状态变化
+  // 异步获取用户数据，避免阻塞
+  const fetchUserData = async (firebaseUser: FirebaseUser): Promise<User | null> => {
+    try {
+      // 先检查缓存
+      const cached = userDataCache.get(firebaseUser.uid);
+      if (cached) {
+        return cached;
+      }
+
+      // 异步获取Firestore数据
+      const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+      
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const user: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          username: userData.username || firebaseUser.displayName || '用户',
+          indexPoints: userData.indexPoints || 0,
+          lastCheckIn: userData.lastCheckIn || null,
+          photoURL: firebaseUser.photoURL || userData.photoURL,
+          emailVerified: firebaseUser.emailVerified,
+          createdAt: userData.createdAt?.toDate() || new Date(),
+          updatedAt: userData.updatedAt?.toDate() || new Date(),
+          bio: userData.bio || ''
+        };
+        
+        // 缓存用户数据
+        userDataCache.set(firebaseUser.uid, user);
+        return user;
+      } else {
+        // 如果Firestore中没有用户数据，创建新的（异步）
+        const newUser: Omit<User, 'id'> = {
+          email: firebaseUser.email || '',
+          username: firebaseUser.displayName || '新用户',
+          indexPoints: 0,
+          lastCheckIn: null,
+          photoURL: firebaseUser.photoURL || null,
+          emailVerified: firebaseUser.emailVerified,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        // 过滤掉undefined值的数据对象
+        const cleanUserData = Object.fromEntries(
+          Object.entries({
+            ...newUser,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          }).filter(([_, value]) => value !== undefined)
+        );
+        
+        // 异步创建用户文档，不阻塞UI
+        setDoc(doc(db, 'users', firebaseUser.uid), cleanUserData).catch(error => {
+          console.error('创建用户文档失败:', error);
+        });
+        
+        const userWithId = { ...newUser, id: firebaseUser.uid };
+        userDataCache.set(firebaseUser.uid, userWithId);
+        return userWithId;
+      }
+    } catch (error) {
+      console.error('获取用户数据失败:', error);
+      // 返回基本用户信息，不阻塞应用
+      return {
+        id: firebaseUser.uid,
+        email: firebaseUser.email || '',
+        username: firebaseUser.displayName || '用户',
+        indexPoints: 0,
+        lastCheckIn: null,
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+    }
+  };
+
+  // 监听认证状态变化 - 优化版本
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       
       if (firebaseUser) {
-        // 从 Firestore 获取用户数据
-        const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
+        // 先设置基本信息，快速完成初始化
+        const basicUser: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          username: firebaseUser.displayName || '用户',
+          indexPoints: 0,
+          lastCheckIn: null,
+          photoURL: firebaseUser.photoURL,
+          emailVerified: firebaseUser.emailVerified,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
         
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const user: User = {
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            username: userData.username || firebaseUser.displayName || '用户',
-            indexPoints: userData.indexPoints || 0,
-            lastCheckIn: userData.lastCheckIn || null,
-            photoURL: firebaseUser.photoURL || userData.photoURL,
-            emailVerified: firebaseUser.emailVerified,
-            createdAt: userData.createdAt?.toDate() || new Date(),
-            updatedAt: userData.updatedAt?.toDate() || new Date()
-          };
-          setUser(user);
-        } else {
-          // 如果Firestore中没有用户数据，创建新的
-          const newUser: Omit<User, 'id'> = {
-            email: firebaseUser.email || '',
-            username: firebaseUser.displayName || '新用户',
-            indexPoints: 0,
-            lastCheckIn: null,
-            photoURL: firebaseUser.photoURL || null,
-            emailVerified: firebaseUser.emailVerified,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          };
-          
-          // 过滤掉undefined值的数据对象
-          const cleanUserData = Object.fromEntries(
-            Object.entries({
-              ...newUser,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp()
-            }).filter(([_, value]) => value !== undefined)
-          );
-          
-          await setDoc(doc(db, 'users', firebaseUser.uid), cleanUserData);
-          
-          setUser({ ...newUser, id: firebaseUser.uid });
-        }
+        setUser(basicUser);
+        setIsLoading(false); // 快速完成初始化
+        
+        // 异步获取完整用户数据
+        fetchUserData(firebaseUser).then(fullUser => {
+          if (fullUser) {
+            setUser(fullUser);
+          }
+        }).catch(error => {
+          console.error('异步获取用户数据失败:', error);
+        });
       } else {
         setUser(null);
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -124,19 +186,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // 更新最后登录时间
-      await updateDoc(doc(db, 'users', userCredential.user.uid), {
+      // 更新最后登录时间（异步，不阻塞）
+      updateDoc(doc(db, 'users', userCredential.user.uid), {
         lastLogin: serverTimestamp(),
         updatedAt: serverTimestamp()
+      }).catch(error => {
+        console.error('更新登录时间失败:', error);
       });
       
       return true;
     } catch (error: any) {
       console.error('登录错误:', error);
+      console.log('错误代码:', error.code);
       
       // 处理特定错误
       let errorMessage = '登录失败，请重试';
       switch (error.code) {
+        case 'auth/invalid-credential':
+          console.log('检测到 invalid-credential 错误');
+          errorMessage = '邮箱或密码错误，请检查后重试';
+          break;
         case 'auth/user-not-found':
           errorMessage = '用户不存在';
           break;
@@ -243,6 +312,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await signOut(auth);
       setUser(null);
+      // 清除缓存
+      userDataCache.clear();
       router.push('/login');
       
       toast({
@@ -319,8 +390,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       await updateDoc(userDocRef, cleanUpdates);
       
-      // 更新本地状态
-      setUser({ ...user, ...updates });
+      // 更新本地状态和缓存
+      const updatedUser = { ...user, ...updates };
+      setUser(updatedUser);
+      userDataCache.set(user.id, updatedUser);
       
       toast({
         title: "资料更新成功",
@@ -364,12 +437,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: serverTimestamp()
       });
       
-      // 更新本地状态
-      setUser({
+      // 更新本地状态和缓存
+      const updatedUser = {
         ...user,
         indexPoints: newPoints,
         lastCheckIn: today
-      });
+      };
+      setUser(updatedUser);
+      userDataCache.set(user.id, updatedUser);
       
       toast({
         title: "签到成功",
@@ -401,11 +476,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: serverTimestamp()
       });
       
-      // 更新本地状态
-      setUser({
+      // 更新本地状态和缓存
+      const updatedUser = {
         ...user,
         indexPoints: newPoints
-      });
+      };
+      setUser(updatedUser);
+      userDataCache.set(user.id, updatedUser);
     } catch (error) {
       console.error('添加积分错误:', error);
     }

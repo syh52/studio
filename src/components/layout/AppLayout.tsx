@@ -8,19 +8,28 @@ import PerspectiveProvider from '../../components/shared/PerspectiveProvider'
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const noMobileLayoutPaths = ['/login', '/register']; // Paths where mobile layout should not be shown
+  const fullScreenPaths = ['/chat']; // Paths that need full screen layout
   const isHomePage = pathname === '/'; // 检查是否为首页
+  const isFullScreen = fullScreenPaths.includes(pathname); // 检查是否为全屏页面
 
-  const showMobileLayout = !noMobileLayoutPaths.includes(pathname);
+  const showMobileLayout = !noMobileLayoutPaths.includes(pathname) && !isFullScreen;
 
   if (!showMobileLayout) {
     // For login/register pages, use a simple layout
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          {children}
+    if (noMobileLayoutPaths.includes(pathname)) {
+      return (
+        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+          <div className="w-full max-w-md">
+            {children}
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+    
+    // For full screen pages like chat, use minimal layout
+    if (isFullScreen) {
+      return <>{children}</>;
+    }
   }
 
   return (

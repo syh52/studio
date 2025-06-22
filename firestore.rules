@@ -29,6 +29,21 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
+    // 公共词汇包集合 - 所有认证用户可以读写
+    match /publicVocabularyPacks/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // 公共对话集合 - 所有认证用户可以读写
+    match /publicDialogues/{document} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // 智能对话会话 - 用户只能访问自己的会话
+    match /chatSessions/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
     // 开发阶段：允许认证用户访问所有其他集合
     // 这包括可能的新功能测试集合
     match /{document=**} {

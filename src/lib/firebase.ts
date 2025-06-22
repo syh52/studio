@@ -24,8 +24,8 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// 配置状态日志
-if (typeof window !== 'undefined') {
+// 静默初始化日志，仅在开发环境显示
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('🔧 Firebase 配置状态:');
   console.log('- 使用环境变量:', !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY);
   console.log('- Project ID:', firebaseConfig.projectId);
@@ -35,78 +35,117 @@ if (typeof window !== 'undefined') {
 // 初始化 Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 
-// 初始化 Firestore
+// 立即初始化 Firestore 和 Auth（这些服务轻量且必需）
 export const db = getFirestore(firebaseApp);
-
-// 初始化 Auth
 export const auth = getAuth(firebaseApp);
 
-// 初始化 AI 服务（延迟初始化以避免服务器端错误）
+// AI 服务状态管理
 let ai: any = null;
 let model: any = null;
+let isAIInitializing = false;
+let aiInitPromise: Promise<{ ai: any; model: any }> | null = null;
 
-function initializeAI() {
-  if (typeof window !== 'undefined' && !ai) {
+// 延迟初始化 AI 服务
+async function initializeAI(): Promise<{ ai: any; model: any }> {
+  // 如果已经初始化，直接返回
+  if (ai && model) {
+    return { ai, model };
+  }
+  
+  // 如果正在初始化，返回同一个Promise
+  if (isAIInitializing && aiInitPromise) {
+    return aiInitPromise;
+  }
+  
+  // 只在客户端初始化
+  if (typeof window === 'undefined') {
+    throw new Error('AI 服务只能在客户端初始化');
+  }
+
+  isAIInitializing = true;
+  
+  aiInitPromise = (async () => {
     try {
-      console.log('🤖 正在初始化 Firebase AI Logic (Vertex AI)...');
+      console.log('🤖 开始初始化 Firebase AI (Vertex AI)...');
       
-      // 使用 Vertex AI Backend，指定location
+      // 使用 Vertex AI Backend
       ai = getAI(firebaseApp, { 
-        backend: new VertexAIBackend('us-central1') // 传递区域作为字符串参数
+        backend: new VertexAIBackend('us-central1')
       });
       
-      // Vertex AI 支持的模型配置
-      // 注意：使用正确的模型版本
+      // 配置 Gemini 2.5 Pro 模型
       model = getGenerativeModel(ai, { 
-        model: "gemini-2.5-flash", // Firebase AI 使用的标准模型名称
+        model: "gemini-2.5-pro",
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 2048,  // 增加到 2048 以支持更详细的回复
-                                  // 约 1500-1600 个英文单词或 1000 个中文字
+          maxOutputTokens: 4096,
           topK: 40,
           topP: 0.95,
         }
       });
       
-      console.log('✅ Firebase AI Logic (Vertex AI) 初始化成功');
+      console.log('✅ Firebase AI 初始化成功');
+      return { ai, model };
     } catch (error: any) {
-      console.error('❌ Firebase AI Logic 初始化失败:', error);
-      console.error('错误详情:', {
-        message: error?.message || '未知错误',
-        code: error?.code || 'UNKNOWN',
-        stack: error?.stack || '无堆栈信息'
-      });
+      console.error('❌ Firebase AI 初始化失败:', error);
       
-      // 提供更友好的错误提示
-      if (error?.code === 'auth/invalid-api-key') {
-        console.error('🔑 API密钥无效，请检查Firebase配置');
-      } else if (error?.message?.includes('not enabled')) {
-        console.error('⚠️ 请在Google Cloud Console启用Vertex AI API');
-        console.error('👉 访问: https://console.cloud.google.com/apis/library/aiplatform.googleapis.com?project=aviation-lexicon-trainer');
-      } else if (error?.message?.includes('billing')) {
-        console.error('💳 Vertex AI 需要启用计费（升级到Blaze计划）');
-        console.error('👉 访问: https://console.firebase.google.com/project/aviation-lexicon-trainer/usage/details');
-      } else if (error?.message?.includes('permission')) {
-        console.error('🔒 权限错误：请确保项目已启用 Vertex AI API');
-      } else if (error?.message?.includes('not found')) {
-        console.error('❌ 模型未找到，可能原因：');
-        console.error('1. Vertex AI API 未启用');
-        console.error('2. 项目未升级到 Blaze 计划');
-        console.error('3. API 正在启用中（需要等待2-5分钟）');
+      // 根据错误类型给出具体的处理建议
+      const errorHandlers: Record<string, string> = {
+        'auth/invalid-api-key': '🔑 API密钥无效，请检查Firebase配置',
+        'not enabled': '⚠️ 请在Google Cloud Console启用Vertex AI API\n👉 https://console.cloud.google.com/apis/library/aiplatform.googleapis.com',
+        'billing': '💳 需要升级到Blaze计划启用Vertex AI\n👉 https://console.firebase.google.com/project/aviation-lexicon-trainer/usage/details',
+        'permission': '🔒 权限错误：请确保项目已启用 Vertex AI API',
+        'not found': '❌ 模型未找到，可能需要等待API启用(2-5分钟)'
+      };
+      
+      for (const [key, message] of Object.entries(errorHandlers)) {
+        if (error?.message?.includes(key) || error?.code?.includes(key)) {
+          console.error(message);
+          break;
+        }
       }
       
+      // 重置状态，允许重试
+      ai = null;
+      model = null;
+      isAIInitializing = false;
+      aiInitPromise = null;
+      
       throw error;
+    } finally {
+      isAIInitializing = false;
     }
-  }
-  return { ai, model };
+  })();
+  
+  return aiInitPromise;
 }
 
-// 获取 AI 实例的函数
-export function getAIInstance() {
-  return initializeAI();
+// 获取 AI 实例的安全函数
+export async function getAIInstance(): Promise<{ ai: any; model: any }> {
+  try {
+    return await initializeAI();
+  } catch (error) {
+    console.error('AI 服务暂时不可用:', error);
+    throw new Error('AI 服务暂时不可用，请稍后重试');
+  }
+}
+
+// 检查 AI 服务是否可用
+export function isAIAvailable(): boolean {
+  return ai !== null && model !== null;
+}
+
+// 预热 AI 服务（可选，在用户需要时调用）
+export function preloadAI(): void {
+  if (typeof window !== 'undefined' && !isAIAvailable() && !isAIInitializing) {
+    initializeAI().catch(error => {
+      // 静默处理预热失败
+      console.warn('AI 服务预热失败:', error.message);
+    });
+  }
 }
 
 export { firebaseApp };
 
-// 导出 AI 实例（延迟初始化）
+// 导出 AI 实例（延迟初始化，向后兼容）
 export { ai, model }; 
