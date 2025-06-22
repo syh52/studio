@@ -1,0 +1,125 @@
+别名路径修复报告
+==================================================
+
+src/components/layout/Header.tsx:
+  - Line 16: @/components/ui/dropdown-menu → ../../components/ui/dropdown-menu
+
+src/components/ui/accordion.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/alert-dialog.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+  - Line 7: @/components/ui/button → ../../components/ui/button
+
+src/components/ui/alert.tsx:
+  - Line 4: @/lib/utils → ../../lib/utils
+
+src/components/ui/avatar.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/badge.tsx:
+  - Line 4: @/lib/utils → ../../lib/utils
+
+src/components/ui/button.tsx:
+  - Line 5: @/lib/utils → ../../lib/utils
+
+src/components/ui/calendar.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+  - Line 8: @/components/ui/button → ../../components/ui/button
+
+src/components/ui/card.tsx:
+  - Line 3: @/lib/utils → ../../lib/utils
+
+src/components/ui/chart.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/checkbox.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/dialog.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/dropdown-menu.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/form.tsx:
+  - Line 15: @/lib/utils → ../../lib/utils
+  - Line 16: @/components/ui/label → ../../components/ui/label
+
+src/components/ui/input.tsx:
+  - Line 3: @/lib/utils → ../../lib/utils
+
+src/components/ui/label.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/menubar.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/popover.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/progress.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/radio-group.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/scroll-area.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/select.tsx:
+  - Line 7: @/lib/utils → ../../lib/utils
+
+src/components/ui/separator.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/sheet.tsx:
+  - Line 8: @/lib/utils → ../../lib/utils
+
+src/components/ui/sidebar.tsx:
+  - Line 8: @/hooks/use-mobile → ../../hooks/use-mobile
+  - Line 9: @/lib/utils → ../../lib/utils
+  - Line 10: @/components/ui/button → ../../components/ui/button
+  - Line 11: @/components/ui/input → ../../components/ui/input
+  - Line 12: @/components/ui/separator → ../../components/ui/separator
+  - Line 13: @/components/ui/sheet → ../../components/ui/sheet
+  - Line 14: @/components/ui/skeleton → ../../components/ui/skeleton
+  - Line 20: @/components/ui/tooltip → ../../components/ui/tooltip
+
+src/components/ui/skeleton.tsx:
+  - Line 1: @/lib/utils → ../../lib/utils
+
+src/components/ui/slider.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/switch.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/table.tsx:
+  - Line 3: @/lib/utils → ../../lib/utils
+
+src/components/ui/tabs.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/ui/toast.tsx:
+  - Line 8: @/lib/utils → ../../lib/utils
+
+src/components/ui/toaster.tsx:
+  - Line 3: @/hooks/use-toast → ../../hooks/use-toast
+  - Line 11: @/components/ui/toast → ../../components/ui/toast
+
+src/components/ui/tooltip.tsx:
+  - Line 6: @/lib/utils → ../../lib/utils
+
+src/components/AISmartImport.tsx:
+  - Line 27: @/components/ui/dialog → ../components/ui/dialog
+
+src/components/manage/EditVocabularyDialog.tsx:
+  - Line 9: @/components/ui/dialog → ../../components/ui/dialog
+
+src/components/manage/VocabularyManagement.tsx:
+  - Line 10: @/components/ui/card → ../../components/ui/card
+  - Line 22: @/components/ui/alert-dialog → ../../components/ui/alert-dialog
+
+src/hooks/use-toast.ts:
+  - Line 9: @/components/ui/toast → ../components/ui/toast

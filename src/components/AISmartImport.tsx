@@ -24,7 +24,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../components/ui/dialog"
 import { ScrollArea } from '../components/ui/scroll-area'
 
 interface ParsedData {
