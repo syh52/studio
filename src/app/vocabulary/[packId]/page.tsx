@@ -2,7 +2,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, useParams } from 'next/navigation';
-import { vocabularyPacks } from '@/lib/data';
+import { vocabularyPacks, getAllVocabularyPacks, VocabularyPack } from '@/lib/data';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Play, CheckCircle2, X, Volume2 } from 'lucide-react';
 import Link from 'next/link';
@@ -10,7 +10,7 @@ import Link from 'next/link';
 type LearningMode = 'presentation' | 'detailed' | 'completed';
 
 export default function VocabularyLearningPage() {
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams<{ packId: string }>();
   const packId = params.packId;
@@ -19,8 +19,7 @@ export default function VocabularyLearningPage() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [learnedWords, setLearnedWords] = useState<string[]>([]);
-
-  const pack = useMemo(() => vocabularyPacks.find(p => p.id === packId), [packId]);
+  const [pack, setPack] = useState<VocabularyPack | null>(null);
   const currentWord = pack?.items[currentWordIndex];
 
   // 认证检查
@@ -30,12 +29,38 @@ export default function VocabularyLearningPage() {
     }
   }, [isAuthenticated, authLoading, router]);
 
-  // 初始化
+  // 加载词汇包数据
   useEffect(() => {
-    if (pack && !authLoading) {
-      setIsLoading(false);
-    }
-  }, [pack, authLoading]);
+    const loadVocabularyPack = async () => {
+      if (!packId || authLoading) return;
+
+      setIsLoading(true);
+      try {
+        // 首先尝试从本地词汇包中查找
+        const localPack = vocabularyPacks.find(p => p.id === packId);
+        if (localPack) {
+          setPack(localPack);
+          setIsLoading(false);
+          return;
+        }
+
+        // 如果本地未找到且用户已登录，从Firestore获取所有词汇包
+        if (user) {
+          const allPacks = await getAllVocabularyPacks(user.id);
+          const foundPack = allPacks.find(p => p.id === packId);
+          if (foundPack) {
+            setPack(foundPack);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load vocabulary pack:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadVocabularyPack();
+  }, [packId, user, authLoading]);
 
   // 播放发音
   const playAudio = () => {

@@ -3,7 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User } from "lucide-react";
+import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Upload } from "lucide-react";
+import AIAssistant from '@/components/ai/AIAssistant';
 
 export default function HomePage() {
   const { user, isAuthenticated, dailyCheckIn, isLoading } = useAuth();
@@ -49,6 +50,10 @@ export default function HomePage() {
 
   const navigateToQuizzes = () => {
     router.push(isAuthenticated ? "/quizzes" : "/login");
+  };
+
+  const navigateToUpload = () => {
+    router.push(isAuthenticated ? "/upload" : "/login");
   };
 
   if (isLoading) {
@@ -101,7 +106,7 @@ export default function HomePage() {
           <button className="text-sm sm:text-base text-purple-400 font-medium cursor-pointer hover:text-purple-300 transition-colors">查看全部</button>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400">
           {/* Vocabulary Learning */}
           <div 
             onClick={navigateToVocabulary}
@@ -129,23 +134,45 @@ export default function HomePage() {
           {/* Testing Module */}
           <div 
             onClick={navigateToQuizzes}
-            className="col-span-2 md:col-span-1 glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced"
+            className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced"
           >
-            <div className="flex md:flex-col items-center md:items-start">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-green-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mr-4 md:mr-0 mb-0 md:mb-4 sm:md:mb-6">
-                <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-green-400" />
-              </div>
-              <div className="flex-1 md:flex-none">
-                <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-1 sm:mb-2 md:mb-3 tracking-tight">智能测验系统</h4>
-                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">多维度能力评估，个性化学习报告</p>
-              </div>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 md:hidden bg-gray-700/50 rounded-full flex items-center justify-center ml-4">
-                <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
-              </div>
+            <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-green-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+              <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-green-400" />
             </div>
+            <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-2 sm:mb-3 tracking-tight">智能测验</h4>
+            <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Quizzes</p>
           </div>
+
+          {/* Bulk Upload - Only for authenticated users */}
+          {isAuthenticated ? (
+            <div 
+              onClick={navigateToUpload}
+              className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-orange-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+                <Upload className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-orange-400" />
+              </div>
+              <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-2 sm:mb-3 tracking-tight">批量上传</h4>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Upload</p>
+            </div>
+          ) : (
+            <div className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 opacity-50">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+                <Upload className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-gray-400" />
+              </div>
+              <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-gray-400 mb-2 sm:mb-3 tracking-tight">批量上传</h4>
+              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">登录后可用</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* AI Assistant Section - Show for authenticated users */}
+      {isAuthenticated && (
+        <div className="animate-blur-in animate-delay-500">
+          <AIAssistant />
+        </div>
+      )}
 
       {/* Learning Progress */}
       {isAuthenticated && (

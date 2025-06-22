@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard, Database } from 'lucide-react';
 import IndexDisplay from '@/components/shared/IndexDisplay';
 import { useRouter, usePathname } from 'next/navigation';
 import {
@@ -66,6 +66,13 @@ export default function Header() {
                 <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/admin' ? 'bg-accent text-accent-foreground' : ''}`}>
                   <LayoutDashboard size={18} />
                   <span className="hidden md:inline">管理</span>
+                </a>
+            </Link>
+            {/* Database Test Link - for debugging */}
+            <Link href="/test-firestore" legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/test-firestore' ? 'bg-accent text-accent-foreground' : ''}`}>
+                  <Database size={18} />
+                  <span className="hidden md:inline">数据测试</span>
                 </a>
             </Link>
           </>

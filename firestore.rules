@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 🚧 开发测试模式 - 允许所有认证用户读写数据
+    // ⚠️ 生产环境前必须修改为严格权限控制
+    
+    // 用户数据 - 开发阶段允许所有认证用户访问
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+      
+      // 用户的自定义词汇包
+      match /customVocabularyPacks/{packId} {
+        allow read, write: if request.auth != null;
+      }
+      
+      // 用户的自定义对话
+      match /customDialogues/{dialogueId} {
+        allow read, write: if request.auth != null;
+      }
+      
+      // 测试文档（用于调试）
+      match /test/{document} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // 全局测试集合 - 开发阶段完全开放
+    match /test/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // 开发阶段：允许认证用户访问所有其他集合
+    // 这包括可能的新功能测试集合
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+} 

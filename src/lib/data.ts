@@ -1,4 +1,3 @@
-
 export interface VocabularyItem {
   id: string;
   english: string;
@@ -44,10 +43,10 @@ export interface Dialogue {
 
 export const vocabularyPacks: VocabularyPack[] = [
   {
-    id: "aviation-fundamentals-cabin-safety",
-    name: "飞行基础与客舱安全",
-    description: "涵盖基础航空术语、安全设备及机上物品词汇。",
-    icon: "PlaneTakeoff",
+    id: "unit-one",
+    name: "单元一",
+    description: "涵盖航空英语基础术语、安全设备、客舱管理及应急处理等核心词汇。",
+    icon: "BookOpen",
     items: [
       // Basic Aviation Terms
       { 
@@ -161,82 +160,6 @@ export const vocabularyPacks: VocabularyPack[] = [
       { id: "vt006", english: "Life Vest", chinese: "救生衣", exampleSentenceEn: "Locate your life vest under your seat.", exampleSentenceZh: "救生衣在您的座位下方。" },
       { id: "vt007", english: "Oxygen Mask", chinese: "氧气面罩", exampleSentenceEn: "In case of cabin depressurization, oxygen masks will drop automatically.", exampleSentenceZh: "如果机舱失压，氧气面罩会自动落下。" },
       { id: "vt008", english: "Emergency Exit", chinese: "紧急出口", exampleSentenceEn: "Familiarize yourself with the nearest emergency exit.", exampleSentenceZh: "请熟悉离您最近的紧急出口。" },
-      // Onboard Equipment & Items
-      { id: "vt028", english: "Lavatory", chinese: "洗手间/厕所", exampleSentenceEn: "A passenger was smoking in the lavatory.", exampleSentenceZh: "一名旅客在厕所吸烟。" },
-      { id: "vt029", english: "Power Bank", chinese: "充电宝", exampleSentenceEn: "Please do not use the power bank.", exampleSentenceZh: "请不要使用充电宝。" },
-      { id: "vt030", english: "Electronic Equipment", chinese: "电子设备", exampleSentenceEn: "One passenger used electronic equipment in violation of regulations.", exampleSentenceZh: "有一名旅客违规使用电子设备。" },
-      { id: "vt031", english: "Mobile Phone", chinese: "手机", exampleSentenceEn: "Please switch your phone to flight mode.", exampleSentenceZh: "请将手机调至飞行模式。" },
-      { id: "vt032", english: "Flight Mode", chinese: "飞行模式", exampleSentenceEn: "Switch your phone to flight mode immediately.", exampleSentenceZh: "请立即将手机调至飞行模式。" },
-      { id: "vt033", english: "Cigarettes", chinese: "香烟", exampleSentenceEn: "I have confiscated his cigarettes.", exampleSentenceZh: "我已经没收了他的香烟。" },
-      { id: "vt034", english: "Lighter", chinese: "打火机", exampleSentenceEn: "I have confiscated his lighter.", exampleSentenceZh: "我已经没收了他的打火机。" },
-      { id: "vt035", english: "Electronic Cigarette", chinese: "电子烟", exampleSentenceEn: "I smoke an electronic cigarette.", exampleSentenceZh: "我抽的是电子烟。" },
-      { id: "vt036", english: "Cigarette End", chinese: "烟头", exampleSentenceEn: "Where did you put your cigarette end?", exampleSentenceZh: "你把烟头丢在哪里了？" },
-      { id: "vt037", english: "Boarding Pass", chinese: "登机牌", exampleSentenceEn: "Please show me your boarding pass.", exampleSentenceZh: "请给我你们的登机牌。" },
-      { id: "vt038", english: "Metal Tableware", chinese: "金属餐具", exampleSentenceEn: "Don't provide metal tableware.", exampleSentenceZh: "不要提供金属餐具。" },
-      { id: "vt039", english: "Alcoholic Drinks", chinese: "酒精饮料", exampleSentenceEn: "Don't provide alcoholic drinks.", exampleSentenceZh: "不要提供酒精饮料。" },
-      { id: "vt040", english: "Documents", chinese: "文件", exampleSentenceEn: "I received two documents from the sales department.", exampleSentenceZh: "我从公司营业部那边收到了两份文件。" },
-      { id: "vt041", english: "Passport", chinese: "护照", exampleSentenceEn: "Here are their documents and passports.", exampleSentenceZh: "这是遣返的证明和护照。" },
-      { id: "vt042", english: "Luggage", chinese: "行李", exampleSentenceEn: "Please check and confirm your luggage.", exampleSentenceZh: "请检查并确认一下你们的行李。" },
-      { id: "vt043", english: "Seat", chinese: "座位", exampleSentenceEn: "Change his seat.", exampleSentenceZh: "把他换到别的位置。" },
-      { id: "vt044", english: "Row", chinese: "排", exampleSentenceEn: "Your seat is in the back row.", exampleSentenceZh: "您的座位在后一排。" },
-      { id: "vt045", english: "Window-side", chinese: "靠窗", exampleSentenceEn: "My seat is window-side!", exampleSentenceZh: "我的座位是靠窗的！" },
-      // 飞行相关基础词汇 (Pre-flight checks etc.)
-      { id: "vt022", english: "Walk-around", chinese: "绕机检查", exampleSentenceEn: "Ready for the pre-flight walk-around?", exampleSentenceZh: "准备好进行飞行前绕机检查了吗？" },
-      { id: "vt023", english: "Control Surfaces", chinese: "操纵面", exampleSentenceEn: "Check the control surfaces.", exampleSentenceZh: "检查操纵面。" },
-      { id: "vt024", english: "Panels", chinese: "盖板", exampleSentenceEn: "Ensure all panels are secure.", exampleSentenceZh: "确保所有盖板都已固定。" },
-      { id: "vt025", english: "Chocks", chinese: "轮挡", exampleSentenceEn: "We'll double-check the chocks.", exampleSentenceZh: "我们会再次检查轮挡。" },
-      { id: "vt026", english: "Landing Gear Pins", chinese: "起落架销", exampleSentenceEn: "Check the landing gear pins.", exampleSentenceZh: "检查起落架销。" },
-      // 乘客相关基础词汇 (General passenger interaction)
-      { id: "vt061", english: "Board", chinese: "登机", exampleSentenceEn: "Please let the deportees board first.", exampleSentenceZh: "请让遣返旅客先登机。" },
-      { id: "vt062", english: "Disembark", chinese: "下机/下飞机", exampleSentenceEn: "Please be the last to disembark.", exampleSentenceZh: "请你在落地后最后一个下机。" },
-      { id: "vt046", english: "Calm Down", chinese: "冷静", exampleSentenceEn: "Calm down, both of you!", exampleSentenceZh: "你们两个冷静一下！" },
-      { 
-        id: "vt056", 
-        english: "Cooperate", 
-        chinese: "配合", 
-        partOfSpeech: "verb",
-        exampleSentenceEn: "Please cooperate.", 
-        exampleSentenceZh: "请配合！",
-        additionalExamples: [
-          {
-            english: "We need all passengers to cooperate during the security check.",
-            chinese: "我们需要所有乘客在安全检查期间配合。"
-          },
-          {
-            english: "The passenger refused to cooperate with the crew instructions.",
-            chinese: "该乘客拒绝配合机组人员的指示。"
-          }
-        ],
-        commonUsages: [
-          {
-            phrase: "cooperate with",
-            translation: "与...配合",
-            example: "Please cooperate with our security procedures."
-          },
-          {
-            phrase: "refuse to cooperate",
-            translation: "拒绝配合",
-            example: "The passenger refused to cooperate with safety instructions."
-          },
-          {
-            phrase: "full cooperation",
-            translation: "全力配合",
-            example: "We appreciate your full cooperation during this investigation."
-          }
-        ]
-      },
-      { id: "vt058", english: "Attitude", chinese: "态度", exampleSentenceEn: "His attitude is very poor.", exampleSentenceZh: "这位旅客态度很差。" },
-      { id: "vt059", english: "Reject", chinese: "拒绝", exampleSentenceEn: "He rejected our advice.", exampleSentenceZh: "拒绝我们的劝告。" },
-      { id: "vt060", english: "Manage Behavior", chinese: "控制自己", exampleSentenceEn: "Can you manage your behavior?", exampleSentenceZh: "您能控制好自己吗？" },
-      { id: "vt063", english: "Personal Reasons", chinese: "个人原因", exampleSentenceEn: "Left the aircraft due to personal reasons.", exampleSentenceZh: "由于个人原因已经离开了飞机。" },
-    ],
-  },
-  {
-    id: "security-operations-emergency-response",
-    name: "安保操作与应急处理",
-    description: "专注于航空安保操作、旅客行为管理及紧急情况处理词汇。",
-    icon: "ShieldAlert",
-    items: [
       // Security Operations Terms
       { id: "vt009", english: "Security Officer", chinese: "安全员", exampleSentenceEn: "I'm the security officer of this flight.", exampleSentenceZh: "我是本次航班的安全员。" },
       { id: "vt010", english: "Surveillance", chinese: "监控", exampleSentenceEn: "Please keep this passenger closely under surveillance.", exampleSentenceZh: "请对该旅客持续做好监控。" },
@@ -284,8 +207,35 @@ export const vocabularyPacks: VocabularyPack[] = [
       { id: "vt019", english: "Localized Check", chinese: "局部检查", exampleSentenceEn: "A localized check is enough.", exampleSentenceZh: "局部的检查就足够了。" },
       { id: "vt020", english: "Clear Cabin", chinese: "清舱", exampleSentenceEn: "I will give you the report after I finish clearing the cabin.", exampleSentenceZh: "清舱后我会向您报告。" },
       { id: "vt021", english: "Explosive Detector", chinese: "爆探", exampleSentenceEn: "The detector is ready for inspection now.", exampleSentenceZh: "爆探已经准备好检测。" },
+      // 飞行相关基础词汇 (Pre-flight checks etc.)
+      { id: "vt022", english: "Walk-around", chinese: "绕机检查", exampleSentenceEn: "Ready for the pre-flight walk-around?", exampleSentenceZh: "准备好进行飞行前绕机检查了吗？" },
+      { id: "vt023", english: "Control Surfaces", chinese: "操纵面", exampleSentenceEn: "Check the control surfaces.", exampleSentenceZh: "检查操纵面。" },
+      { id: "vt024", english: "Panels", chinese: "盖板", exampleSentenceEn: "Ensure all panels are secure.", exampleSentenceZh: "确保所有盖板都已固定。" },
+      { id: "vt025", english: "Chocks", chinese: "轮挡", exampleSentenceEn: "We'll double-check the chocks.", exampleSentenceZh: "我们会再次检查轮挡。" },
+      { id: "vt026", english: "Landing Gear Pins", chinese: "起落架销", exampleSentenceEn: "Check the landing gear pins.", exampleSentenceZh: "检查起落架销。" },
       { id: "vt027", english: "Record Audio and Video", chinese: "录音录像", exampleSentenceEn: "I will record audio and video.", exampleSentenceZh: "现在对执勤过程录音录像。" },
-      // Passenger Behavior Management (items not already in pack 1)
+      // Onboard Equipment & Items
+      { id: "vt028", english: "Lavatory", chinese: "洗手间/厕所", exampleSentenceEn: "A passenger was smoking in the lavatory.", exampleSentenceZh: "一名旅客在厕所吸烟。" },
+      { id: "vt029", english: "Power Bank", chinese: "充电宝", exampleSentenceEn: "Please do not use the power bank.", exampleSentenceZh: "请不要使用充电宝。" },
+      { id: "vt030", english: "Electronic Equipment", chinese: "电子设备", exampleSentenceEn: "One passenger used electronic equipment in violation of regulations.", exampleSentenceZh: "有一名旅客违规使用电子设备。" },
+      { id: "vt031", english: "Mobile Phone", chinese: "手机", exampleSentenceEn: "Please switch your phone to flight mode.", exampleSentenceZh: "请将手机调至飞行模式。" },
+      { id: "vt032", english: "Flight Mode", chinese: "飞行模式", exampleSentenceEn: "Switch your phone to flight mode immediately.", exampleSentenceZh: "请立即将手机调至飞行模式。" },
+      { id: "vt033", english: "Cigarettes", chinese: "香烟", exampleSentenceEn: "I have confiscated his cigarettes.", exampleSentenceZh: "我已经没收了他的香烟。" },
+      { id: "vt034", english: "Lighter", chinese: "打火机", exampleSentenceEn: "I have confiscated his lighter.", exampleSentenceZh: "我已经没收了他的打火机。" },
+      { id: "vt035", english: "Electronic Cigarette", chinese: "电子烟", exampleSentenceEn: "I smoke an electronic cigarette.", exampleSentenceZh: "我抽的是电子烟。" },
+      { id: "vt036", english: "Cigarette End", chinese: "烟头", exampleSentenceEn: "Where did you put your cigarette end?", exampleSentenceZh: "你把烟头丢在哪里了？" },
+      { id: "vt037", english: "Boarding Pass", chinese: "登机牌", exampleSentenceEn: "Please show me your boarding pass.", exampleSentenceZh: "请给我你们的登机牌。" },
+      { id: "vt038", english: "Metal Tableware", chinese: "金属餐具", exampleSentenceEn: "Don't provide metal tableware.", exampleSentenceZh: "不要提供金属餐具。" },
+      { id: "vt039", english: "Alcoholic Drinks", chinese: "酒精饮料", exampleSentenceEn: "Don't provide alcoholic drinks.", exampleSentenceZh: "不要提供酒精饮料。" },
+      { id: "vt040", english: "Documents", chinese: "文件", exampleSentenceEn: "I received two documents from the sales department.", exampleSentenceZh: "我从公司营业部那边收到了两份文件。" },
+      { id: "vt041", english: "Passport", chinese: "护照", exampleSentenceEn: "Here are their documents and passports.", exampleSentenceZh: "这是遣返的证明和护照。" },
+      { id: "vt042", english: "Luggage", chinese: "行李", exampleSentenceEn: "Please check and confirm your luggage.", exampleSentenceZh: "请检查并确认一下你们的行李。" },
+      { id: "vt043", english: "Seat", chinese: "座位", exampleSentenceEn: "Change his seat.", exampleSentenceZh: "把他换到别的位置。" },
+      { id: "vt044", english: "Row", chinese: "排", exampleSentenceEn: "Your seat is in the back row.", exampleSentenceZh: "您的座位在后一排。" },
+      { id: "vt045", english: "Window-side", chinese: "靠窗", exampleSentenceEn: "My seat is window-side!", exampleSentenceZh: "我的座位是靠窗的！" },
+      // 乘客相关基础词汇 (General passenger interaction)
+      { id: "vt046", english: "Calm Down", chinese: "冷静", exampleSentenceEn: "Calm down, both of you!", exampleSentenceZh: "你们两个冷静一下！" },
+      // Passenger Behavior Management
       { id: "vt047", english: "Fighting", chinese: "打架斗殴", exampleSentenceEn: "Fighting and brawling on the plane.", exampleSentenceZh: "机上打架斗殴。" },
       { id: "vt048", english: "Bump Into", chinese: "撞", exampleSentenceEn: "He bumped into me on purpose!", exampleSentenceZh: "他路过的时候故意撞我！" },
       { id: "vt049", english: "Swear", chinese: "说脏话", exampleSentenceEn: "He swore at me!", exampleSentenceZh: "他向我说脏话！" },
@@ -329,7 +279,48 @@ export const vocabularyPacks: VocabularyPack[] = [
       { id: "vt053", english: "Deportee", chinese: "遣返旅客", exampleSentenceEn: "We have two deportees.", exampleSentenceZh: "有两名遣返旅客。" },
       { id: "vt054", english: "Escort", chinese: "押解", exampleSentenceEn: "A suspect escorted by three police officers.", exampleSentenceZh: "一名嫌疑人，由三名警官押解。" },
       { id: "vt055", english: "Suspect", chinese: "嫌疑人", exampleSentenceEn: "There will be a suspect escorted.", exampleSentenceZh: "本次航班将有一名嫌疑人。" },
+      { 
+        id: "vt056", 
+        english: "Cooperate", 
+        chinese: "配合", 
+        partOfSpeech: "verb",
+        exampleSentenceEn: "Please cooperate.", 
+        exampleSentenceZh: "请配合！",
+        additionalExamples: [
+          {
+            english: "We need all passengers to cooperate during the security check.",
+            chinese: "我们需要所有乘客在安全检查期间配合。"
+          },
+          {
+            english: "The passenger refused to cooperate with the crew instructions.",
+            chinese: "该乘客拒绝配合机组人员的指示。"
+          }
+        ],
+        commonUsages: [
+          {
+            phrase: "cooperate with",
+            translation: "与...配合",
+            example: "Please cooperate with our security procedures."
+          },
+          {
+            phrase: "refuse to cooperate",
+            translation: "拒绝配合",
+            example: "The passenger refused to cooperate with safety instructions."
+          },
+          {
+            phrase: "full cooperation",
+            translation: "全力配合",
+            example: "We appreciate your full cooperation during this investigation."
+          }
+        ]
+      },
       { id: "vt057", english: "Violate Regulations", chinese: "违规", exampleSentenceEn: "Used equipment in violation of regulations.", exampleSentenceZh: "违规使用设备。" },
+      { id: "vt058", english: "Attitude", chinese: "态度", exampleSentenceEn: "His attitude is very poor.", exampleSentenceZh: "这位旅客态度很差。" },
+      { id: "vt059", english: "Reject", chinese: "拒绝", exampleSentenceEn: "He rejected our advice.", exampleSentenceZh: "拒绝我们的劝告。" },
+      { id: "vt060", english: "Manage Behavior", chinese: "控制自己", exampleSentenceEn: "Can you manage your behavior?", exampleSentenceZh: "您能控制好自己吗？" },
+      { id: "vt061", english: "Board", chinese: "登机", exampleSentenceEn: "Please let the deportees board first.", exampleSentenceZh: "请让遣返旅客先登机。" },
+      { id: "vt062", english: "Disembark", chinese: "下机/下飞机", exampleSentenceEn: "Please be the last to disembark.", exampleSentenceZh: "请你在落地后最后一个下机。" },
+      { id: "vt063", english: "Personal Reasons", chinese: "个人原因", exampleSentenceEn: "Left the aircraft due to personal reasons.", exampleSentenceZh: "由于个人原因已经离开了飞机。" },
       { id: "vt064", english: "Discontinue Journey", chinese: "终止行程", exampleSentenceEn: "Two passengers want to end their trip.", exampleSentenceZh: "有两名乘客想要终止本次行程。" },
       // Emergency Situations
       { id: "vt065", english: "Flight Safety", chinese: "飞行安全", exampleSentenceEn: "Your behavior is affecting flight safety.", exampleSentenceZh: "你们的行为已经影响到了飞行安全。" },
@@ -637,4 +628,70 @@ export const dialogues: Dialogue[] = [
     ]
   }
 ];
+
+// 获取包含自定义内容的词汇包
+export async function getAllVocabularyPacks(userId?: string): Promise<VocabularyPack[]> {
+  if (typeof window === 'undefined') {
+    return vocabularyPacks;
+  }
+  
+  try {
+    // 如果提供了 userId，尝试从 Firestore 加载自定义内容
+    let customPacks: VocabularyPack[] = [];
+    if (userId) {
+      const { getCustomVocabularyPacks } = await import('./firestore-service');
+      customPacks = await getCustomVocabularyPacks(userId);
+    }
+    
+    return [...vocabularyPacks, ...customPacks];
+  } catch (error) {
+    console.error('Error loading custom vocabulary packs:', error);
+    return vocabularyPacks;
+  }
+}
+
+// 获取包含自定义内容的对话
+export async function getAllDialogues(userId?: string): Promise<Dialogue[]> {
+  if (typeof window === 'undefined') {
+    return dialogues;
+  }
+  
+  try {
+    // 如果提供了 userId，尝试从 Firestore 加载自定义内容
+    let customDialogues: Dialogue[] = [];
+    if (userId) {
+      const { getCustomDialogues } = await import('./firestore-service');
+      customDialogues = await getCustomDialogues(userId);
+    }
+    
+    return [...dialogues, ...customDialogues];
+  } catch (error) {
+    console.error('Error loading custom dialogues:', error);
+    return dialogues;
+  }
+}
+
+// 删除自定义词汇包（使用 Firestore）
+export async function deleteCustomVocabularyPack(userId: string, packId: string): Promise<boolean> {
+  try {
+    const { deleteCustomVocabularyPack: deleteFromFirestore } = await import('./firestore-service');
+    await deleteFromFirestore(userId, packId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting custom vocabulary pack:', error);
+    return false;
+  }
+}
+
+// 删除自定义对话（使用 Firestore）
+export async function deleteCustomDialogue(userId: string, dialogueId: string): Promise<boolean> {
+  try {
+    const { deleteCustomDialogue: deleteFromFirestore } = await import('./firestore-service');
+    await deleteFromFirestore(userId, dialogueId);
+    return true;
+  } catch (error) {
+    console.error('Error deleting custom dialogue:', error);
+    return false;
+  }
+}
 
