@@ -2,6 +2,118 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # CPU和内存配置
+  cpu: 2
+  memoryMiB: 1024
+  # 并发和实例配置
+  concurrency: 100
+  maxInstances: 10
+  minInstances: 0
+
+# 环境变量配置
+env:
+  # 基础环境变量 - 在构建和运行时都可用
+  - variable: NODE_ENV
+    value: production
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Firebase配置 - 使用实际项目信息
+  - variable: FIREBASE_PROJECT_ID
+    value: aviation-lexicon-trainer
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Next.js 公共环境变量（浏览器端可用）
+  - variable: NEXT_PUBLIC_APP_NAME
+    value: Lexicon
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyDtARFXghjPrzCOUYtucYkUJI22HzcmHcY
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: aviation-lexicon-trainer.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: aviation-lexicon-trainer
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: aviation-lexicon-trainer.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "461284748566"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:461284748566:web:917008c87daa9bfa38f437
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # Vertex AI 区域配置
+  - variable: VERTEX_AI_REGION
+    value: us-central1
+    availability:
+      - RUNTIME
+
+  # AI 模型配置
+  - variable: AI_MODEL_NAME
+    value: gemini-2.5-flash
+    availability:
+      - RUNTIME
+
+  # API密钥 - 使用Cloud Secret Manager存储敏感信息（如果有额外的API密钥）
+  # 注意：Firebase API密钥通常是公开的，不需要存储在Secret Manager中
+  # 以下是其他可能需要的敏感API密钥的示例：
+  
+  # - variable: OPENAI_API_KEY
+  #   secret: projects/aviation-lexicon-trainer/secrets/openai-api-key/versions/latest
+  #   availability:
+  #     - RUNTIME
+
+  # - variable: CUSTOM_API_KEY
+  #   secret: projects/aviation-lexicon-trainer/secrets/custom-api-key/versions/latest
+  #   availability:
+  #     - RUNTIME
+
+  # 应用配置
+  - variable: APP_URL
+    value: https://aviation-lexicon-trainer.web.app
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # 调试模式 - 仅在构建时需要
+  - variable: DEBUG_MODE
+    value: "false"
+    availability:
+      - BUILD
+
+# 构建输出配置
+outputFiles:
+  serverApp:
+    include: [.next, package.json, node_modules]
+
+# 自定义构建脚本
+scripts:
+  buildCommand: npm run build
+  runCommand: npm start
