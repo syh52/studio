@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 
 export default function TestAIPage() {
   const [status, setStatus] = useState<string>("");
@@ -13,7 +13,7 @@ export default function TestAIPage() {
       setStatus("测试 Firebase 初始化...");
       setError("");
       
-      const { firebaseApp } = await import("@/lib/firebase");
+      const { firebaseApp } = await import("../../lib/firebase");
       setStatus(prev => prev + "\n✅ Firebase 初始化成功");
       setStatus(prev => prev + `\n- Project ID: ${firebaseApp.options.projectId}`);
       
@@ -28,7 +28,7 @@ export default function TestAIPage() {
       setStatus("测试 AI 初始化...");
       setError("");
       
-      const { getAIInstance } = await import("@/lib/firebase");
+      const { getAIInstance } = await import("../../lib/firebase");
       const { ai, model } = getAIInstance();
       
       if (ai && model) {
@@ -48,7 +48,7 @@ export default function TestAIPage() {
       setStatus("测试简单文本生成...");
       setError("");
       
-      const { getAIInstance } = await import("@/lib/firebase");
+      const { getAIInstance } = await import("../../lib/firebase");
       const { model } = getAIInstance();
       
       if (!model) {

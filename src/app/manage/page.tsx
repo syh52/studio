@@ -14,7 +14,7 @@ import {
   deleteCustomVocabularyPack,
   updateCustomDialogue,
   updateCustomVocabularyPack
-} from '@/lib/firestore-service';
+} from '../../lib/firestore-service';
 import { VocabularyPack, Dialogue } from '../../lib/data'
 import { Upload, Search, FileText, Book } from 'lucide-react';
 

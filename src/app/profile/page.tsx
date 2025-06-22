@@ -34,7 +34,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "../../components/ui/dialog";
 
 const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; 
 
