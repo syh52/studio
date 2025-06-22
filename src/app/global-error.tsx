@@ -8,8 +8,13 @@ export default function GlobalError({
   reset: () => void
 }) {
   return (
-    <html>
-      <body>
+    <html lang="zh-CN" className="dark">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>系统错误 - Lexicon</title>
+      </head>
+      <body className="font-inter antialiased bg-gray-900 min-h-screen">
         <div className="min-h-screen bg-gray-900 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-6xl font-bold text-white mb-4">错误</h1>
