@@ -1,10 +1,10 @@
 "use client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext"
 import Link from 'next/link';
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "../hooks/use-toast"
 import { useRouter } from "next/navigation";
 import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Upload } from "lucide-react";
-import AIAssistant from '@/components/ai/AIAssistant';
+import AIAssistant from '../components/ai/AIAssistant'
 
 export default function HomePage() {
   const { user, isAuthenticated, dailyCheckIn, isLoading } = useAuth();

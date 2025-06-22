@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '../../contexts/AuthContext'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Alert, AlertDescription } from '../../components/ui/alert'
+import { Badge } from '../../components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
 import { 
   CheckCircle, 
   XCircle, 
@@ -17,9 +17,9 @@ import {
   FileText,
   Book
 } from 'lucide-react';
-import { checkFirestoreConnection, testWritePermission } from '@/lib/firestore-service';
-import { getAllVocabularyPacks, getAllDialogues } from '@/lib/data';
-import { saveCustomVocabularyPack } from '@/lib/firestore-service';
+import { checkFirestoreConnection, testWritePermission } from '../../lib/firestore-service'
+import { getAllVocabularyPacks, getAllDialogues } from '../../lib/data'
+import { saveCustomVocabularyPack } from '../../lib/firestore-service'
 
 interface TestResult {
   name: string;

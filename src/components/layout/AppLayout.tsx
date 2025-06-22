@@ -3,7 +3,7 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import MobileNavigation from './MobileNavigation';
 import MobileHeader from './MobileHeader';
-import PerspectiveProvider from '@/components/shared/PerspectiveProvider';
+import PerspectiveProvider from '../../components/shared/PerspectiveProvider'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { getAllVocabularyPacks, deleteCustomVocabularyPack } from '@/lib/data';
-import VocabularyPackCard from '@/components/vocabulary/VocabularyPackCard';
+import { getAllVocabularyPacks, deleteCustomVocabularyPack } from '../../lib/data'
+import VocabularyPackCard from '../../components/vocabulary/VocabularyPackCard'
 import { Search, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '../../components/ui/button'
+import { useToast } from '../../hooks/use-toast'
 import {
   AlertDialog,
   AlertDialogAction,

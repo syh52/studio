@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useState, useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext'
 import { useRouter, useParams } from 'next/navigation';
-import { vocabularyPacks, getAllVocabularyPacks, VocabularyPack } from '@/lib/data';
-import { Button } from '@/components/ui/button';
+import { vocabularyPacks, getAllVocabularyPacks, VocabularyPack } from '../../../lib/data'
+import { Button } from '../../../components/ui/button'
 import { ChevronLeft, Play, CheckCircle2, X, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 

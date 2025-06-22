@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { Toaster } from "@/components/ui/toaster";
-import AppLayout from '@/components/layout/AppLayout';
-import PerformanceMonitor from '@/components/shared/PerformanceMonitor';
+import { AuthProvider } from '../contexts/AuthContext'
+import { Toaster } from "../components/ui/toaster"
+import AppLayout from '../components/layout/AppLayout'
+import PerformanceMonitor from '../components/shared/PerformanceMonitor'
 
 export const metadata: Metadata = {
   title: 'Lexicon - 部门英语学习',

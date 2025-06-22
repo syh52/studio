@@ -1,5 +1,5 @@
 "use client";
-import { VocabularyItemWithProgress } from '@/lib/vocabulary-learning';
+import { VocabularyItemWithProgress } from '../../lib/vocabulary-learning'
 import { Volume2, BookOpen, X, Check, Sparkles, Brain, Target } from 'lucide-react';
 import { useCallback, useState, useEffect } from 'react';
 

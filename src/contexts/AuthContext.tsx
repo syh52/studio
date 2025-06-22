@@ -21,8 +21,8 @@ import {
   serverTimestamp,
   Timestamp 
 } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '../lib/firebase'
+import { useToast } from '../hooks/use-toast'
 
 interface User {
   id: string;

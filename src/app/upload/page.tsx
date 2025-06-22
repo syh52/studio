@@ -1,11 +1,11 @@
 'use client';
 
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { BulkUpload } from '@/components/BulkUpload';
+import { BulkUpload } from '../../components/BulkUpload'
 import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../components/ui/button'
 
 export default function UploadPage() {
   const { isAuthenticated, isLoading } = useAuth();

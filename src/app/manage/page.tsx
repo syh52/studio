@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '../../contexts/AuthContext'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { useToast } from '../../hooks/use-toast'
 import { 
   getCustomDialogues, 
   getCustomVocabularyPacks, 
@@ -15,14 +15,14 @@ import {
   updateCustomDialogue,
   updateCustomVocabularyPack
 } from '@/lib/firestore-service';
-import { VocabularyPack, Dialogue } from '@/lib/data';
+import { VocabularyPack, Dialogue } from '../../lib/data'
 import { Upload, Search, FileText, Book } from 'lucide-react';
 
 // 导入新创建的组件
-import DialogueManagement from '@/components/manage/DialogueManagement';
-import VocabularyManagement from '@/components/manage/VocabularyManagement';
-import EditDialogueDialog from '@/components/manage/EditDialogueDialog';
-import EditVocabularyDialog from '@/components/manage/EditVocabularyDialog';
+import DialogueManagement from '../../components/manage/DialogueManagement'
+import VocabularyManagement from '../../components/manage/VocabularyManagement'
+import EditDialogueDialog from '../../components/manage/EditDialogueDialog'
+import EditVocabularyDialog from '../../components/manage/EditVocabularyDialog'
 
 export default function ManagePage() {
   const { user, isAuthenticated, isLoading } = useAuth();

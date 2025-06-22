@@ -1,12 +1,12 @@
 
 "use client";
 
-import type { VocabularyPack, VocabularyItem } from '@/lib/data';
+import type { VocabularyPack, VocabularyItem } from '../../lib/data'
 import { useEffect, useState, useMemo, useCallback } from 'react'; // Added useCallback
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from "@/components/ui/progress";
+import { useAuth } from '../../contexts/AuthContext'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Progress } from "../../components/ui/progress"
 import { AlertCircle, CheckCircle, HelpCircle, ArrowRightCircle, RotateCcw, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';

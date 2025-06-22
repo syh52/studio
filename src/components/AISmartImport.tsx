@@ -5,19 +5,19 @@ import {
   Upload, Bot, FileText, Book, CheckCircle, AlertCircle, 
   Eye, Download, Sparkles, Loader2, Trash2, Edit
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { saveCustomVocabularyPack, saveMultipleDialogues } from '@/lib/firestore-service';
-import { VocabularyPack, Dialogue } from '@/lib/data';
-import { LexiconAIService } from '@/lib/ai-service';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Progress } from '../components/ui/progress'
+import { Label } from '../components/ui/label'
+import { Textarea } from '../components/ui/textarea'
+import { Badge } from '../components/ui/badge'
+import { useAuth } from '../contexts/AuthContext'
+import { saveCustomVocabularyPack, saveMultipleDialogues } from '../lib/firestore-service'
+import { VocabularyPack, Dialogue } from '../lib/data'
+import { LexiconAIService } from '../lib/ai-service'
+import { useToast } from '../hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea } from '../components/ui/scroll-area'
 
 interface ParsedData {
   contentType: 'vocabulary' | 'dialogue' | 'mixed';

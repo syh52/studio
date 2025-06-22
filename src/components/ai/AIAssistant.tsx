@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { LexiconAIService, type AIResponse } from '@/lib/ai-service';
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Textarea } from '../../components/ui/textarea'
+import { Badge } from '../../components/ui/badge'
+import { ScrollArea } from '../../components/ui/scroll-area'
+import { LexiconAIService, type AIResponse } from '../../lib/ai-service'
 import { Loader2, Sparkles, MessageSquare, BookOpen, Calendar, Send, Trash2, UserCircle, Bot } from 'lucide-react';
-import { vocabularyPacks, type VocabularyItem, type Dialogue } from '@/lib/data';
+import { vocabularyPacks, type VocabularyItem, type Dialogue } from '../../lib/data'
 
 interface ChatMessage {
   id: string;

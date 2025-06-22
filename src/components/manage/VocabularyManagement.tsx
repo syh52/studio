@@ -8,7 +8,7 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../components/ui/button'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,8 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Skeleton } from '@/components/ui/skeleton';
-import { VocabularyPack } from '@/lib/data';
+import { Skeleton } from '../../components/ui/skeleton'
+import { VocabularyPack } from '../../lib/data'
 import { 
   Trash2, 
   Edit, 

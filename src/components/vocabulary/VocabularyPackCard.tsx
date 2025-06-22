@@ -1,5 +1,5 @@
-import type { VocabularyPack } from '@/lib/data';
-import { getLearningStats } from '@/lib/vocabulary-learning';
+import type { VocabularyPack } from '../../lib/data'
+import { getLearningStats } from '../../lib/vocabulary-learning'
 import { useRouter } from 'next/navigation';
 import { BookOpen, CheckCircle, AlertCircle } from 'lucide-react';
 import { useState, useCallback, useMemo, memo } from 'react';

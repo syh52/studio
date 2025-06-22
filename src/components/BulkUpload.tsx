@@ -5,21 +5,21 @@ import {
   Upload, FileText, Mic, Book, X, CheckCircle, AlertCircle, 
   Download, Table, FileSpreadsheet, HelpCircle, Eye, Edit, Trash2, Bot
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { useAuth } from '@/contexts/AuthContext';
-import { saveCustomVocabularyPack, saveMultipleDialogues } from '@/lib/firestore-service';
-import { VocabularyPack, Dialogue } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Alert, AlertDescription } from '../components/ui/alert'
+import { Progress } from '../components/ui/progress'
+import { Label } from '../components/ui/label'
+import { Textarea } from '../components/ui/textarea'
+import { Input } from '../components/ui/input'
+import { Badge } from '../components/ui/badge'
+import { useAuth } from '../contexts/AuthContext'
+import { saveCustomVocabularyPack, saveMultipleDialogues } from '../lib/firestore-service'
+import { VocabularyPack, Dialogue } from '../lib/data'
+import { useToast } from '../hooks/use-toast'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { saveAs } from 'file-saver';

@@ -1,10 +1,10 @@
 
 "use client";
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
+import { useAuth } from '../../contexts/AuthContext'
+import { Button } from '../../components/ui/button'
 import { LogIn, LogOut, UserPlus, UserCircle, Settings, Plane, BookOpen, CheckSquare, LayoutDashboard, Database } from 'lucide-react';
-import IndexDisplay from '@/components/shared/IndexDisplay';
+import IndexDisplay from '../../components/shared/IndexDisplay'
 import { useRouter, usePathname } from 'next/navigation';
 import {
   DropdownMenu,
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../components/ui/avatar"
 import { useState, useEffect } from 'react';
 
 const DEFAULT_AVATAR_PATH = "/images/dino-avatar.png"; 

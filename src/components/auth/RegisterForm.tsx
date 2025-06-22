@@ -1,14 +1,14 @@
 "use client";
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from "@/hooks/use-toast";
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { useToast } from "../../hooks/use-toast"
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight, Loader2, Check, X, Info } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '../../components/ui/alert'
 
 interface PasswordStrength {
   score: number;

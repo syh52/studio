@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { getAllDialogues, deleteCustomDialogue, type Dialogue } from '@/lib/data';
+import { getAllDialogues, deleteCustomDialogue, type Dialogue } from '../../lib/data'
 import Link from 'next/link';
 import * as LucideIcons from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from '../../components/ui/button'
+import { useToast } from '../../hooks/use-toast'
 import {
   AlertDialog,
   AlertDialogAction,

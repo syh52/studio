@@ -1,13 +1,13 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { Textarea } from '../../components/ui/textarea'
+import { Badge } from '../../components/ui/badge'
 import { 
   UserCircle, 
   Mail, 
@@ -23,10 +23,10 @@ import {
   Camera,
   Loader2
 } from 'lucide-react';
-import IndexDisplay from '@/components/shared/IndexDisplay';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import IndexDisplay from '../../components/shared/IndexDisplay'
+import { Avatar, AvatarImage, AvatarFallback } from '../../components/ui/avatar'
+import { useToast } from '../../hooks/use-toast'
+import { Alert, AlertDescription } from '../../components/ui/alert'
 import {
   Dialog,
   DialogContent,

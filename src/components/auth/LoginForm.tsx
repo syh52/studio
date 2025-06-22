@@ -1,11 +1,11 @@
 "use client";
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useToast } from "@/hooks/use-toast";
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import { useToast } from "../../hooks/use-toast"
 import Link from 'next/link';
 import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import {

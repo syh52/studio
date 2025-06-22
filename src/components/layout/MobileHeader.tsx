@@ -1,6 +1,6 @@
 "use client";
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext'
 import { usePathname, useRouter } from 'next/navigation';
 import { User, ChevronLeft } from 'lucide-react';
 
