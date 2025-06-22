@@ -1,12 +1,11 @@
-
 "use client"; // Mark as client component for hooks like useParams, useRouter, useAuth
 
 import { useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { dialogues, type Dialogue as DialogueType, type DialogueLine } from '@/lib/data';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { useAuth } from '../../../contexts/AuthContext';
+import { dialogues, type Dialogue as DialogueType, type DialogueLine } from '../../../lib/data';
+import { Button } from '../../../components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/ui/card';
 import { ArrowLeft, Volume2, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 

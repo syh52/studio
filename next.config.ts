@@ -26,14 +26,6 @@ const nextConfig: NextConfig = {
       '6000-firebase-studio-1748859126855.cluster-lqnxvk7thvfw4wbonsercicksm.cloudworkstations.dev',
     ],
   },
-  webpack: (config) => {
-    // 简化的路径别名配置，使用相对路径
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': './src',
-    };
-    return config;
-  },
   async headers() {
     return [
       {
