@@ -52,9 +52,12 @@ export function AdminKeyDialog({
     setError(null);
 
     try {
+      console.log('开始验证管理员密钥...');
       const permissions = await verifyAdminKey(inputKey.trim());
+      console.log('密钥验证结果:', permissions);
       
       if (permissions) {
+        console.log('验证成功，权限级别:', permissions.level);
         toast({
           title: "验证成功",
           description: `欢迎，${getAdminLevelName(permissions.level)}！`,
@@ -65,13 +68,14 @@ export function AdminKeyDialog({
         setAttemptCount(0);
         onOpenChange(false);
       } else {
+        console.log('密钥验证失败');
         setAttemptCount(prev => prev + 1);
         setError(`密钥无效或已过期（${attemptCount + 1}/3 次尝试）`);
         setInputKey('');
       }
     } catch (error: any) {
       console.error('密钥验证错误:', error);
-      setError('验证过程中发生错误，请重试');
+      setError(`验证过程中发生错误：${error.message || '请重试'}`);
     } finally {
       setVerifying(false);
     }

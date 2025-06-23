@@ -296,6 +296,7 @@ export default function ProfilePage() {
               </Button>
             )}
             
+
             <Button 
               onClick={() => setShowLogoutDialog(true)}
               variant="outline" 

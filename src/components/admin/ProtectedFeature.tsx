@@ -33,17 +33,22 @@ export function ProtectedFeature({
   }, [requiredPermission]);
 
   const checkPermissions = () => {
+    console.log('ProtectedFeature: 检查权限，所需权限:', requiredPermission);
     const cachedPermissions = getCachedAdminPermissions();
+    console.log('ProtectedFeature: 缓存的权限:', cachedPermissions);
     setPermissions(cachedPermissions);
     
     if (cachedPermissions && hasPermission(requiredPermission)) {
+      console.log('ProtectedFeature: 权限检查通过，设置访问权限为true');
       setHasAccess(true);
     } else {
+      console.log('ProtectedFeature: 权限检查未通过，设置访问权限为false');
       setHasAccess(false);
     }
   };
 
   const handleKeySuccess = (newPermissions: AdminPermissions) => {
+    console.log('ProtectedFeature: 密钥验证成功，收到新权限:', newPermissions);
     setPermissions(newPermissions);
     checkPermissions();
   };

@@ -77,7 +77,7 @@ export default function ManagePage() {
     }
   }, [user, toast]);
   
-  // 认证检查
+  // 认证检查（移除权限检查）
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.push('/login');
@@ -94,7 +94,7 @@ export default function ManagePage() {
     return (
       <div className="flex flex-col items-center justify-center text-center py-20">
         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="font-inter text-xl text-white">验证身份中...</p>
+        <p className="font-inter text-xl text-white">加载中...</p>
       </div>
     );
   }
@@ -107,17 +107,6 @@ export default function ManagePage() {
   // 删除公共对话
   const handleDeleteDialogue = async (dialogueId: string) => {
     if (!user) return;
-    
-    // 检查管理员权限
-    const permissions = getCachedAdminPermissions();
-    if (!permissions || !hasPermission('canAccessUpload')) {
-      toast({
-        title: "权限不足",
-        description: "只有管理员才能删除公共对话",
-        variant: "destructive"
-      });
-      return;
-    }
     
     try {
       await deletePublicDialogue(dialogueId);
@@ -139,17 +128,6 @@ export default function ManagePage() {
   const handleDeleteVocabulary = async (packId: string) => {
     if (!user) return;
     
-    // 检查管理员权限
-    const permissions = getCachedAdminPermissions();
-    if (!permissions || !hasPermission('canAccessUpload')) {
-      toast({
-        title: "权限不足",
-        description: "只有管理员才能删除公共词汇包",
-        variant: "destructive"
-      });
-      return;
-    }
-    
     try {
       await deletePublicVocabularyPack(packId);
       setVocabularyPacks(prev => prev.filter(p => p.id !== packId));
@@ -170,17 +148,6 @@ export default function ManagePage() {
   const handleUpdateDialogue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !editingDialogue) return;
-    
-    // 检查管理员权限
-    const permissions = getCachedAdminPermissions();
-    if (!permissions || !hasPermission('canAccessUpload')) {
-      toast({
-        title: "权限不足",
-        description: "只有管理员才能编辑公共对话",
-        variant: "destructive"
-      });
-      return;
-    }
     
     try {
       await updatePublicDialogue(editingDialogue.id, {
@@ -210,17 +177,6 @@ export default function ManagePage() {
   // 更新公共词汇包
   const handleUpdateVocabulary = async () => {
     if (!user || !editingVocabulary) return;
-    
-    // 检查管理员权限
-    const permissions = getCachedAdminPermissions();
-    if (!permissions || !hasPermission('canAccessUpload')) {
-      toast({
-        title: "权限不足",
-        description: "只有管理员才能编辑公共词汇包",
-        variant: "destructive"
-      });
-      return;
-    }
     
     try {
       await updatePublicVocabularyPack(editingVocabulary.id, {
@@ -263,117 +219,148 @@ export default function ManagePage() {
       {/* 页面标题 */}
       <div className="flex items-center justify-between mb-8 animate-blur-in animate-delay-200">
         <div>
-          <h1 className="text-3xl font-inter font-semibold text-white tracking-tight">管理公共学习资料</h1>
-          <p className="text-gray-400 mt-2 leading-relaxed">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-3xl font-inter font-semibold text-white tracking-tight">管理公共学习资料</h1>
+            <div className="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded-full border border-purple-500/30">
+              需要管理员权限
+            </div>
+          </div>
+          <p className="text-gray-400 leading-relaxed">
             查看、编辑和管理社区共享的对话和词汇内容
           </p>
         </div>
-        <Button 
-          onClick={() => router.push('/upload')} 
-          className="gradient-primary text-white hover:scale-105 transition-all duration-200 modern-focus animate-blur-in animate-delay-300"
-        >
-          <Upload className="h-4 w-4 mr-2" />
-          上传新内容
-        </Button>
       </div>
       
-      {/* 搜索框 */}
-      <div className="mb-6 relative animate-blur-in animate-delay-400">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          placeholder="搜索对话或词汇..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400 transition-all duration-200 modern-focus"
-        />
-      </div>
-      
-      {/* 主要内容 */}
-      <div className="glass-card-strong rounded-2xl overflow-hidden animate-blur-in animate-delay-500">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 bg-white/5 border-b border-white/10">
-            <TabsTrigger 
-              value="dialogues" 
-              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
-            >
-              <FileText className="h-4 w-4" />
-              对话管理 ({filteredDialogues.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="vocabulary" 
-              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
-            >
-              <Book className="h-4 w-4" />
-              词汇管理 ({filteredVocabularyPacks.length})
-            </TabsTrigger>
-            <TabsTrigger 
-              value="admin" 
-              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
-            >
-              <Shield className="h-4 w-4" />
-              管理员功能
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dialogues" className="mt-6">
-            <DialogueManagement
-              dialogues={filteredDialogues}
-              dataLoading={dataLoading}
-              searchTerm={searchTerm}
-              onEdit={setEditingDialogue}
-              onDelete={handleDeleteDialogue}
-            />
-          </TabsContent>
-          
-          <TabsContent value="vocabulary" className="mt-6">
-            <VocabularyManagement
-              vocabularyPacks={filteredVocabularyPacks}
-              dataLoading={dataLoading}
-              searchTerm={searchTerm}
-              onEdit={setEditingVocabulary}
-              onDelete={handleDeleteVocabulary}
-            />
-          </TabsContent>
+      {/* Protected Management Interface */}
+      <ProtectedFeature
+        requiredPermission="canAccessUpload"
+        title="管理员验证"
+        description="请输入管理员密钥以访问管理功能"
+        fallbackTitle="管理功能需要管理员权限"
+        fallbackDescription={
+          <div className="space-y-4">
+            <p>管理功能允许查看、编辑和删除公共学习资料，包括对话场景和词汇包。还可以管理系统密钥和用户权限。</p>
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4">
+              <h4 className="text-purple-400 font-medium mb-2">🔐 需要获取管理员密钥？</h4>
+              <p className="text-gray-300 text-sm">
+                如果您需要管理员权限，请联系 <span className="font-medium text-purple-400">沈亦航</span> 获取有效的管理员密钥。
+              </p>
+              <p className="text-gray-400 text-xs mt-2">
+                请注意：管理员功能涉及系统核心内容，仅限授权人员使用。
+              </p>
+            </div>
+          </div>
+        }
+      >
+        {/* Upload Button */}
+        <div className="mb-6 flex justify-end animate-blur-in animate-delay-300">
+          <Button 
+            onClick={() => router.push('/upload')} 
+            className="gradient-primary text-white hover:scale-105 transition-all duration-200 modern-focus"
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            上传新内容
+          </Button>
+        </div>
+        
+        {/* 搜索框 */}
+        <div className="mb-6 relative animate-blur-in animate-delay-400">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="搜索对话或词汇..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 glass-card border-white/20 bg-white/10 text-white placeholder-gray-400 focus:border-purple-400 transition-all duration-200 modern-focus"
+          />
+        </div>
+        
+        {/* 主要内容 */}
+        <div className="glass-card-strong rounded-2xl overflow-hidden animate-blur-in animate-delay-500">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-3 bg-white/5 border-b border-white/10">
+              <TabsTrigger 
+                value="dialogues" 
+                className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+              >
+                <FileText className="h-4 w-4" />
+                对话管理 ({filteredDialogues.length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="vocabulary" 
+                className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+              >
+                <Book className="h-4 w-4" />
+                词汇管理 ({filteredVocabularyPacks.length})
+              </TabsTrigger>
+              <TabsTrigger 
+                value="admin" 
+                className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+              >
+                <Shield className="h-4 w-4" />
+                密钥管理
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dialogues" className="mt-6">
+              <DialogueManagement
+                dialogues={filteredDialogues}
+                dataLoading={dataLoading}
+                searchTerm={searchTerm}
+                onEdit={setEditingDialogue}
+                onDelete={handleDeleteDialogue}
+              />
+            </TabsContent>
+            
+            <TabsContent value="vocabulary" className="mt-6">
+              <VocabularyManagement
+                vocabularyPacks={filteredVocabularyPacks}
+                dataLoading={dataLoading}
+                searchTerm={searchTerm}
+                onEdit={setEditingVocabulary}
+                onDelete={handleDeleteVocabulary}
+              />
+            </TabsContent>
 
-          <TabsContent value="admin" className="mt-6">
-            <ProtectedFeature
-              requiredPermission="canManageKeys"
-              title="管理员验证"
-              description="请输入管理员密钥以访问管理员功能"
-              fallbackTitle="管理员功能需要权限验证"
-              fallbackDescription={
-                <div className="space-y-4">
-                  <p>管理员功能包括密钥管理、系统配置、用户权限管理等核心功能。</p>
-                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
-                    <h4 className="text-blue-400 font-medium mb-2">🔐 需要获取管理员密钥？</h4>
-                    <p className="text-gray-300 text-sm">
-                      如果您需要管理员权限，请联系 <span className="font-medium text-blue-400">沈亦航</span> 获取有效的管理员密钥。
-                    </p>
-                    <p className="text-gray-400 text-xs mt-2">
-                      请注意：管理员功能涉及系统核心设置，仅限授权人员使用。
+            <TabsContent value="admin" className="mt-6">
+              <ProtectedFeature
+                requiredPermission="canManageKeys"
+                title="超级管理员验证"
+                description="密钥管理需要超级管理员权限，请输入超级管理员密钥"
+                fallbackTitle="密钥管理需要更高权限"
+                fallbackDescription={
+                  <div className="space-y-4">
+                    <p>密钥管理功能包括生成、查看、禁用管理员密钥等核心权限操作。</p>
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+                      <h4 className="text-red-400 font-medium mb-2">⚠️ 超级管理员权限</h4>
+                      <p className="text-gray-300 text-sm">
+                        此功能需要超级管理员密钥。请联系 <span className="font-medium text-red-400">沈亦航</span> 获取最高权限密钥。
+                      </p>
+                      <p className="text-gray-400 text-xs mt-2">
+                        注意：密钥管理涉及系统安全核心，仅限最高权限用户操作。
+                      </p>
+                    </div>
+                  </div>
+                }
+              >
+                <div className="space-y-6">
+                  {/* 页面标题 */}
+                  <div className="mb-8">
+                    <h2 className="text-2xl font-inter font-bold text-white mb-2">
+                      管理员密钥管理
+                    </h2>
+                    <p className="text-gray-400">
+                      生成、管理和监控所有管理员密钥的使用情况
                     </p>
                   </div>
-                </div>
-              }
-            >
-              <div className="space-y-6">
-                {/* 页面标题 */}
-                <div className="mb-8">
-                  <h2 className="text-2xl font-inter font-bold text-white mb-2">
-                    管理员密钥管理
-                  </h2>
-                  <p className="text-gray-400">
-                    生成、管理和监控所有管理员密钥的使用情况
-                  </p>
-                </div>
 
-                {/* 管理界面 */}
-                <AdminKeyManagement />
-              </div>
-            </ProtectedFeature>
-          </TabsContent>
-        </Tabs>
-      </div>
+                  {/* 管理界面 */}
+                  <AdminKeyManagement />
+                </div>
+              </ProtectedFeature>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </ProtectedFeature>
       
       {/* 编辑对话框 */}
       <EditDialogueDialog

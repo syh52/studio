@@ -1,13 +1,11 @@
-
 "use client";
 
 import type { VocabularyPack, VocabularyItem } from '../../lib/data'
-import { useEffect, useState, useMemo, useCallback } from 'react'; // Added useCallback
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext'
 import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
 import { Progress } from "../../components/ui/progress"
-import { AlertCircle, CheckCircle, HelpCircle, ArrowRightCircle, RotateCcw, Volume2 } from 'lucide-react';
+import { AlertCircle, CheckCircle, HelpCircle, ArrowRight, RotateCcw, Volume2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -129,66 +127,107 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
     setSelectedAnswer(null);
   }, [pack]);
 
+  // 播放发音
+  const playAudio = () => {
+    if (!currentItem) return;
+    const utterance = new SpeechSynthesisUtterance(currentItem.english);
+    utterance.lang = 'en-US';
+    utterance.rate = 0.8;
+    speechSynthesis.speak(utterance);
+  };
+
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-        <p className="ml-4 font-headline text-lg">加载认证信息...</p>
+      <div className="flex flex-col items-center justify-center text-center py-20">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="font-inter text-xl text-white">加载认证信息...</p>
       </div>
     );
   }
 
   if (!isAuthenticated && !authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-        <p className="ml-4 font-headline text-lg">请先登录以进行测验。正在跳转至登录页面...</p>
+      <div className="flex flex-col items-center justify-center text-center py-20">
+        <p className="font-inter text-xl text-white">请先登录以进行测验。正在跳转至登录页面...</p>
       </div>
     );
   }
 
   if (!pack || (pack.items.length === 0 && shuffledItems.length === 0 && !currentItem) ) {
     return (
-      <div className="flex flex-col items-center justify-center text-center py-10">
-        <HelpCircle size={48} className="text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-headline text-accent mb-2">{pack?.name || '测验'}</h1>
-        <p className="text-muted-foreground mb-4">
-          这个词汇包中目前没有可测验的词条。
-        </p>
-        <Link href="/quizzes" passHref>
-          <Button variant="outline" className="btn-pixel">返回测验列表</Button>
-        </Link>
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="max-w-md mx-auto px-4 py-20 text-center">
+          <div className="glass-card rounded-3xl p-8">
+            <div className="w-16 h-16 bg-gray-700/50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <HelpCircle className="h-8 w-8 text-gray-400" />
+            </div>
+            <h1 className="text-2xl font-inter font-semibold text-white mb-4">{pack?.name || '测验'}</h1>
+            <p className="text-gray-400 mb-6">
+              这个词汇包中目前没有可测验的词条。
+            </p>
+            <Link href="/quizzes" passHref>
+              <Button className="glass-card-strong text-purple-400 border-purple-400/30 hover:bg-purple-500/10 px-6 py-3 rounded-xl font-medium">
+                返回测验列表
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (quizCompleted) {
     return (
-      <Card className="w-full max-w-lg mx-auto text-center pixel-border shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl text-accent">测验完成！</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-lg">您在"{pack.name}"测验中的最终得分是：</p>
-          <p className="font-headline text-4xl text-primary">{score} 分</p>
-          <div className="flex justify-center gap-4 mt-6">
-            <Button onClick={restartQuiz} className="btn-pixel">
-              <RotateCcw size={18} className="mr-2" />
-              再试一次
-            </Button>
-            <Link href="/quizzes" passHref>
-              <Button variant="outline" className="btn-pixel">返回测验列表</Button>
-            </Link>
+      <div className="min-h-screen bg-gray-900 text-white">
+        <div className="max-w-md mx-auto px-4 py-20">
+          <div className="text-center space-y-6">
+            {/* 成功图标 */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full blur-sm"></div>
+              <div className="relative w-20 h-20 mx-auto bg-green-500/20 rounded-full flex items-center justify-center glass-card">
+                <CheckCircle className="h-10 w-10 text-green-400" />
+              </div>
+            </div>
+            
+            {/* 完成信息 */}
+            <div className="glass-card rounded-3xl p-8">
+              <h1 className="text-3xl font-inter font-semibold text-white mb-3">测验完成！🎉</h1>
+              <p className="text-gray-300 mb-2">
+                恭喜你完成了《{pack.name}》的测验
+              </p>
+              <p className="text-4xl font-inter font-bold text-green-400 my-4">{score} 分</p>
+              <p className="text-sm text-purple-400">
+                答对了 {Math.round(score / POINTS_PER_CORRECT_ANSWER)} / {shuffledItems.length} 题
+              </p>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="space-y-3">
+              <button 
+                onClick={restartQuiz}
+                className="w-full gradient-primary text-white py-4 px-6 rounded-xl text-base font-medium transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <RotateCcw className="h-5 w-5" />
+                再试一次
+              </button>
+              
+              <Link href="/quizzes" passHref>
+                <button className="w-full glass-card-strong text-purple-400 py-4 px-6 rounded-xl text-base font-medium transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center gap-2 border border-purple-400/30">
+                  返回测验列表
+                </button>
+              </Link>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (!currentItem) {
      return (
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
-             <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin"></div>
-             <p className="ml-4 font-headline text-lg">加载题目...</p>
+        <div className="flex flex-col items-center justify-center text-center py-20">
+             <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+             <p className="font-inter text-xl text-white">加载题目...</p>
         </div>
      );
   }
@@ -196,97 +235,145 @@ export default function QuizClientPage({ pack }: QuizClientPageProps) {
   const progressPercentage = shuffledItems.length > 0 ? ((currentQuestionIndex +1) / shuffledItems.length) * 100 : 0;
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <Card className="pixel-border shadow-lg">
-        <CardHeader className="text-center">
-          <CardTitle className="font-headline text-3xl text-accent mb-2">{pack.name} - 词汇测验</CardTitle>
-          <p className="text-muted-foreground">
-            题目 {currentQuestionIndex + 1} / {shuffledItems.length}  |  当前得分: {score}
-          </p>
-          <Progress value={progressPercentage} className="w-full mt-2 h-3 pixel-border" />
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          <div className="text-center p-6 bg-card-foreground/5 rounded-sm pixel-border">
-            <p className="text-sm text-muted-foreground mb-1">请选择以下英文单词的正确中文翻译：</p>
-            <h2 className="font-headline text-4xl text-primary">{currentItem.english}</h2>
-            {currentItem.pronunciationAudio && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="mt-2 text-accent hover:bg-accent/20"
-                onClick={() => {
-                  alert(`模拟播放音频: ${currentItem.english}`)
-                }}
+    <div className="min-h-screen bg-gray-900 text-white">
+      {/* 进度和返回按钮 */}
+      <div className="px-4 py-6">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center justify-between mb-6">
+            <Link href="/quizzes">
+              <button 
+                className="glass-card p-3 rounded-xl transition-all duration-200 hover:scale-105 active:scale-95"
+                title="返回测验列表"
               >
-                <Volume2 size={24} />
-              </Button>
-            )}
+                <ArrowRight className="h-5 w-5 text-gray-300 rotate-180" />
+              </button>
+            </Link>
+            <div className="text-center">
+              <p className="text-sm text-gray-400">
+                {currentQuestionIndex + 1} / {shuffledItems.length}  •  得分: {score}
+              </p>
+            </div>
+            <div className="w-12"></div> {/* 占位符 */}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {currentOptions.map((option, index) => {
-              let buttonClass = "btn-pixel justify-start text-left h-auto py-3 quiz-option";
-              if (isAnswerChecked) {
-                if (option === currentItem.chinese) {
-                  buttonClass += " quiz-option-correct";
-                } else if (option === selectedAnswer) {
-                  buttonClass += " quiz-option-incorrect";
-                } else {
-                  buttonClass += " opacity-60 cursor-not-allowed";
-                }
-              }
-              return (
-                <Button
-                  key={index}
-                  variant="outline"
-                  className={buttonClass}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={isAnswerChecked}
+          {/* 进度条 */}
+          <div className="glass-card rounded-full h-2 mb-8">
+            <div 
+              className="gradient-primary h-2 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercentage}%` }}
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      {/* 测验内容 */}
+      <div className="px-4 pb-8">
+        <div className="max-w-2xl mx-auto">
+          <div className="relative">
+            {/* 背景光晕 */}
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-3xl blur-sm"></div>
+            
+            {/* 测验卡片 */}
+            <div className="relative glass-card rounded-3xl p-6 sm:p-8 space-y-6 sm:space-y-8">
+              {/* 标题 */}
+              <div className="text-center">
+                <h1 className="text-xl sm:text-2xl font-inter font-semibold text-white mb-2">{pack.name} - 词汇测验</h1>
+                <p className="text-sm text-gray-400">请选择以下英文单词的正确中文翻译</p>
+              </div>
+
+              {/* 单词显示 */}
+              <div className="text-center glass-card-strong rounded-2xl p-6 sm:p-8">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-inter font-bold text-white tracking-tight mb-4">
+                  {currentItem.english}
+                </h2>
+                
+                {/* 发音按钮 */}
+                <button 
+                  onClick={playAudio}
+                  className="inline-flex items-center gap-2 px-4 py-2 glass-card rounded-xl hover:bg-white/10 transition-all duration-200 active:scale-95"
                 >
-                  {option}
-                </Button>
-              );
-            })}
-          </div>
+                  <Volume2 className="h-5 w-5 text-green-400" />
+                  <span className="text-sm text-green-400">点击发音</span>
+                </button>
+              </div>
 
-          {isAnswerChecked && (
-            <div className={`p-3 rounded-sm pixel-border text-center ${selectedAnswer === currentItem.chinese ? 'bg-green-500/20 text-green-700' : 'bg-red-500/20 text-red-700'}`}>
-              {selectedAnswer === currentItem.chinese ? (
-                <div className="flex items-center justify-center gap-2">
-                  <CheckCircle size={20} />
-                  <p>太棒了！回答正确！</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center gap-1">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle size={20} />
-                    <p>回答错误。</p>
-                  </div>
-                  <p>正确答案是： <span className="font-bold">{currentItem.chinese}</span></p>
+              {/* 选项 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {currentOptions.map((option, index) => {
+                  const isCorrect = option === currentItem.chinese;
+                  const isSelected = option === selectedAnswer;
+                  
+                  let buttonClass = "w-full glass-card-strong text-left p-4 sm:p-5 rounded-xl transition-all duration-200 border ";
+                  
+                  if (isAnswerChecked) {
+                    if (isCorrect) {
+                      buttonClass += "border-green-500/50 bg-green-500/20 text-green-100";
+                    } else if (isSelected) {
+                      buttonClass += "border-red-500/50 bg-red-500/20 text-red-100";
+                    } else {
+                      buttonClass += "border-white/10 text-gray-400 opacity-60";
+                    }
+                  } else {
+                    buttonClass += "border-white/20 text-white hover:border-purple-400/50 hover:bg-purple-500/10 active:scale-95 cursor-pointer";
+                  }
+                  
+                  return (
+                    <button
+                      key={index}
+                      className={buttonClass}
+                      onClick={() => handleAnswerSelect(option)}
+                      disabled={isAnswerChecked}
+                    >
+                      <span className="text-sm sm:text-base font-medium">{option}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 答案反馈 */}
+              {isAnswerChecked && (
+                <div className={`glass-card-strong rounded-xl p-4 sm:p-5 text-center border ${selectedAnswer === currentItem.chinese ? 'border-green-500/50 bg-green-500/20' : 'border-red-500/50 bg-red-500/20'}`}>
+                  {selectedAnswer === currentItem.chinese ? (
+                    <div className="flex items-center justify-center gap-2 text-green-400">
+                      <CheckCircle className="h-5 w-5" />
+                      <p className="font-medium">太棒了！回答正确！</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 text-red-400">
+                      <div className="flex items-center justify-center gap-2">
+                        <AlertCircle className="h-5 w-5" />
+                        <p className="font-medium">回答错误</p>
+                      </div>
+                      <p className="text-sm">
+                        正确答案是：<span className="font-bold text-white">{currentItem.chinese}</span>
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          <div className="flex justify-center mt-6">
-            {isAnswerChecked ? (
-              <Button onClick={handleNextQuestion} className="btn-pixel bg-accent text-accent-foreground hover:bg-accent/90">
-                <ArrowRightCircle size={20} className="mr-2" />
-                {currentQuestionIndex === shuffledItems.length - 1 ? '完成测验' : '下一题'}
-              </Button>
-            ) : (
-              <Button className="btn-pixel opacity-50 cursor-not-allowed" disabled>
-                 请先选择答案
-              </Button>
-            )}
+              {/* 下一题按钮 */}
+              <div className="flex justify-center">
+                {isAnswerChecked ? (
+                  <button 
+                    onClick={handleNextQuestion}
+                    className="gradient-primary text-white py-4 px-8 rounded-xl font-medium transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2"
+                  >
+                    <ArrowRight className="h-5 w-5" />
+                    {currentQuestionIndex === shuffledItems.length - 1 ? '完成测验' : '下一题'}
+                  </button>
+                ) : (
+                  <button 
+                    className="glass-card-strong text-gray-400 py-4 px-8 rounded-xl font-medium opacity-50 cursor-not-allowed border border-white/10"
+                    disabled
+                  >
+                    请先选择答案
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-       <div className="text-center mt-6">
-        <Link href="/quizzes" passHref>
-          <Button variant="link" className="text-accent">返回测验列表</Button>
-        </Link>
+        </div>
       </div>
     </div>
   );

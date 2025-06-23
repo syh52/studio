@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext"
 import Link from 'next/link';
 import { useToast } from "../hooks/use-toast"
 import { useRouter } from "next/navigation";
-import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Upload } from "lucide-react";
+import { BookOpen, MessageCircle, CheckCircle, ChevronRight, Zap, User, Upload, Settings } from "lucide-react";
 
 
 export default function HomePage() {
@@ -56,6 +56,10 @@ export default function HomePage() {
     router.push(isAuthenticated ? "/upload" : "/login");
   };
 
+  const navigateToManage = () => {
+    router.push(isAuthenticated ? "/manage" : "/login");
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-20">
@@ -106,7 +110,7 @@ export default function HomePage() {
           <button className="text-sm sm:text-base text-purple-400 font-medium cursor-pointer hover:text-purple-300 transition-colors">查看全部</button>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 mb-4 sm:mb-6 animate-blur-in animate-delay-400">
           {/* Vocabulary Learning */}
           <div 
             onClick={navigateToVocabulary}
@@ -143,8 +147,8 @@ export default function HomePage() {
             <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Quizzes</p>
           </div>
 
-          {/* Bulk Upload - Only for authenticated users */}
-          {isAuthenticated ? (
+          {/* Upload Module - Available for all authenticated users */}
+          {isAuthenticated && (
             <div 
               onClick={navigateToUpload}
               className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced"
@@ -155,13 +159,19 @@ export default function HomePage() {
               <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-2 sm:mb-3 tracking-tight">批量上传</h4>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Upload</p>
             </div>
-          ) : (
-            <div className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 opacity-50">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
-                <Upload className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-gray-400" />
+          )}
+
+          {/* Management Module - Available for all authenticated users */}
+          {isAuthenticated && (
+            <div 
+              onClick={navigateToManage}
+              className="glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 perspective-element transform transition-all duration-200 ease-out hover:scale-105 cursor-pointer active:scale-95 btn-enhanced border-purple-500/30"
+            >
+              <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-purple-600/20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6">
+                <Settings className="h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 text-purple-400" />
               </div>
-              <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-gray-400 mb-2 sm:mb-3 tracking-tight">批量上传</h4>
-              <p className="text-xs sm:text-sm text-gray-500 leading-relaxed">登录后可用</p>
+              <h4 className="text-sm sm:text-base md:text-lg font-inter font-semibold text-white mb-2 sm:mb-3 tracking-tight">管理功能</h4>
+              <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">Management</p>
             </div>
           )}
         </div>

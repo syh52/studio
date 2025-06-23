@@ -642,31 +642,35 @@ export default function KnowledgePage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold">知识库管理</h1>
-          <p className="text-muted-foreground mt-2">
+          <h1 className="text-2xl sm:text-3xl font-bold">知识库管理</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">
             上传文档自动提取专业知识，构建智能化学习资源
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button 
             variant="outline" 
             onClick={checkAIQuotaStatus}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm sm:text-base"
+            size="sm"
           >
             <Settings className="h-4 w-4" />
-            刷新状态
+            <span className="hidden sm:inline">刷新状态</span>
+            <span className="sm:hidden">刷新</span>
           </Button>
           <Button 
             variant="outline" 
             onClick={handleCleanupCorrupted}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 text-sm sm:text-base"
             disabled={isUploading}
+            size="sm"
           >
             <Trash2 className="h-4 w-4" />
-            清理乱码
+            <span className="hidden sm:inline">清理乱码</span>
+            <span className="sm:hidden">清理</span>
           </Button>
         </div>
       </div>
@@ -920,21 +924,23 @@ export default function KnowledgePage() {
             </Button>
           </div>
 
-          <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="space-y-3 max-h-80 sm:max-h-96 overflow-y-auto">
             {filteredItems.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                {searchQuery ? '未找到匹配的知识条目' : '暂无知识条目，请上传文档'}
+                <div className="text-sm sm:text-base">
+                  {searchQuery ? '未找到匹配的知识条目' : '暂无知识条目，请上传文档'}
+                </div>
               </div>
             ) : (
               filteredItems.map((item) => (
-                <Card key={item.id} className="p-4">
+                <Card key={item.id} className="p-3 sm:p-4">
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1">
-                      <h3 className="font-medium text-sm">{item.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      <h3 className="font-medium text-sm sm:text-base">{item.title}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 line-clamp-2">
                         {item.content}
                       </p>
-                      <div className="flex gap-2 mt-2">
+                      <div className="flex flex-wrap gap-1 sm:gap-2 mt-2">
                         <Badge variant="outline" className="text-xs">
                           {item.category}
                         </Badge>

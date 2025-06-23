@@ -47,8 +47,11 @@ export function verifySuperAdminKey(inputKey: string): boolean {
  */
 export async function verifyAdminKey(inputKey: string): Promise<AdminPermissions | null> {
   try {
+    console.log('verifyAdminKey: 开始验证密钥');
+    
     // 首先检查是否为超级管理员密钥
     if (verifySuperAdminKey(inputKey)) {
+      console.log('verifyAdminKey: 检测到超级管理员密钥');
       const superAdminPermissions: AdminPermissions = {
         level: AdminLevel.SUPER_ADMIN,
         canManageKeys: true,
@@ -59,20 +62,25 @@ export async function verifyAdminKey(inputKey: string): Promise<AdminPermissions
       };
       
       // 缓存超级管理员权限
+      console.log('verifyAdminKey: 准备缓存超级管理员权限');
       cacheAdminPermissions(inputKey, superAdminPermissions);
+      console.log('verifyAdminKey: 超级管理员权限验证完成');
       return superAdminPermissions;
     }
 
     // 检查普通管理员密钥（从 Firestore 验证）
+    console.log('verifyAdminKey: 检查普通管理员密钥');
     const regularAdminPermissions = await verifyRegularAdminKey(inputKey);
     if (regularAdminPermissions) {
+      console.log('verifyAdminKey: 普通管理员密钥验证成功');
       cacheAdminPermissions(inputKey, regularAdminPermissions);
       return regularAdminPermissions;
     }
 
+    console.log('verifyAdminKey: 密钥验证失败');
     return null;
   } catch (error) {
-    console.error('密钥验证失败:', error);
+    console.error('verifyAdminKey: 密钥验证失败:', error);
     return null;
   }
 }
@@ -180,11 +188,29 @@ function getCurrentUserIdFromAuth(): string | null {
  * 缓存管理员权限到本地存储
  */
 function cacheAdminPermissions(inputKey: string, permissions: AdminPermissions): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    console.log('cacheAdminPermissions: 非浏览器环境，跳过缓存');
+    return;
+  }
+  
+  console.log('cacheAdminPermissions: 开始缓存权限');
   
   const currentUserId = getCurrentUserIdFromAuth();
+  console.log('cacheAdminPermissions: 当前用户ID:', currentUserId);
+  
   if (!currentUserId || currentUserId === 'anonymous') {
-    console.warn('无法缓存管理员权限：用户未登录');
+    console.warn('cacheAdminPermissions: 无法缓存管理员权限：用户未登录或为匿名用户');
+    // 对于超级管理员，我们允许在未登录状态下使用临时缓存
+    if (permissions.level === AdminLevel.SUPER_ADMIN) {
+      console.log('cacheAdminPermissions: 超级管理员使用临时缓存');
+      const tempCache = {
+        permissions,
+        keyHash: CryptoJS.SHA256(inputKey.trim()).toString(),
+        lastVerified: Date.now(),
+        userId: 'temp_super_admin'
+      };
+      localStorage.setItem('lexicon_admin_cache', JSON.stringify(tempCache));
+    }
     return;
   }
   
@@ -196,7 +222,9 @@ function cacheAdminPermissions(inputKey: string, permissions: AdminPermissions):
     userId: currentUserId
   };
   
+  console.log('cacheAdminPermissions: 保存权限缓存:', cache);
   localStorage.setItem('lexicon_admin_cache', JSON.stringify(cache));
+  console.log('cacheAdminPermissions: 权限缓存保存完成');
 }
 
 /**
@@ -207,34 +235,46 @@ export function getCachedAdminPermissions(): AdminPermissions | null {
   
   try {
     const cacheStr = localStorage.getItem('lexicon_admin_cache');
-    if (!cacheStr) return null;
+    if (!cacheStr) {
+      console.log('getCachedAdminPermissions: 没有找到权限缓存');
+      return null;
+    }
     
     const cache: AdminCache = JSON.parse(cacheStr);
+    console.log('getCachedAdminPermissions: 读取到权限缓存:', cache);
     
-    // 检查是否为旧版本缓存（没有userId字段）
-    if (!cache.userId) {
-      console.warn('发现旧版本管理员权限缓存，自动清除');
+    // 检查缓存是否过期
+    if (cache.permissions.validUntil < Date.now()) {
+      console.log('getCachedAdminPermissions: 权限缓存已过期');
       clearAdminCache();
       return null;
     }
     
-    // 检查缓存是否过期
-    if (cache.permissions.validUntil < Date.now()) {
+    // 检查是否为旧版本缓存（没有userId字段）
+    if (!cache.userId) {
+      console.warn('getCachedAdminPermissions: 发现旧版本管理员权限缓存，自动清除');
       clearAdminCache();
       return null;
+    }
+    
+    // 对于超级管理员的临时缓存，允许使用
+    if (cache.userId === 'temp_super_admin' && cache.permissions.level === AdminLevel.SUPER_ADMIN) {
+      console.log('getCachedAdminPermissions: 使用超级管理员临时缓存');
+      return cache.permissions;
     }
     
     // 检查缓存的用户ID是否与当前用户匹配
     const currentUserId = getCurrentUserIdFromAuth();
     if (!currentUserId || cache.userId !== currentUserId) {
-      console.warn('管理员权限缓存用户不匹配，自动清除缓存');
+      console.warn('getCachedAdminPermissions: 管理员权限缓存用户不匹配，当前用户:', currentUserId, '缓存用户:', cache.userId);
       clearAdminCache();
       return null;
     }
     
+    console.log('getCachedAdminPermissions: 权限缓存验证通过');
     return cache.permissions;
   } catch (error) {
-    console.error('读取管理员缓存失败:', error);
+    console.error('getCachedAdminPermissions: 读取管理员缓存失败:', error);
     clearAdminCache();
     return null;
   }
