@@ -1,142 +1,142 @@
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# ===== 必须忽略的文件（安全和性能考虑）=====
 
-# Next.js build outputs
+# 依赖目录（体积巨大，应通过 package.json 安装）
+node_modules/
+jspm_packages/
+
+# 环境变量（包含敏感信息如API密钥）
+.env
+.env.local
+.env.production
+# 开发测试阶段：创建 .env.example 来共享配置模板
+# .env.development.local  # 如果团队需要共享开发配置可以注释掉
+# .env.test.local        # 如果需要共享测试配置可以注释掉
+
+# Firebase 临时文件和缓存
+.firebase/
+firebase-debug.log*
+ui-debug.log*
+firestore-debug.log*
+
+# Next.js 构建输出
 .next/
 out/
 build/
 dist/
-
-# Production build
 /build
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# ===== 开发测试阶段可选忽略 =====
 
-# Firebase
-.firebase/
-firebase-debug.log
-ui-debug.log
-firestore-debug.log
-
-# Logs
+# 日志文件（开发时可能需要查看）
 logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+# 如果需要提交特定日志用于调试，使用: git add -f debug.log
 
-# Runtime data
+# 测试相关文件
+coverage/
+.coverage/
+*.lcov
+.nyc_output/
+htmlcov/
+test-results/
+
+# 编辑器配置（团队可能需要共享配置）
+.vscode/       # 如果团队使用统一的VSCode配置，可以注释掉
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-*
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+.Spotlight-V100
+.Trashes
+
+# 临时文件和缓存
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+.parcel-cache/
+.npm/
+
+# 运行时数据
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
-coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-node_modules/
-jspm_packages/
-
-# Optional npm cache directory
-.npm
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
-.env.test
-
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# Next.js build output
-.next
-
-# Nuxt.js build / generate output
-.nuxt
-dist
-
-# Storybook build outputs
-.out
-.storybook-out
-
-# Temporary folders
-tmp/
-temp/
-
-# Editor directories and files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Windows
-[Dd]esktop.ini
-$RECYCLE.BIN/
-
-# Backup files
-*.backup
-*.bak
-*.orig
-
-# Package lock files (choose one based on your package manager)
+# 包管理器文件
+# 开发阶段建议提交 package-lock.json 确保依赖版本一致
 # package-lock.json
 # yarn.lock
 # pnpm-lock.yaml
 
-# Local development
+# 可选的npm缓存目录
+.npm
+
+# 可选的REPL历史
+.node_repl_history
+
+# npm pack 的输出
+*.tgz
+
+# Yarn完整性文件
+.yarn-integrity
+
+# dotenv测试环境变量文件
+.env.test
+
+# Nuxt.js 构建/生成输出
+.nuxt
+
+# Storybook构建输出
+.out
+.storybook-out
+
+# 备份文件
+*.backup
+*.bak
+*.orig
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+
+# ===== 项目特定忽略 =====
+
+# Vercel部署
 .vercel
-.cache/
 
 # Sentry
 .sentryclirc
 
-# Debug
+# 本地开发数据库
+*.sqlite
+*.db
+
+# 调试文件
 debug.log
 
-# Testing
-coverage/
-.coverage
-htmlcov/
-
-# IDEs
-*.sublime-*
-.vscode/
-.idea/
-
-# Misc
-*.tgz
-*.tar.gz
+# ===== 提示 =====
+# 1. 强制添加被忽略的文件：git add -f <filename>
+# 2. 查看被忽略的文件：git status --ignored
+# 3. 测试忽略规则：git check-ignore -v <filename>
