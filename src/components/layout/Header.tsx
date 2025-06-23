@@ -1,4 +1,3 @@
-
 "use client";
 import Link from 'next/link';
 import { useAuth } from '../../contexts/AuthContext'
@@ -63,8 +62,8 @@ export default function Header() {
               </Link>
             ))}
             {/* Admin Link - visible to any authenticated user for this prototype */}
-            <Link href="/admin" legacyBehavior>
-                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/admin' ? 'bg-accent text-accent-foreground' : ''}`}>
+            <Link href="/manage" legacyBehavior>
+                <a className={`flex items-center gap-1 text-xs md:text-sm p-1 md:p-2 hover:bg-accent hover:text-accent-foreground transition-colors rounded-sm ${pathname === '/manage' ? 'bg-accent text-accent-foreground' : ''}`}>
                   <LayoutDashboard size={18} />
                   <span className="hidden md:inline">管理</span>
                 </a>
