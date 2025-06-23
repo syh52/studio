@@ -128,23 +128,6 @@ export default function RegisterForm() {
       {/* Register Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="username" className="text-sm font-medium text-white">用户名</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="pl-10 glass-card border-white/20 bg-white/5 text-white placeholder-gray-400 modern-focus rounded-xl h-12"
-              placeholder="选择一个用户名"
-              disabled={isLoading}
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2">
           <Label htmlFor="email" className="text-sm font-medium text-white">邮箱地址</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -156,6 +139,23 @@ export default function RegisterForm() {
               required
               className="pl-10 glass-card border-white/20 bg-white/5 text-white placeholder-gray-400 modern-focus rounded-xl h-12"
               placeholder="user@example.com"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="username" className="text-sm font-medium text-white">用户名</Label>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Input
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="pl-10 glass-card border-white/20 bg-white/5 text-white placeholder-gray-400 modern-focus rounded-xl h-12"
+              placeholder="选择一个用户名"
               disabled={isLoading}
             />
           </div>
