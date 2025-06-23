@@ -16,13 +16,16 @@ import {
   updatePublicVocabularyPack
 } from '../../lib/firestore-service';
 import { VocabularyPack, Dialogue } from '../../lib/data'
-import { Upload, Search, FileText, Book } from 'lucide-react';
+import { Upload, Search, FileText, Book, Shield } from 'lucide-react';
 
 // 导入新创建的组件
 import DialogueManagement from '../../components/manage/DialogueManagement'
 import VocabularyManagement from '../../components/manage/VocabularyManagement'
 import EditDialogueDialog from '../../components/manage/EditDialogueDialog'
 import EditVocabularyDialog from '../../components/manage/EditVocabularyDialog'
+import { AdminKeyManagement } from '../../components/admin/AdminKeyManagement'
+import { ProtectedFeature } from '../../components/admin/ProtectedFeature'
+import { getCachedAdminPermissions, hasPermission } from '../../lib/admin-auth'
 
 export default function ManagePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -33,6 +36,17 @@ export default function ManagePage() {
   const [vocabularyPacks, setVocabularyPacks] = useState<VocabularyPack[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('dialogues');
+
+  // 处理URL参数来设置默认标签页
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tab = urlParams.get('tab');
+      if (tab && ['dialogues', 'vocabulary', 'admin'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
   
   // 编辑状态
   const [editingDialogue, setEditingDialogue] = useState<Dialogue | null>(null);
@@ -94,6 +108,17 @@ export default function ManagePage() {
   const handleDeleteDialogue = async (dialogueId: string) => {
     if (!user) return;
     
+    // 检查管理员权限
+    const permissions = getCachedAdminPermissions();
+    if (!permissions || !hasPermission('canAccessUpload')) {
+      toast({
+        title: "权限不足",
+        description: "只有管理员才能删除公共对话",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       await deletePublicDialogue(dialogueId);
       setDialogues(prev => prev.filter(d => d.id !== dialogueId));
@@ -113,6 +138,17 @@ export default function ManagePage() {
   // 删除公共词汇包
   const handleDeleteVocabulary = async (packId: string) => {
     if (!user) return;
+    
+    // 检查管理员权限
+    const permissions = getCachedAdminPermissions();
+    if (!permissions || !hasPermission('canAccessUpload')) {
+      toast({
+        title: "权限不足",
+        description: "只有管理员才能删除公共词汇包",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       await deletePublicVocabularyPack(packId);
@@ -134,6 +170,17 @@ export default function ManagePage() {
   const handleUpdateDialogue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !editingDialogue) return;
+    
+    // 检查管理员权限
+    const permissions = getCachedAdminPermissions();
+    if (!permissions || !hasPermission('canAccessUpload')) {
+      toast({
+        title: "权限不足",
+        description: "只有管理员才能编辑公共对话",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       await updatePublicDialogue(editingDialogue.id, {
@@ -163,6 +210,17 @@ export default function ManagePage() {
   // 更新公共词汇包
   const handleUpdateVocabulary = async () => {
     if (!user || !editingVocabulary) return;
+    
+    // 检查管理员权限
+    const permissions = getCachedAdminPermissions();
+    if (!permissions || !hasPermission('canAccessUpload')) {
+      toast({
+        title: "权限不足",
+        description: "只有管理员才能编辑公共词汇包",
+        variant: "destructive"
+      });
+      return;
+    }
     
     try {
       await updatePublicVocabularyPack(editingVocabulary.id, {
@@ -233,7 +291,7 @@ export default function ManagePage() {
       {/* 主要内容 */}
       <div className="glass-card-strong rounded-2xl overflow-hidden animate-blur-in animate-delay-500">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 bg-white/5 border-b border-white/10">
+          <TabsList className="grid w-full grid-cols-3 bg-white/5 border-b border-white/10">
             <TabsTrigger 
               value="dialogues" 
               className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
@@ -247,6 +305,13 @@ export default function ManagePage() {
             >
               <Book className="h-4 w-4" />
               词汇管理 ({filteredVocabularyPacks.length})
+            </TabsTrigger>
+            <TabsTrigger 
+              value="admin" 
+              className="flex items-center gap-2 text-gray-300 data-[state=active]:text-white data-[state=active]:bg-purple-500/20 transition-all duration-200"
+            >
+              <Shield className="h-4 w-4" />
+              管理员功能
             </TabsTrigger>
           </TabsList>
           
@@ -268,6 +333,44 @@ export default function ManagePage() {
               onEdit={setEditingVocabulary}
               onDelete={handleDeleteVocabulary}
             />
+          </TabsContent>
+
+          <TabsContent value="admin" className="mt-6">
+            <ProtectedFeature
+              requiredPermission="canManageKeys"
+              title="管理员验证"
+              description="请输入管理员密钥以访问管理员功能"
+              fallbackTitle="管理员功能需要权限验证"
+              fallbackDescription={
+                <div className="space-y-4">
+                  <p>管理员功能包括密钥管理、系统配置、用户权限管理等核心功能。</p>
+                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+                    <h4 className="text-blue-400 font-medium mb-2">🔐 需要获取管理员密钥？</h4>
+                    <p className="text-gray-300 text-sm">
+                      如果您需要管理员权限，请联系 <span className="font-medium text-blue-400">沈亦航</span> 获取有效的管理员密钥。
+                    </p>
+                    <p className="text-gray-400 text-xs mt-2">
+                      请注意：管理员功能涉及系统核心设置，仅限授权人员使用。
+                    </p>
+                  </div>
+                </div>
+              }
+            >
+              <div className="space-y-6">
+                {/* 页面标题 */}
+                <div className="mb-8">
+                  <h2 className="text-2xl font-inter font-bold text-white mb-2">
+                    管理员密钥管理
+                  </h2>
+                  <p className="text-gray-400">
+                    生成、管理和监控所有管理员密钥的使用情况
+                  </p>
+                </div>
+
+                {/* 管理界面 */}
+                <AdminKeyManagement />
+              </div>
+            </ProtectedFeature>
           </TabsContent>
         </Tabs>
       </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Card, 
@@ -26,8 +27,10 @@ import {
   Trash2, 
   Edit, 
   Book, 
-  Volume2
+  Volume2,
+  Shield
 } from 'lucide-react';
+import { getCachedAdminPermissions, hasPermission } from '../../lib/admin-auth';
 
 interface VocabularyManagementProps {
   vocabularyPacks: VocabularyPack[];
@@ -45,6 +48,13 @@ export default function VocabularyManagement({
   onDelete 
 }: VocabularyManagementProps) {
   const router = useRouter();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 检查管理员权限
+  useEffect(() => {
+    const permissions = getCachedAdminPermissions();
+    setIsAdmin(permissions ? hasPermission('canAccessUpload') : false);
+  }, []);
 
   // 过滤词汇包
   const filteredVocabularyPacks = vocabularyPacks.filter(pack =>
@@ -76,7 +86,7 @@ export default function VocabularyManagement({
         <CardContent className="text-center py-12">
           <Book className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-400 leading-relaxed">
-            {searchTerm ? '没有找到匹配的词汇包' : '您还没有上传任何词汇包'}
+            {searchTerm ? '没有找到匹配的词汇包' : '还没有公共词汇包'}
           </p>
           <Button 
             variant="outline" 
@@ -91,95 +101,114 @@ export default function VocabularyManagement({
   }
 
   return (
-    <div className="grid gap-4">
-      {filteredVocabularyPacks.map((pack, index) => (
-        <Card 
-          key={pack.id} 
-          className="glass-card border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-200 perspective-element animate-blur-in"
-          style={{ animationDelay: `${index * 100}ms` }}
-        >
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <CardTitle className="text-xl text-white font-inter tracking-tight">
-                  {pack.name}
-                </CardTitle>
-                <CardDescription className="mt-1 text-gray-400 leading-relaxed">
-                  {pack.description}
-                </CardDescription>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Book className="h-3 w-3" />
-                    {pack.items.length} 个词汇
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Volume2 className="h-3 w-3" />
-                    {pack.items.filter(item => item.pronunciationAudio).length} 个有音频
-                  </span>
+    <div className="space-y-4">
+      {/* 权限提示 */}
+      {!isAdmin && (
+        <div className="glass-card border-orange-500/30 bg-orange-500/5 p-4 rounded-xl">
+          <div className="flex items-center gap-2 text-orange-300">
+            <Shield className="h-4 w-4" />
+            <span className="font-medium">查看模式</span>
+          </div>
+          <p className="text-sm text-orange-200 mt-1">
+            您当前处于查看模式，无法编辑或删除公共内容。如需管理权限，请联系管理员。
+          </p>
+        </div>
+      )}
+
+      {/* 词汇包列表 */}
+      <div className="grid gap-4">
+        {filteredVocabularyPacks.map((pack, index) => (
+          <Card 
+            key={pack.id} 
+            className="glass-card border-white/20 bg-white/5 hover:bg-white/10 transition-all duration-200 perspective-element animate-blur-in"
+            style={{ animationDelay: `${index * 100}ms` }}
+          >
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-xl text-white font-inter tracking-tight">
+                    {pack.name}
+                  </CardTitle>
+                  <CardDescription className="mt-1 text-gray-400 leading-relaxed">
+                    {pack.description}
+                  </CardDescription>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                    <span className="flex items-center gap-1">
+                      <Book className="h-3 w-3" />
+                      {pack.items.length} 个词汇
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Volume2 className="h-3 w-3" />
+                      {pack.items.filter(item => item.pronunciationAudio).length} 个有音频
+                    </span>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onEdit(pack)}
-                  className="glass-card border-white/30 text-white hover:bg-white/10 hover:scale-105 transition-all duration-200 modern-focus"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
+                {/* 只有管理员才能看到编辑和删除按钮 */}
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
                       size="sm"
-                      className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10 hover:scale-105 transition-all duration-200 modern-focus"
+                      onClick={() => onEdit(pack)}
+                      className="glass-card border-white/30 text-white hover:bg-white/10 hover:scale-105 transition-all duration-200 modern-focus"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Edit className="h-4 w-4" />
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="glass-card-strong border-white/30 bg-gray-900/95">
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="text-white font-inter">确认删除</AlertDialogTitle>
-                      <AlertDialogDescription className="text-gray-400 leading-relaxed">
-                        您确定要删除词汇包"{pack.name}"吗？此操作无法撤销。
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="glass-card border-white/30 text-white hover:bg-white/10">
-                        取消
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => onDelete(pack.id)}
-                        className="bg-red-600 text-white hover:bg-red-700 transition-all duration-200"
-                      >
-                        删除
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          className="glass-card border-red-500/30 text-red-400 hover:bg-red-500/10 hover:scale-105 transition-all duration-200 modern-focus"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="glass-card-strong border-white/30 bg-gray-900/95">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-white font-inter">确认删除</AlertDialogTitle>
+                          <AlertDialogDescription className="text-gray-400 leading-relaxed">
+                            您确定要删除词汇包"{pack.name}"吗？此操作无法撤销。
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="glass-card border-white/30 text-white hover:bg-white/10">
+                            取消
+                          </AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => onDelete(pack.id)}
+                            className="bg-red-600 text-white hover:bg-red-700 transition-all duration-200"
+                          >
+                            删除
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {pack.items.slice(0, 5).map((item, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm">
-                  <span className="font-medium text-white min-w-20">{item.english}</span>
-                  <span className="text-gray-400 flex-1">{item.chinese}</span>
-                  {item.pronunciationAudio && (
-                    <Volume2 className="h-3 w-3 text-green-400" />
-                  )}
-                </div>
-              ))}
-              {pack.items.length > 5 && (
-                <p className="text-sm text-gray-500 pt-2">
-                  ... 还有 {pack.items.length - 5} 个词汇
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {pack.items.slice(0, 5).map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm">
+                    <span className="font-medium text-white min-w-20">{item.english}</span>
+                    <span className="text-gray-400 flex-1">{item.chinese}</span>
+                    {item.pronunciationAudio && (
+                      <Volume2 className="h-3 w-3 text-green-400" />
+                    )}
+                  </div>
+                ))}
+                {pack.items.length > 5 && (
+                  <p className="text-sm text-gray-500 pt-2">
+                    ... 还有 {pack.items.length - 5} 个词汇
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 } 
