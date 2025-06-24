@@ -1,5 +1,6 @@
 import { getAIInstance } from '../firebase';
 import { KnowledgeBase } from '../knowledge-base';
+import { aiProviderManager } from '../ai-providers/ai-provider-manager';
 import type { AIResponse, ConversationMessage, GenerationConfig } from './types';
 
 /**
@@ -30,8 +31,6 @@ export class LexiconAIService {
    */
   static async generateChatResponse(conversationHistory: ConversationMessage[]): Promise<AIResponse> {
     try {
-      const model = await this.getModel();
-      
       // 验证对话历史格式
       if (conversationHistory.length === 0) {
         throw new Error('对话历史不能为空');
@@ -43,9 +42,10 @@ export class LexiconAIService {
         throw new Error('最后一条消息必须是用户消息');
       }
 
-      // 调试：打印角色序列
+      // 调试：打印角色序列和当前AI服务
       const roleSequence = conversationHistory.map(msg => msg.role).join(' -> ');
       console.log('AI服务收到的角色序列:', roleSequence);
+      console.log('当前使用的AI服务:', aiProviderManager.getCurrentProvider());
 
       // 如果只有一条用户消息（第一次对话），尝试添加知识库上下文
       if (conversationHistory.length === 1) {
@@ -56,24 +56,16 @@ export class LexiconAIService {
           ? `${knowledgeContext}\n\n用户问题：${lastMessage.parts[0].text}`
           : `你是一个专业的航空英语学习助手。请用中文回答，内容要准确、实用，适合航空安全员学习。\n\n用户问题：${lastMessage.parts[0].text}`;
 
-        const result = await model.generateContent({
-          contents: [{ role: 'user', parts: [{ text: enhancedPrompt }] }],
-          generationConfig: {
-            maxOutputTokens: 3000,  // 增加到3000，约2000-2500个中文字
-            temperature: 0.7,
-            topK: 40,
-            topP: 0.95,
-          }
-        });
-        const response = result.response.text();
-        return {
-          success: true,
-          data: response.trim()
-        };
+        // 使用增强的对话历史
+        const enhancedHistory: ConversationMessage[] = [
+          { role: 'user', parts: [{ text: enhancedPrompt }] }
+        ];
+        
+        return aiProviderManager.generateChatResponse(enhancedHistory);
       }
 
-      // 多轮对话：创建聊天实例，确保知识库上下文在历史记录中
-      let history = conversationHistory.slice(0, -1);
+      // 多轮对话：检查并添加知识库上下文
+      let history = [...conversationHistory];
       
       // 如果历史记录的第一条消息不包含知识库上下文，尝试添加
       if (history.length > 0 && !history[0].parts[0].text.includes('重要专业知识库')) {
@@ -87,25 +79,8 @@ export class LexiconAIService {
           };
         }
       }
-      
-      const chat = model.startChat({
-        history: history,
-        generationConfig: {
-          maxOutputTokens: 4096,  // 提升到4096，充分利用Gemini 2.5 Pro的能力
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-        },
-      });
 
-      // 发送最后一条用户消息
-      const result = await chat.sendMessage(lastMessage.parts[0].text);
-      const response = result.response.text();
-
-      return {
-        success: true,
-        data: response.trim()
-      };
+      return aiProviderManager.generateChatResponse(history);
     } catch (error) {
       console.error('多轮对话生成失败:', error);
       return {
@@ -122,29 +97,8 @@ export class LexiconAIService {
    */
   static async* generateChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
     try {
-      const model = await this.getModel();
-      
-      // 使用 startChat 方法创建多轮对话
-      const chat = model.startChat({
-        history: conversationHistory.slice(0, -1), // 除了最后一条消息
-        generationConfig: {
-          maxOutputTokens: 4096,  // 提升到4096，充分利用Gemini 2.5 Pro的能力
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-        },
-      });
-
-      // 发送最后一条用户消息并流式获取回复
-      const lastMessage = conversationHistory[conversationHistory.length - 1];
-      const result = await chat.sendMessageStream(lastMessage.parts[0].text);
-      
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) {
-          yield text;
-        }
-      }
+      console.log('开始流式生成，使用AI服务:', aiProviderManager.getCurrentProvider());
+      yield* aiProviderManager.generateChatResponseStream(conversationHistory);
     } catch (error) {
       console.error('流式多轮对话生成失败:', error);
       yield `抱歉，生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
@@ -159,32 +113,8 @@ export class LexiconAIService {
    */
   static async generateText(prompt: string, config?: GenerationConfig): Promise<AIResponse> {
     try {
-      const model = await this.getModel();
-      
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: config || {
-          temperature: 0.7,
-          maxOutputTokens: 4096, // 默认使用Gemini 2.5 Pro的强大输出能力
-          topK: 40,
-          topP: 0.95,
-        }
-      });
-      
-      const response = await result.response;
-      
-      // 检查完成原因
-      if (response.candidates && response.candidates[0]) {
-        const finishReason = response.candidates[0].finishReason;
-        if (finishReason === 'MAX_TOKENS') {
-          console.warn('⚠️ 回复因达到 token 限制而截断');
-        }
-      }
-      
-      return {
-        success: true,
-        data: response.text()
-      };
+      console.log('生成文本，使用AI服务:', aiProviderManager.getCurrentProvider());
+      return aiProviderManager.generateText(prompt);
     } catch (error: any) {
       console.error('生成文本失败:', error);
       return {

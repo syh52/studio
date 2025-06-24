@@ -1,6 +1,7 @@
 'use client';
 
 import { ProtectedFeature } from '../../components/admin/ProtectedFeature';
+import { AIProviderStatus } from '../../components/ai/AIProviderStatus';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { getCachedAdminPermissions, clearAdminCache, getAdminPermissionDebugInfo } from '../../lib/admin-auth';
@@ -23,6 +24,9 @@ export default function TestAdminPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 space-y-6">
+      {/* AI服务状态 */}
+      <AIProviderStatus />
+
       <Card className="glass-card border-white/20 bg-white/5">
         <CardHeader>
           <CardTitle className="text-white">测试超级管理员功能</CardTitle>
@@ -31,6 +35,13 @@ export default function TestAdminPage() {
           <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4">
             <p className="text-yellow-300 text-sm">
               <strong>超级管理员密钥：</strong> LEXICON-SUPER-ADMIN-2024-9F8E7D6C5B4A3928
+            </p>
+          </div>
+
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+            <p className="text-blue-300 text-sm">
+              <strong>重要提示：</strong> 项目现已支持DeepSeek AI服务，可在中国大陆无需VPN直接使用。
+              配置DeepSeek API密钥后，AI功能将自动切换到国内服务。
             </p>
           </div>
           
