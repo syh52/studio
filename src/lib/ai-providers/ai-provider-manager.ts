@@ -25,7 +25,8 @@ export class AIProviderManager {
 
   private constructor() {
     this.deepSeekProvider = new DeepSeekProvider();
-    this.initializeProviders();
+    // 异步初始化，避免阻塞页面加载
+    this.initializeProvidersAsync();
   }
 
   static getInstance(): AIProviderManager {
@@ -35,31 +36,51 @@ export class AIProviderManager {
     return AIProviderManager.instance;
   }
 
-  private async initializeProviders() {
-    // 检查各个AI服务的可用性
+  private initializeProvidersAsync() {
+    // 异步初始化，避免阻塞页面加载
     if (typeof window !== 'undefined') {
-      // 检查DeepSeek是否配置
+      // 立即检查DeepSeek配置
       const deepseekConfigured = this.deepSeekProvider.isConfigured();
       console.log('🤖 DeepSeek配置状态:', deepseekConfigured ? '✅ 已配置' : '❌ 未配置');
 
-      // 检查Google AI是否可用（可能因为网络限制无法使用）
-      try {
-        await getAIInstance();
-        this.isGoogleAvailable = true;
-        console.log('🤖 Google AI状态: ✅ 可用');
-      } catch (error) {
-        this.isGoogleAvailable = false;
-        console.log('🤖 Google AI状态: ❌ 不可用 (可能需要VPN)');
-      }
-
-      // 自动选择最佳可用的AI服务
+      // 优先选择DeepSeek（如果已配置）
       if (deepseekConfigured) {
         this.currentProvider = 'deepseek';
         console.log('🎯 自动选择AI服务: DeepSeek (中国大陆友好)');
-      } else if (this.isGoogleAvailable) {
+      }
+
+      // 异步检查Google AI（不阻塞初始化）
+      this.checkGoogleAIAsync().catch(error => {
+        console.log('🤖 Google AI异步检查失败:', error.message);
+      });
+    }
+  }
+
+  private async checkGoogleAIAsync() {
+    try {
+      // 设置超时避免长时间阻塞
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Google AI检查超时')), 5000);
+      });
+      
+      const checkPromise = getAIInstance();
+      
+      await Promise.race([checkPromise, timeoutPromise]);
+      
+      this.isGoogleAvailable = true;
+      console.log('🤖 Google AI状态: ✅ 可用');
+      
+      // 如果DeepSeek未配置，切换到Google AI
+      if (!this.deepSeekProvider.isConfigured()) {
         this.currentProvider = 'google';
-        console.log('🎯 自动选择AI服务: Google AI (需要VPN)');
-      } else {
+        console.log('🎯 切换AI服务为: Google AI (DeepSeek未配置)');
+      }
+    } catch (error) {
+      this.isGoogleAvailable = false;
+      console.log('🤖 Google AI状态: ❌ 不可用 (可能需要VPN)');
+      
+      // 如果DeepSeek也未配置，显示警告
+      if (!this.deepSeekProvider.isConfigured()) {
         console.warn('⚠️ 没有可用的AI服务配置');
       }
     }
