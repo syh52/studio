@@ -1,5 +1,6 @@
 import { getAIInstance } from '../firebase';
-import type { AIResponse, VocabularyItem } from '../data';
+import type { AIResponse } from './types';
+import type { VocabularyItem } from '../data';
 
 /**
  * 词汇AI服务
@@ -9,8 +10,8 @@ export class AIVocabularyService {
   /**
    * 获取AI模型实例
    */
-  private static getModel() {
-    const { model } = getAIInstance();
+  private static async getModel() {
+    const { model } = await getAIInstance();
     if (!model) {
       throw new Error('AI 模型未初始化');
     }
@@ -22,7 +23,7 @@ export class AIVocabularyService {
    */
   static async generateVocabularyTip(vocabulary: VocabularyItem): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const prompt = `
 作为航空英语学习助手，为以下词汇生成一个简短的学习建议或记忆技巧：
 
@@ -62,7 +63,7 @@ export class AIVocabularyService {
     context?: string
   ): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const prompt = `
 作为英语学习助手，请为以下词汇生成简短自然的例句：
 
@@ -255,7 +256,7 @@ ${learningHistory ? `
     };
 
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
 
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -270,6 +271,53 @@ ${learningHistory ? `
       };
     } catch (error: any) {
       console.error('生成词汇建议失败:', error);
+      return {
+        success: false,
+        error: error.message || '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 基于上下文生成词汇建议
+   */
+  static async generateContextualSuggestions(
+    context: string,
+    targetCount: number = 10
+  ): Promise<AIResponse> {
+    try {
+      const { model } = await getAIInstance();
+      const prompt = `
+作为航空英语学习助手，请为以下上下文生成${targetCount}个相关的词汇建议：
+
+上下文：${context}
+
+请提供：
+1. 词汇建议
+2. 记忆技巧
+3. 实际应用场景举例
+
+每个建议不超过100字。
+      `;
+
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 1500,
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+        }
+      });
+      
+      const response = await result.response;
+
+      return {
+        success: true,
+        data: response.text()
+      };
+    } catch (error: any) {
+      console.error('生成上下文相关词汇建议失败:', error);
       return {
         success: false,
         error: error.message || '未知错误'

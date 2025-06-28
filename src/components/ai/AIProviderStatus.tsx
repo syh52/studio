@@ -2,206 +2,262 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Alert, AlertDescription } from '../ui/alert';
-import { 
-  Zap, 
-  Wifi, 
-  WifiOff, 
-  Globe, 
-  Shield, 
-  RefreshCw, 
-  Info,
-  CheckCircle,
-  XCircle,
-  AlertTriangle
-} from 'lucide-react';
-import { aiProviderManager, AIProviderConfig, AIProviderType } from '../../lib/ai-providers/ai-provider-manager';
+import { Button } from '../ui/button';
+import { CheckCircle, XCircle, Loader2, RefreshCw, Crown, Shield } from 'lucide-react';
+
+interface AIProvider {
+  name: string;
+  type: string;
+  status: 'connected' | 'disconnected' | 'testing';
+  isPrimary: boolean;
+  isEnabled: boolean;
+  priority: number;
+  description: string;
+  lastTestTime?: Date;
+  error?: string;
+}
 
 export function AIProviderStatus() {
-  const [providerStatus, setProviderStatus] = useState<{
-    current: AIProviderType;
-    available: AIProviderConfig[];
-    isWorking: boolean;
-  } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [providers, setProviders] = useState<AIProvider[]>([]);
+  const [currentProvider, setCurrentProvider] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const loadStatus = async () => {
+  // 初始化提供者状态
+  useEffect(() => {
+    const loadProviderStatus = async () => {
+      try {
+        const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
+        const availableProviders = aiProviderManager.getAvailableProviders();
+        const current = aiProviderManager.getCurrentProvider();
+        
+        const providersData: AIProvider[] = availableProviders.map(provider => ({
+          name: provider.name,
+          type: provider.type,
+          status: provider.enabled ? 'connected' : 'disconnected',
+          isPrimary: provider.type === current,
+          isEnabled: provider.enabled,
+          priority: provider.priority,
+          description: provider.description
+        }));
+
+        setProviders(providersData);
+        setCurrentProvider(current);
+      } catch (error) {
+        console.error('加载AI提供者状态失败:', error);
+      }
+    };
+
+    loadProviderStatus();
+  }, []);
+
+  const testAIProvider = async (providerType: string) => {
+    setIsLoading(true);
+    setProviders(prev => prev.map(p => 
+      p.type === providerType 
+        ? { ...p, status: 'testing' as const }
+        : p
+    ));
+
     try {
-      const status = aiProviderManager.getProviderStatus();
-      setProviderStatus(status);
+      const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
+      
+      // 临时切换到要测试的提供者
+      const originalProvider = aiProviderManager.getCurrentProvider();
+      const switched = aiProviderManager.setProvider(providerType as any);
+      
+      if (switched) {
+        // 测试提供者
+        const isWorking = await aiProviderManager.testCurrentProvider();
+        
+        setProviders(prev => prev.map(p => 
+          p.type === providerType 
+            ? { 
+                ...p, 
+                status: isWorking ? 'connected' as const : 'disconnected' as const,
+                lastTestTime: new Date(),
+                error: isWorking ? undefined : '测试失败'
+              }
+            : p
+        ));
+        
+        // 如果测试成功且不是原提供者，询问是否切换
+        if (isWorking && providerType !== originalProvider) {
+          console.log(`✅ ${providerType} 测试成功`);
+        } else {
+          // 恢复原提供者
+          aiProviderManager.setProvider(originalProvider);
+        }
+      } else {
+        throw new Error('无法切换到该提供者');
+      }
     } catch (error) {
-      console.error('获取AI服务状态失败:', error);
+      setProviders(prev => prev.map(p => 
+        p.type === providerType 
+          ? { 
+              ...p, 
+              status: 'disconnected' as const,
+              error: error instanceof Error ? error.message : '连接失败'
+            }
+          : p
+      ));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const refreshStatus = async () => {
-    setIsRefreshing(true);
-    await loadStatus();
-    setIsRefreshing(false);
-  };
-
-  const switchProvider = async (providerType: AIProviderType) => {
-    const success = aiProviderManager.setProvider(providerType);
-    if (success) {
-      await loadStatus();
+  const switchProvider = async (providerType: string) => {
+    try {
+      const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
+      const switched = aiProviderManager.setProvider(providerType as any);
+      
+      if (switched) {
+        setCurrentProvider(providerType);
+        setProviders(prev => prev.map(p => ({
+          ...p,
+          isPrimary: p.type === providerType
+        })));
+      }
+    } catch (error) {
+      console.error('切换AI提供者失败:', error);
     }
   };
 
-  useEffect(() => {
-    loadStatus();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <Card className="glass-card border-white/20 bg-white/5">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 animate-spin text-blue-400" />
-            <span className="text-gray-300">检查AI服务状态...</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!providerStatus) {
-    return (
-      <Alert className="glass-card border-red-500/20 bg-red-500/10">
-        <XCircle className="h-4 w-4 text-red-400" />
-        <AlertDescription className="text-red-300">
-          无法获取AI服务状态
-        </AlertDescription>
-      </Alert>
-    );
-  }
-
-  const currentProviderConfig = providerStatus.available.find(
-    p => p.type === providerStatus.current
-  );
-
-  const getStatusIcon = (provider: AIProviderConfig) => {
-    if (!provider.enabled) {
-      return <XCircle className="h-4 w-4 text-red-400" />;
+  const testAllProviders = async () => {
+    for (const provider of providers) {
+      if (provider.isEnabled) {
+        await testAIProvider(provider.type);
+      }
     }
-    if (provider.type === providerStatus?.current) {
-      return <CheckCircle className="h-4 w-4 text-green-400" />;
-    }
-    return <Wifi className="h-4 w-4 text-gray-400" />;
   };
 
-  const getStatusBadge = (provider: AIProviderConfig) => {
-    if (!provider.enabled) {
-      return <Badge variant="destructive" className="text-xs">未配置</Badge>;
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <CheckCircle className="h-4 w-4 text-green-400" />;
+      case 'disconnected':
+        return <XCircle className="h-4 w-4 text-red-400" />;
+      case 'testing':
+        return <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />;
+      default:
+        return <XCircle className="h-4 w-4 text-gray-400" />;
     }
-    if (provider.type === providerStatus?.current) {
-      return <Badge className="bg-green-600 text-xs">当前使用</Badge>;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <Badge variant="default" className="bg-green-600">已连接</Badge>;
+      case 'disconnected':
+        return <Badge variant="destructive">未连接</Badge>;
+      case 'testing':
+        return <Badge variant="secondary">测试中...</Badge>;
+      default:
+        return <Badge variant="outline">未知</Badge>;
     }
-    return <Badge variant="outline" className="text-xs">可用</Badge>;
   };
 
   return (
-    <Card className="glass-card border-white/20 bg-white/5">
-      <CardHeader className="pb-3">
+    <Card className="glass-card border-white/20">
+      <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-white text-lg flex items-center gap-2">
-            <Zap className="h-5 w-5 text-blue-400" />
-            AI服务状态
+          <CardTitle className="text-white flex items-center gap-2">
+            <Shield className="h-5 w-5 text-blue-400" />
+            AI 服务状态
           </CardTitle>
           <Button
+            onClick={testAllProviders}
+            disabled={isLoading}
             variant="outline"
             size="sm"
-            onClick={refreshStatus}
-            disabled={isRefreshing}
-            className="glass-card border-white/30 text-white hover:bg-white/10"
+            className="glass-card-strong border-white/30 text-white hover:bg-white/10"
           >
-            <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-            刷新
+            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            测试所有
           </Button>
         </div>
+        <p className="text-gray-400 text-sm">
+          当前使用: <span className="text-blue-400 font-medium">{providers.find(p => p.isPrimary)?.name || '未知'}</span>
+        </p>
       </CardHeader>
-
       <CardContent className="space-y-4">
-        {/* 当前服务状态 */}
-        <div className="flex items-center justify-between p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              {providerStatus.isWorking ? (
-                <CheckCircle className="h-5 w-5 text-green-400" />
-              ) : (
-                <AlertTriangle className="h-5 w-5 text-yellow-400" />
-              )}
-              <span className="text-white font-medium">
-                当前服务: {currentProviderConfig?.name || '未知'}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {currentProviderConfig?.type === 'deepseek' && (
-              <Badge className="bg-green-600 text-xs">🇨🇳 国内访问</Badge>
-            )}
-            {currentProviderConfig?.type === 'google' && (
-              <Badge variant="secondary" className="text-xs">🌍 需要VPN</Badge>
-            )}
-          </div>
-        </div>
-
-        {/* 服务列表 */}
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium text-gray-300">可用服务:</h4>
-          {providerStatus.available.map((provider) => (
-            <div
-              key={provider.type}
-              className="flex items-center justify-between p-3 rounded-lg glass-card border-white/10 hover:border-white/20 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                {getStatusIcon(provider)}
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-white font-medium">{provider.name}</span>
-                    {getStatusBadge(provider)}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">{provider.description}</p>
+        {providers
+          .sort((a, b) => a.priority - b.priority)
+          .map((provider, index) => (
+          <div
+            key={provider.type}
+            className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
+              provider.isPrimary 
+                ? 'bg-blue-500/10 border-blue-500/30' 
+                : 'bg-white/5 border-white/10'
+            }`}
+          >
+            <div className="flex items-center space-x-3">
+              {getStatusIcon(provider.status)}
+              <div className="flex-1">
+                <div className="flex items-center space-x-2">
+                  <h3 className="text-white font-medium">{provider.name}</h3>
+                  {provider.isPrimary && (
+                    <Crown className="h-4 w-4 text-yellow-400" />
+                  )}
+                  {provider.priority === 1 && (
+                    <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                      首选
+                    </Badge>
+                  )}
+                  {provider.priority > 1 && (
+                    <Badge variant="outline" className="text-xs border-orange-400 text-orange-400">
+                      备用
+                    </Badge>
+                  )}
                 </div>
+                <p className="text-gray-400 text-sm">{provider.description}</p>
+                {provider.error && (
+                  <p className="text-red-400 text-sm mt-1">错误: {provider.error}</p>
+                )}
+                {provider.lastTestTime && (
+                  <p className="text-gray-400 text-xs mt-1">
+                    最后测试: {provider.lastTestTime.toLocaleTimeString()}
+                  </p>
+                )}
               </div>
-              
-              {provider.enabled && provider.type !== providerStatus.current && (
+            </div>
+            <div className="flex items-center space-x-3">
+              {getStatusBadge(provider.status)}
+              <div className="flex gap-2">
                 <Button
+                  onClick={() => testAIProvider(provider.type)}
+                  disabled={isLoading || provider.status === 'testing'}
                   variant="outline"
                   size="sm"
-                  onClick={() => switchProvider(provider.type)}
-                  className="glass-card border-white/30 text-white hover:bg-white/10"
+                  className="glass-card border-white/20 text-white hover:bg-white/10"
                 >
-                  切换
+                  {provider.status === 'testing' ? '测试中...' : '测试'}
                 </Button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* 配置提示 */}
-        {!providerStatus.available.some(p => p.enabled) && (
-          <Alert className="glass-card border-yellow-500/20 bg-yellow-500/10">
-            <Info className="h-4 w-4 text-yellow-400" />
-            <AlertDescription className="text-yellow-300 text-sm">
-              <div className="space-y-2">
-                <p className="font-medium">没有可用的AI服务</p>
-                <p>请配置以下任一AI服务：</p>
-                <ul className="list-disc list-inside space-y-1 text-xs">
-                  <li>DeepSeek API（推荐，中国大陆直接访问）</li>
-                  <li>Google AI（需要VPN）</li>
-                </ul>
-                <p className="text-xs">
-                  配置方法：在 <code>.env.local</code> 文件中添加相应的API密钥
-                </p>
+                {!provider.isPrimary && provider.isEnabled && (
+                  <Button
+                    onClick={() => switchProvider(provider.type)}
+                    disabled={isLoading}
+                    variant="outline"
+                    size="sm"
+                    className="glass-card border-blue-400/20 text-blue-400 hover:bg-blue-500/10"
+                  >
+                    切换
+                  </Button>
+                )}
               </div>
-            </AlertDescription>
-          </Alert>
-        )}
+            </div>
+          </div>
+        ))}
+        
+        <div className="pt-4 border-t border-white/10">
+          <div className="text-gray-400 text-sm space-y-1">
+            <p>• <span className="text-blue-400">Google AI (Gemini)</span> - 功能强大的多模态AI，首选服务</p>
+            <p>• <span className="text-orange-400">DeepSeek (备用)</span> - 仅在主要服务不可用时使用</p>
+            <p>• 系统会自动选择可用的服务，无需手动切换</p>
+            <p>• 如遇余额不足等错误，系统会自动切换到可用服务</p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

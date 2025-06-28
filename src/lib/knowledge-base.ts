@@ -435,16 +435,15 @@ export class KnowledgeBase {
   private static async analyzeContentWithAI(content: string, fileName: string): Promise<KnowledgeItem[]> {
     try {
       // 动态导入AI服务以避免循环依赖
-      const { LexiconAIService } = await import('./ai-service');
+      const { LexiconAIService } = await import('./ai/core-service');
       
       // 检查AI服务是否可用
       console.log('🤖 检查AI服务状态...');
-      const coreService = await import('./ai/core-service');
-      const isAvailable = await coreService.LexiconAIService.isAvailable();
+      const isAvailable = await LexiconAIService.isAvailable();
       
       if (!isAvailable) {
         console.log('🔥 AI服务未就绪，正在预热...');
-        await coreService.LexiconAIService.warmup();
+        await LexiconAIService.warmup();
       }
 
       // 检查文档大小并分块处理
@@ -487,7 +486,7 @@ export class KnowledgeBase {
    * 分析单个文档（小文档）
    */
   private static async analyzeSingleDocument(content: string, fileName: string): Promise<KnowledgeItem[]> {
-    const { LexiconAIService } = await import('./ai-service');
+    const { LexiconAIService } = await import('./ai/core-service');
     
     const prompt = `
 请分析以下文档内容，提取出重要的专业知识，并将其整理为结构化的知识条目。
@@ -518,18 +517,18 @@ ${content}
 
     console.log('🤖 开始AI文档分析...');
     
-    // 使用超激进重试机制处理AI请求
-    const result = await this.retryWithBackoff(
-      () => LexiconAIService.generateText(prompt),
-      6,     // 最多重试6次
-      30000  // 基础延迟30秒
-    );
-    
-    if (!result.success || !result.data) {
-      throw new Error('AI解析失败: ' + (result.error || '未知错误'));
+    try {
+      const result = await LexiconAIService.generateText(prompt);
+      
+      if (!result.success || !result.data) {
+        throw new Error('AI解析失败: ' + (result.error || '未知错误'));
+      }
+      
+      return this.parseAIResponse(result.data, fileName);
+    } catch (error) {
+      console.error(`❌ 单文档分析失败 (${fileName}):`, error);
+      throw error;
     }
-
-    return this.parseAIResponse(result.data, fileName);
   }
 
   /**
@@ -623,7 +622,7 @@ ${content}
    * 分块分析大文档
    */
   private static async analyzeDocumentInChunks(content: string, fileName: string): Promise<KnowledgeItem[]> {
-    const { LexiconAIService } = await import('./ai-service');
+    const { LexiconAIService } = await import('./ai/core-service');
     
     // 将文档分块（超小块策略）
     const chunks = this.splitDocumentIntoChunks(content, 200000); // 20万token每块
@@ -638,7 +637,7 @@ ${content}
       }
     });
     
-    const allKnowledgeItems: KnowledgeItem[] = [];
+    const allItems: KnowledgeItem[] = [];
     
     // 逐块处理
     for (let i = 0; i < chunks.length; i++) {
@@ -647,7 +646,7 @@ ${content}
       
       console.log(`🤖 正在分析第 ${chunkIndex}/${chunks.length} 块...`);
       
-      const prompt = `
+      const chunkPrompt = `
 请分析以下文档片段，提取出重要的专业知识，并将其整理为结构化的知识条目。
 
 文档名称：${fileName} (第${chunkIndex}/${chunks.length}部分)
@@ -676,41 +675,31 @@ ${chunk}
       `;
 
       try {
-        // 使用超激进重试机制处理AI请求
-        const result = await this.retryWithBackoff(
-          () => LexiconAIService.generateText(prompt),
-          6,     // 最多重试6次
-          30000  // 基础延迟30秒
-        );
+        const result = await LexiconAIService.generateText(chunkPrompt);
         
         if (result.success && result.data) {
           const chunkItems = this.parseAIResponse(result.data, `${fileName}-part${chunkIndex}`);
-          allKnowledgeItems.push(...chunkItems);
+          allItems.push(...chunkItems);
           console.log(`✅ 第 ${chunkIndex} 块分析完成，提取了 ${chunkItems.length} 个知识条目`);
         } else {
           console.warn(`⚠️ 第 ${chunkIndex} 块分析失败: ${result.error}`);
         }
-      } catch (error: any) {
-        if (error.message?.includes('429') || error.message?.includes('Resource exhausted')) {
-          console.error(`❌ 第 ${chunkIndex} 块API限制错误，跳过此块继续处理`);
-        } else {
-          console.error(`❌ 第 ${chunkIndex} 块分析出错:`, error);
-        }
-        // 继续处理下一块，不中断整个流程
+      } catch (error) {
+        console.warn(`⚠️ 第 ${chunkIndex} 块分析出错:`, error);
       }
       
       // 全局速率控制已经确保了足够的延迟，无需额外等待
     }
     
-    console.log(`🎉 分块分析完成，总共提取了 ${allKnowledgeItems.length} 个知识条目`);
+    console.log(`✅ 分块分析完成，总共提取了 ${allItems.length} 个知识条目`);
     
     // 如果提取的条目过多，进行去重和优先级筛选
-    if (allKnowledgeItems.length > 50) {
+    if (allItems.length > 50) {
       console.log('📋 知识条目较多，进行优化筛选...');
-      return this.optimizeKnowledgeItems(allKnowledgeItems);
+      return this.optimizeKnowledgeItems(allItems);
     }
     
-    return allKnowledgeItems;
+    return allItems;
   }
 
   /**

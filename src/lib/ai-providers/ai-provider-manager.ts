@@ -19,13 +19,13 @@ export interface AIProviderConfig {
 
 export class AIProviderManager {
   private static instance: AIProviderManager;
-  private currentProvider: AIProviderType = 'deepseek'; // 默认使用DeepSeek
+  private currentProvider: AIProviderType = 'google'; // 默认使用Google AI (Gemini)
   private deepSeekProvider: DeepSeekProvider;
   private isGoogleAvailable: boolean = false;
 
   private constructor() {
     this.deepSeekProvider = new DeepSeekProvider();
-    // 异步初始化，避免阻塞页面加载
+    // 异步初始化，优先检查Google AI
     this.initializeProvidersAsync();
   }
 
@@ -37,30 +37,43 @@ export class AIProviderManager {
   }
 
   private initializeProvidersAsync() {
-    // 异步初始化，避免阻塞页面加载
+    // 异步初始化，优先检查Google AI
     if (typeof window !== 'undefined') {
-      // 立即检查DeepSeek配置
-      const deepseekConfigured = this.deepSeekProvider.isConfigured();
-      console.log('🤖 DeepSeek配置状态:', deepseekConfigured ? '✅ 已配置' : '❌ 未配置');
-
-      // 优先选择DeepSeek（如果已配置）
-      if (deepseekConfigured) {
-        this.currentProvider = 'deepseek';
-        console.log('🎯 自动选择AI服务: DeepSeek (中国大陆友好)');
-      }
-
-      // 异步检查Google AI（不阻塞初始化）
-      this.checkGoogleAIAsync().catch(error => {
-        console.log('🤖 Google AI异步检查失败:', error.message);
+      console.log('🤖 优先初始化 Google AI (Gemini)...');
+      
+      // 优先检查Google AI
+      this.checkGoogleAIAsync().then(() => {
+        if (this.isGoogleAvailable) {
+          this.currentProvider = 'google';
+          console.log('🎯 使用AI服务: Google AI (Gemini) - 首选');
+        } else {
+          // 如果Google AI不可用，检查DeepSeek作为备用
+          const deepseekConfigured = this.deepSeekProvider.isConfigured();
+          console.log('🤖 DeepSeek配置状态:', deepseekConfigured ? '✅ 已配置' : '❌ 未配置');
+          
+          if (deepseekConfigured) {
+            this.currentProvider = 'deepseek';
+            console.log('🎯 备用AI服务: DeepSeek (Google AI不可用)');
+          } else {
+            console.warn('⚠️ 没有可用的AI服务配置');
+          }
+        }
+      }).catch(error => {
+        console.log('🤖 Google AI初始化失败:', error.message);
+        // 尝试使用DeepSeek作为备用
+        if (this.deepSeekProvider.isConfigured()) {
+          this.currentProvider = 'deepseek';
+          console.log('🎯 备用AI服务: DeepSeek');
+        }
       });
     }
   }
 
   private async checkGoogleAIAsync() {
     try {
-      // 设置超时避免长时间阻塞
+      // 设置较短超时，快速检测
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Google AI检查超时')), 5000);
+        setTimeout(() => reject(new Error('Google AI检查超时')), 3000);
       });
       
       const checkPromise = getAIInstance();
@@ -69,20 +82,9 @@ export class AIProviderManager {
       
       this.isGoogleAvailable = true;
       console.log('🤖 Google AI状态: ✅ 可用');
-      
-      // 如果DeepSeek未配置，切换到Google AI
-      if (!this.deepSeekProvider.isConfigured()) {
-        this.currentProvider = 'google';
-        console.log('🎯 切换AI服务为: Google AI (DeepSeek未配置)');
-      }
     } catch (error) {
       this.isGoogleAvailable = false;
-      console.log('🤖 Google AI状态: ❌ 不可用 (可能需要VPN)');
-      
-      // 如果DeepSeek也未配置，显示警告
-      if (!this.deepSeekProvider.isConfigured()) {
-        console.warn('⚠️ 没有可用的AI服务配置');
-      }
+      console.log('🤖 Google AI状态: ❌ 不可用 -', error instanceof Error ? error.message : '未知错误');
     }
   }
 
@@ -92,18 +94,18 @@ export class AIProviderManager {
   getAvailableProviders(): AIProviderConfig[] {
     return [
       {
-        type: 'deepseek',
-        enabled: this.deepSeekProvider.isConfigured(),
-        priority: 1,
-        name: 'DeepSeek',
-        description: '国产AI服务，中国大陆可直接访问'
-      },
-      {
         type: 'google',
         enabled: this.isGoogleAvailable,
-        priority: 2,
-        name: 'Google AI',
-        description: 'Google Gemini服务，需要VPN访问'
+        priority: 1, // Google AI优先级最高
+        name: 'Google AI (Gemini)',
+        description: 'Google Gemini 2.5 Pro - 强大的多模态AI'
+      },
+      {
+        type: 'deepseek',
+        enabled: this.deepSeekProvider.isConfigured(),
+        priority: 2, // DeepSeek作为备用
+        name: 'DeepSeek (备用)',
+        description: '国产AI服务 - 仅作为备用选项'
       }
     ];
   }
@@ -133,7 +135,7 @@ export class AIProviderManager {
   }
 
   /**
-   * 智能选择最佳AI服务
+   * 智能选择最佳AI服务 - 优先选择Google AI
    */
   selectBestProvider(): AIProviderType {
     const available = this.getAvailableProviders()
@@ -142,7 +144,7 @@ export class AIProviderManager {
     
     if (available.length > 0) {
       this.currentProvider = available[0].type;
-      console.log(`🎯 自动选择最佳AI服务: ${available[0].name}`);
+      console.log(`🎯 自动选择AI服务: ${available[0].name}`);
       return this.currentProvider;
     } else {
       throw new Error('没有可用的AI服务');
@@ -150,158 +152,190 @@ export class AIProviderManager {
   }
 
   /**
-   * 生成聊天回复（统一接口）
-   */
-  async generateChatResponse(conversationHistory: ConversationMessage[]): Promise<AIResponse> {
-    switch (this.currentProvider) {
-      case 'deepseek':
-        return this.generateDeepSeekChatResponse(conversationHistory);
-      case 'google':
-        return this.generateGoogleChatResponse(conversationHistory);
-      default:
-        return {
-          success: false,
-          error: `不支持的AI服务: ${this.currentProvider}`
-        };
-    }
-  }
-
-  /**
-   * 流式生成聊天回复（统一接口）
-   */
-  async* generateChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
-    switch (this.currentProvider) {
-      case 'deepseek':
-        yield* this.generateDeepSeekChatResponseStream(conversationHistory);
-        break;
-      case 'google':
-        yield* this.generateGoogleChatResponseStream(conversationHistory);
-        break;
-      default:
-        throw new Error(`不支持的AI服务: ${this.currentProvider}`);
-    }
-  }
-
-  /**
-   * 生成文本（统一接口）
+   * 生成文本回复（使用当前可用的提供者）
    */
   async generateText(prompt: string): Promise<AIResponse> {
-    switch (this.currentProvider) {
-      case 'deepseek':
-        return this.deepSeekProvider.generateText(prompt);
-      case 'google':
-        return this.generateGoogleText(prompt);
-      default:
-        return {
-          success: false,
-          error: `不支持的AI服务: ${this.currentProvider}`
-        };
-    }
-  }
-
-  /**
-   * 使用DeepSeek生成聊天回复
-   */
-  private async generateDeepSeekChatResponse(conversationHistory: ConversationMessage[]): Promise<AIResponse> {
-    const messages: DeepSeekMessage[] = conversationHistory.map(msg => ({
-      role: msg.role === 'model' ? 'assistant' : msg.role,
-      content: msg.parts[0].text
-    }));
-
-    return this.deepSeekProvider.generateChatResponse(messages);
-  }
-
-  /**
-   * 使用DeepSeek流式生成聊天回复
-   */
-  private async* generateDeepSeekChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
-    const messages: DeepSeekMessage[] = conversationHistory.map(msg => ({
-      role: msg.role === 'model' ? 'assistant' : msg.role,
-      content: msg.parts[0].text
-    }));
-
-    yield* this.deepSeekProvider.generateChatResponseStream(messages);
-  }
-
-  /**
-   * 使用Google AI生成聊天回复
-   */
-  private async generateGoogleChatResponse(conversationHistory: ConversationMessage[]): Promise<AIResponse> {
     try {
-      const { model } = await getAIInstance();
-      const result = await model.generateContent({
-        contents: conversationHistory,
-        generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-        }
-      });
-      return {
-        success: true,
-        data: result.response.text()
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : '未知错误'
-      };
-    }
-  }
-
-  /**
-   * 使用Google AI流式生成聊天回复
-   */
-  private async* generateGoogleChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
-    try {
-      const { model } = await getAIInstance();
-      const result = await model.generateContentStream({
-        contents: conversationHistory,
-        generationConfig: {
-          maxOutputTokens: 4096,
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-        }
-      });
-
-      for await (const chunk of result.stream) {
-        const text = chunk.text();
-        if (text) {
-          yield text;
+      // 首先尝试Google AI
+      if (this.isGoogleAvailable) {
+        try {
+          const { model } = await getAIInstance();
+          const result = await model.generateContent({
+            contents: [{ role: 'user', parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 4096,
+              topK: 40,
+              topP: 0.95,
+            }
+          });
+          return {
+            success: true,
+            data: result.response.text()
+          };
+        } catch (error) {
+          console.warn('Google AI 调用失败，尝试切换到DeepSeek:', error);
+          this.isGoogleAvailable = false;
         }
       }
+
+      // 如果Google AI不可用，尝试DeepSeek
+      if (this.deepSeekProvider.isConfigured()) {
+        try {
+          const result = await this.deepSeekProvider.generateChatResponse([
+            { role: 'user', content: prompt }
+          ]);
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          console.error('DeepSeek调用失败:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : '生成失败'
+          };
+        }
+      }
+
+      throw new Error('所有AI服务都不可用');
     } catch (error) {
-      console.error('Google AI流式生成失败:', error);
-      throw error;
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '生成失败'
+      };
     }
   }
 
   /**
-   * 使用Google AI生成文本
+   * 生成对话回复
    */
-  private async generateGoogleText(prompt: string): Promise<AIResponse> {
+  async generateChatResponse(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): Promise<AIResponse> {
     try {
-      const { model } = await getAIInstance();
-      const result = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4096,
-          topK: 40,
-          topP: 0.95,
+      // 首先尝试Google AI
+      if (this.isGoogleAvailable) {
+        try {
+          const { model } = await getAIInstance();
+          const conversationHistory: ConversationMessage[] = messages
+            .filter(msg => msg.role !== 'system') // 过滤掉system消息，因为ConversationMessage不支持
+            .map(msg => ({
+              role: msg.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: msg.content }]
+            }));
+          
+          // 如果有system消息，将其合并到第一个用户消息中
+          const systemMessages = messages.filter(msg => msg.role === 'system');
+          if (systemMessages.length > 0 && conversationHistory.length > 0) {
+            const systemContext = systemMessages.map(msg => msg.content).join('\n');
+            const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
+            if (firstUserMessage) {
+              firstUserMessage.parts[0].text = `${systemContext}\n\n${firstUserMessage.parts[0].text}`;
+            }
+          }
+          
+          const result = await model.generateContent({
+            contents: conversationHistory,
+            generationConfig: {
+              maxOutputTokens: 4096,
+              temperature: 0.7,
+              topK: 40,
+              topP: 0.95,
+            }
+          });
+          
+          return {
+            success: true,
+            data: result.response.text()
+          };
+        } catch (error) {
+          console.warn('Google AI 调用失败，尝试切换到DeepSeek:', error);
+          this.isGoogleAvailable = false;
         }
-      });
-      return {
-        success: true,
-        data: result.response.text()
-      };
+      }
+
+      // 如果Google AI不可用，尝试DeepSeek
+      if (this.deepSeekProvider.isConfigured()) {
+        try {
+          const deepSeekMessages = messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }));
+          const result = await this.deepSeekProvider.generateChatResponse(deepSeekMessages);
+          return {
+            success: true,
+            data: result
+          };
+        } catch (error) {
+          console.error('DeepSeek调用失败:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : '对话生成失败'
+          };
+        }
+      }
+
+      throw new Error('所有AI服务都不可用');
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : '未知错误'
+        error: error instanceof Error ? error.message : '对话生成失败'
       };
+    }
+  }
+
+  /**
+   * 流式生成（仅支持Google AI）
+   */
+  async* generateStreamingResponse(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): AsyncGenerator<string> {
+    try {
+      if (this.isGoogleAvailable) {
+        const { model } = await getAIInstance();
+        const conversationHistory: ConversationMessage[] = messages
+          .filter(msg => msg.role !== 'system') // 过滤掉system消息，因为ConversationMessage不支持
+          .map(msg => ({
+            role: msg.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: msg.content }]
+          }));
+        
+        // 如果有system消息，将其合并到第一个用户消息中
+        const systemMessages = messages.filter(msg => msg.role === 'system');
+        if (systemMessages.length > 0 && conversationHistory.length > 0) {
+          const systemContext = systemMessages.map(msg => msg.content).join('\n');
+          const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
+          if (firstUserMessage) {
+            firstUserMessage.parts[0].text = `${systemContext}\n\n${firstUserMessage.parts[0].text}`;
+          }
+        }
+        
+        const result = await model.generateContentStream({
+          contents: conversationHistory,
+          generationConfig: {
+            maxOutputTokens: 4096,
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+          }
+        });
+
+        for await (const chunk of result.stream) {
+          const text = chunk.text();
+          if (text) {
+            yield text;
+          }
+        }
+        return;
+      }
+      
+      // DeepSeek暂不支持流式响应，使用普通响应
+      const response = await this.generateChatResponse(messages);
+      if (response.success && response.data) {
+        yield response.data;
+      } else {
+        throw new Error(response.error || '流式响应生成失败');
+      }
+    } catch (error) {
+      console.error('流式响应生成失败:', error);
+      throw error;
     }
   }
 

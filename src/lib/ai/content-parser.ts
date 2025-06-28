@@ -9,8 +9,8 @@ export class AIContentParser {
   /**
    * 获取AI模型实例
    */
-  private static getModel() {
-    const { model } = getAIInstance();
+  private static async getModel() {
+    const { model } = await getAIInstance();
     if (!model) {
       throw new Error('AI 模型未初始化');
     }
@@ -24,7 +24,12 @@ export class AIContentParser {
    */
   static async parseVocabularyText(text: string): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const { model } = await getAIInstance();
+      
+      if (!model) {
+        throw new Error('AI 模型未初始化');
+      }
+
       const prompt = `
 你是一个专业的英语学习内容解析助手。请分析以下文本，提取出所有的英语词汇、短语或术语，并自动匹配中文翻译。
 
@@ -86,7 +91,7 @@ ${text}
    */
   static async parseDialogueText(text: string): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const prompt = `
 你是一个专业的英语对话内容解析助手。请分析以下文本，识别和提取对话内容，并组织成结构化格式。
 
@@ -160,7 +165,7 @@ ${text}
    */
   static async parseSmartContent(text: string): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const prompt = `
 你是一个智能英语学习内容分析助手。请分析以下文本，自动识别其中包含的英语学习内容类型（词汇、对话，或两者都有），并提取组织成结构化格式。
 

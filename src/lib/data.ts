@@ -1,3 +1,6 @@
+// 导入AI服务相关类型
+export type { AIResponse, ConversationMessage } from './ai/types';
+
 export interface VocabularyItem {
   id: string;
   english: string;

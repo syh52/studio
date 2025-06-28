@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '../../components/ui/button'
 import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Textarea } from '../../components/ui/textarea'
 import { VocabularyPack } from '../../lib/data'
-import { LexiconAIService } from '../../lib/ai-service';
+import { LexiconAIService } from '../../lib/ai/core-service';
 import { 
   Search, 
   Sparkles, 
@@ -15,6 +15,9 @@ import {
   Trash2, 
   Play
 } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Alert, AlertDescription } from '../ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 
 interface VocabularyEditingInterfaceProps {
   vocabulary: VocabularyPack;
@@ -196,12 +199,12 @@ export default function VocabularyEditingInterface({
 
       toast({
         title: "批量生成完成",
-        description: `成功生成 ${results.success.length} 个单词的例句${results.errors.length > 0 ? `，${results.errors.length} 个失败` : ''}`,
-        variant: results.errors.length > 0 ? "default" : "default"
+                description: `成功生成 ${results.success.length} 个单词的例句${results.failed.length > 0 ? `，${results.failed.length} 个失败` : ''}`,
+        variant: results.failed.length > 0 ? "default" : "default"
       });
-
-      if (results.errors.length > 0) {
-        console.error('批量生成错误:', results.errors);
+      
+      if (results.failed.length > 0) {
+        console.error('批量生成错误:', results.failed);
       }
 
     } catch (error) {

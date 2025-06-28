@@ -61,7 +61,13 @@ export class LexiconAIService {
           { role: 'user', parts: [{ text: enhancedPrompt }] }
         ];
         
-        return aiProviderManager.generateChatResponse(enhancedHistory);
+        // 转换为AI Provider Manager格式
+        const providerMessages = enhancedHistory.map(msg => ({
+          role: (msg.role === 'model' ? 'assistant' : msg.role) as 'user' | 'assistant' | 'system',
+          content: msg.parts[0].text
+        }));
+        
+        return aiProviderManager.generateChatResponse(providerMessages);
       }
 
       // 多轮对话：检查并添加知识库上下文
@@ -80,7 +86,13 @@ export class LexiconAIService {
         }
       }
 
-      return aiProviderManager.generateChatResponse(history);
+      // 转换为AI Provider Manager格式
+      const providerMessages = history.map(msg => ({
+        role: (msg.role === 'model' ? 'assistant' : msg.role) as 'user' | 'assistant' | 'system',
+        content: msg.parts[0].text
+      }));
+      
+      return aiProviderManager.generateChatResponse(providerMessages);
     } catch (error) {
       console.error('多轮对话生成失败:', error);
       return {
@@ -98,7 +110,13 @@ export class LexiconAIService {
   static async* generateChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
     try {
       console.log('开始流式生成，使用AI服务:', aiProviderManager.getCurrentProvider());
-      yield* aiProviderManager.generateChatResponseStream(conversationHistory);
+      // 转换为AI Provider Manager格式
+      const providerMessages = conversationHistory.map(msg => ({
+        role: (msg.role === 'model' ? 'assistant' : msg.role) as 'user' | 'assistant' | 'system',
+        content: msg.parts[0].text
+      }));
+      
+      yield* aiProviderManager.generateStreamingResponse(providerMessages);
     } catch (error) {
       console.error('流式多轮对话生成失败:', error);
       yield `抱歉，生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
@@ -239,5 +257,174 @@ export class LexiconAIService {
       };
       reader.onerror = error => reject(error);
     });
+  }
+
+  /**
+   * 生成词汇学习提示
+   */
+  static async generateVocabularyTip(vocabulary: any): Promise<AIResponse> {
+    try {
+      const prompt = `为以下航空英语词汇生成学习提示和用法建议：
+词汇：${vocabulary.english} - ${vocabulary.chinese}
+请提供：
+1. 记忆技巧
+2. 使用场景
+3. 相关搭配
+4. 注意事项`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('生成词汇提示失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 生成对话问题
+   */
+  static async generateDialogueQuestions(dialogue: any): Promise<AIResponse> {
+    try {
+      const prompt = `基于以下航空英语对话，生成5个理解问题：
+对话标题：${dialogue.title}
+对话内容：${dialogue.lines?.map((line: any) => `${line.speaker}: ${line.english} (${line.chinese})`).join('\n')}
+
+请生成：
+1. 场景理解问题
+2. 关键词汇问题
+3. 程序流程问题
+4. 应用场景问题
+5. 扩展思考问题`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('生成对话问题失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 生成学习计划
+   */
+  static async generateStudyPlan(userProfile: any, selectedContent: string[]): Promise<AIResponse> {
+    try {
+      const prompt = `为航空安全员制定个性化学习计划：
+用户信息：
+- 等级：${userProfile.level}
+- 学习目标：${userProfile.goals?.join(', ')}
+- 可用时间：${userProfile.availableTime}分钟/天
+
+学习内容：${selectedContent.join(', ')}
+
+请制定：
+1. 每日学习安排
+2. 重点学习内容
+3. 练习建议
+4. 进度检查要点`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('生成学习计划失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 智能解析内容
+   */
+  static async parseSmartContent(inputText: string): Promise<AIResponse> {
+    try {
+      const prompt = `请分析以下内容，判断是词汇还是对话，并按格式整理：
+${inputText}
+
+如果是词汇，返回JSON格式：
+{
+  "type": "vocabulary",
+  "items": [{"english": "...", "chinese": "...", "explanation": "..."}]
+}
+
+如果是对话，返回JSON格式：
+{
+  "type": "dialogue", 
+  "items": [{"title": "...", "description": "...", "lines": [{"speaker": "...", "english": "...", "chinese": "..."}]}]
+}`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('智能解析内容失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 批量生成例句
+   */
+  static async generateBatchExampleSentences(vocabularyItems: any[], progressCallback?: (completed: number, total: number) => void): Promise<{success: any[], failed: any[]}> {
+    const results: {success: any[], failed: any[]} = { success: [], failed: [] };
+    
+    for (let i = 0; i < vocabularyItems.length; i++) {
+      const item = vocabularyItems[i];
+      try {
+        const response = await this.generateNaturalExampleSentences(item.english, item.chinese);
+        if (response.success) {
+          results.success.push({ id: item.id, data: response.data });
+        } else {
+          results.failed.push({ id: item.id, error: response.error });
+        }
+      } catch (error) {
+        results.failed.push({ id: item.id, error: error instanceof Error ? error.message : '未知错误' });
+      }
+      
+      if (progressCallback) {
+        progressCallback(i + 1, vocabularyItems.length);
+      }
+      
+      // 添加延迟避免API限制
+      if (i < vocabularyItems.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    return results;
+  }
+
+  /**
+   * 生成自然例句
+   */
+  static async generateNaturalExampleSentences(english: string, chinese: string): Promise<AIResponse> {
+    try {
+      const prompt = `为航空英语词汇生成3个自然的例句：
+词汇：${english} - ${chinese}
+
+要求：
+1. 例句应该符合航空安全员的工作场景
+2. 语言自然流畅
+3. 包含中英文对照
+4. 体现词汇的实际用法
+
+格式：
+1. 英文例句 - 中文翻译
+2. 英文例句 - 中文翻译  
+3. 英文例句 - 中文翻译`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('生成自然例句失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
+      };
+    }
   }
 } 

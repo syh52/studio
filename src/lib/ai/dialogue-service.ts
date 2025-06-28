@@ -1,5 +1,6 @@
 import { getAIInstance } from '../firebase';
-import type { AIResponse, ConversationMessage, Dialogue } from '../data';
+import type { AIResponse, ConversationMessage } from './types';
+import type { Dialogue } from '../data';
 
 /**
  * 对话AI服务
@@ -9,8 +10,8 @@ export class AIDialogueService {
   /**
    * 获取AI模型实例
    */
-  private static getModel() {
-    const { model } = getAIInstance();
+  private static async getModel() {
+    const { model } = await getAIInstance();
     if (!model) {
       throw new Error('AI 模型未初始化');
     }
@@ -32,7 +33,7 @@ export class AIDialogueService {
     conversationHistory: ConversationMessage[]
   ): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       
       // 构建角色设定
       const systemPrompt = `
@@ -95,7 +96,7 @@ export class AIDialogueService {
    */
   static async generateDialogueQuestions(dialogue: Dialogue): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const dialogueText = dialogue.lines
         .map(line => `${line.speaker}: ${line.english} (${line.chinese})`)
         .join('\n');
@@ -178,7 +179,7 @@ ${dialogue.content}
     };
 
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
 
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -196,6 +197,70 @@ ${dialogue.content}
       return {
         success: false,
         error: error.message || '未知错误'
+      };
+    }
+  }
+
+  /**
+   * 生成角色扮演对话
+   */
+  static async generateRolePlayDialogue(
+    scenario: string, 
+    difficulty: 'beginner' | 'intermediate' | 'advanced' = 'intermediate'
+  ): Promise<AIResponse> {
+    try {
+      const { model } = await getAIInstance();
+      
+      // 构建角色设定
+      const systemPrompt = `
+你正在参与一个航空英语学习的角色扮演对话练习：
+
+场景：${scenario}
+你的角色：${difficulty === 'beginner' ? '初级' : difficulty === 'intermediate' ? '中级' : '高级'}
+
+请用英文回复，语言要符合航空行业标准，对话要自然流畅。每次回复后，用中文简要解释关键词汇或表达方式。
+
+格式：
+[英文对话]
+
+📝 关键词汇：[中文解释]
+      `;
+
+      const fullHistory = [
+        {
+          role: 'user' as const,
+          parts: [{ text: systemPrompt }]
+        },
+        {
+          role: 'model' as const,
+          parts: [{ text: 'Ready to start the role-play conversation. I will speak as the ' + (difficulty === 'beginner' ? '初级' : difficulty === 'intermediate' ? '中级' : '高级') + '.' }]
+        },
+      ];
+
+      const chat = model.startChat({
+        history: fullHistory.slice(0, -1),
+        generationConfig: {
+          maxOutputTokens: 2000,  // 角色扮演可以稍微短一些
+          temperature: 0.8,
+          topK: 40,
+          topP: 0.95,
+        },
+      });
+
+      // 发送最后一条用户消息
+      const lastMessage = fullHistory[fullHistory.length - 1];
+      const result = await chat.sendMessage(lastMessage.parts[0].text);
+      const response = result.response.text();
+
+      return {
+        success: true,
+        data: response.trim()
+      };
+    } catch (error) {
+      console.error('角色扮演对话生成失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
       };
     }
   }

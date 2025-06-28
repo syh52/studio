@@ -1,14 +1,16 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '../../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
-import { Textarea } from '../../components/ui/textarea'
-import { Badge } from '../../components/ui/badge'
-import { ScrollArea } from '../../components/ui/scroll-area'
-import { LexiconAIService, type AIResponse } from '../../lib/ai-service'
+import { Button } from '../ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
+import { Textarea } from '../ui/textarea'
+import { Badge } from '../ui/badge'
+import { ScrollArea } from '../ui/scroll-area'
+import { LexiconAIService } from '../../lib/ai/core-service'
+import type { AIResponse } from '../../lib/ai/types'
 import { Loader2, Sparkles, MessageSquare, BookOpen, Calendar, Send, Trash2, UserCircle, Bot } from 'lucide-react';
 import { vocabularyPacks, type VocabularyItem, type Dialogue } from '../../lib/data'
+import { Alert, AlertDescription } from '../ui/alert'
 
 interface ChatMessage {
   id: string;
@@ -93,7 +95,7 @@ export default function AIAssistant({ className }: AIAssistantProps) {
     
     const result: AIResponse = await LexiconAIService.generateStudyPlan(
       "初级", 
-      "航空安全执勤"
+      ["航空安全执勤"]
     );
     
     if (result.success && result.data) {

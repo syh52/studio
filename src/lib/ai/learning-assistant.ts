@@ -9,8 +9,8 @@ export class AILearningAssistant {
   /**
    * 获取AI模型实例
    */
-  private static getModel() {
-    const { model } = getAIInstance();
+  private static async getModel() {
+    const { model } = await getAIInstance();
     if (!model) {
       throw new Error('AI 模型未初始化');
     }
@@ -22,7 +22,7 @@ export class AILearningAssistant {
    */
   static async generateStudyPlan(userLevel: string, focusArea: string): Promise<AIResponse> {
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
       const prompt = `
 作为航空英语学习顾问，为用户制定一个个性化的学习计划：
 
@@ -92,7 +92,7 @@ ${userProfile.weakAreas ? `薄弱环节：${userProfile.weakAreas.join('、')}` 
     };
 
     try {
-      const model = this.getModel();
+      const model = await this.getModel();
 
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -110,6 +110,56 @@ ${userProfile.weakAreas ? `薄弱环节：${userProfile.weakAreas.join('、')}` 
       return {
         success: false,
         error: error.message || '未知错误'
+      };
+    }
+  }
+
+  static async generatePersonalizedLearningPlan(
+    userProfile: UserProfile, 
+    vocabularyData: any[]
+  ): Promise<AIResponse> {
+    try {
+      const { model } = await getAIInstance();
+      const prompt = `
+作为航空英语学习顾问，为用户制定一个个性化的学习计划：
+
+用户水平：${userProfile.level}
+关注领域：${userProfile.focusArea}
+
+基于我们的词汇库（${vocabularyData.length}个航空安全英语词汇）和对话库（10个真实工作场景），请生成：
+
+1. 每日学习建议（时间分配）
+2. 重点学习领域推荐
+3. 练习顺序建议
+4. 预期学习周期
+
+要求：
+- 用中文回答
+- 切合航空安全员的实际工作需求
+- 提供具体可执行的建议
+- 详细说明每个阶段的学习重点
+      `;
+
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 4096,  // 提升到4096，支持更详细的学习计划
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+        }
+      });
+      const response = result.response.text();
+
+      return {
+        success: true,
+        data: response.trim()
+      };
+    } catch (error) {
+      console.error('AI学习计划生成失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误'
       };
     }
   }

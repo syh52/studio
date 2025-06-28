@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { 
   Upload, FileText, Mic, Book, X, CheckCircle, AlertCircle, 
-  Download, Table, FileSpreadsheet, HelpCircle, Eye, Edit, Trash2, Bot
+  Download, Table, FileSpreadsheet, HelpCircle, Eye, Edit, Trash2, Bot, Loader2, Sparkles, Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -16,8 +16,8 @@ import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/AuthContext'
 import { savePublicVocabularyPack, savePublicDialogue } from '../lib/firestore-service'
-import { VocabularyPack, Dialogue } from '../lib/data'
-import { LexiconAIService } from '../lib/ai-service'
+import { VocabularyPack, Dialogue, VocabularyItem } from '../lib/data'
+import { LexiconAIService } from '../lib/ai/core-service'
 import { useToast } from '../hooks/use-toast'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion'
@@ -26,6 +26,7 @@ import Papa from 'papaparse';
 import { saveAs } from 'file-saver';
 import { AISmartImport } from './AISmartImport';
 import { useRouter } from 'next/navigation';
+import { ScrollArea } from '../components/ui/scroll-area'
 
 interface UploadResult {
   success: boolean;
@@ -406,7 +407,7 @@ export function BulkUpload() {
       
       setResults([{
         success: true,
-        message: `成功创建词汇包，包含 ${vocabulary.length} 个单词，已保存到公共词库。${exampleResults.success.length} 个词汇使用了AI生成的例句${exampleResults.errors.length > 0 ? `，${exampleResults.errors.length} 个使用了备用例句` : ''}。`,
+        message: `成功创建词汇包，包含 ${vocabulary.length} 个单词，已保存到公共词库。${exampleResults.success.length} 个词汇使用了AI生成的例句${exampleResults.failed.length > 0 ? `，${exampleResults.failed.length} 个使用了备用例句` : ''}。`,
         data: vocabularyPack
       }]);
       

@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { ScrollArea } from '../../components/ui/scroll-area';
-import { LexiconAIService } from '../../lib/ai-service';
+import { LexiconAIService } from '../../lib/ai/core-service';
 import { KnowledgeBase } from '../../lib/knowledge-base';
 import { useAuth } from '../../contexts/AuthContext';
 import { 
@@ -242,8 +242,31 @@ export default function ChatPage() {
         });
       }
 
-      // 使用多轮对话API
-      const result = await LexiconAIService.generateChatResponse(conversationHistory);
+      // 使用多轮对话API，带有智能错误重试
+      let result = await LexiconAIService.generateChatResponse(conversationHistory);
+      
+      // 如果当前AI服务失败，尝试切换到其他可用服务
+      if (!result.success && result.error) {
+        console.log('🔄 当前AI服务失败，尝试切换到备用服务...');
+        
+        // 检查是否是DeepSeek余额不足错误
+        if (result.error.includes('402') || result.error.includes('Insufficient Balance')) {
+          console.log('💰 DeepSeek余额不足，自动切换到Google AI');
+          
+          // 导入AI提供者管理器并尝试切换
+          try {
+            const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
+            const switched = aiProviderManager.setProvider('google');
+            
+            if (switched) {
+              console.log('✅ 已切换到Google AI，重新尝试生成回复');
+              result = await LexiconAIService.generateChatResponse(conversationHistory);
+            }
+          } catch (switchError) {
+            console.error('切换AI服务失败:', switchError);
+          }
+        }
+      }
       
       if (result.success && result.data) {
         const aiMessage: ChatMessage = {
@@ -254,20 +277,47 @@ export default function ChatPage() {
         };
         setChatMessages(prev => [...prev, aiMessage]);
       } else {
+        // 提供更友好的错误信息
+        let errorMsg = '抱歉，我遇到了一些问题';
+        
+        if (result.error?.includes('402') || result.error?.includes('Insufficient Balance')) {
+          errorMsg = '😅 当前AI服务余额不足，请稍后重试或联系管理员充值。我们已尝试切换到备用服务。';
+        } else if (result.error?.includes('网络')) {
+          errorMsg = '🌐 网络连接出现问题，请检查您的网络连接后重试。';
+        } else if (result.error?.includes('超时')) {
+          errorMsg = '⏰ 服务响应超时，请稍后重试。';
+        } else if (result.error) {
+          errorMsg = `🤖 AI服务暂时不可用：${result.error}`;
+        }
+        
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'model',
-          content: `抱歉，我遇到了一些问题：${result.error}`,
+          content: errorMsg,
           timestamp: new Date()
         };
         setChatMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
       console.error('发送消息失败:', error);
+      
+      // 根据错误类型提供不同的提示
+      let errorMsg = '抱歉，发生了意外错误，请稍后重试。';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMsg = '🌐 网络连接失败，请检查网络连接后重试。';
+        } else if (error.message.includes('timeout')) {
+          errorMsg = '⏰ 请求超时，请稍后重试。';
+        } else if (error.message.includes('402')) {
+          errorMsg = '💰 AI服务余额不足，我们正在尝试切换到备用服务。';
+        }
+      }
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: '抱歉，发生了意外错误，请稍后重试。',
+        content: errorMsg,
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);

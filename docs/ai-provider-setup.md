@@ -1,148 +1,114 @@
-# AI服务配置指南
+# AI 服务提供者设置指南
 
-## 概述
+Lexicon航空英语学习平台支持多个AI服务提供者，确保在任何环境下都能提供稳定的AI功能。
 
-Lexicon项目支持多种AI服务提供商，解决了中国大陆用户访问AI功能的问题。
+## 🎯 服务优先级
 
-## 🇨🇳 中国大陆用户推荐：DeepSeek AI
+### 1. Google AI (Gemini) - 首选服务
+- **优势**: 功能强大的多模态AI，支持文本、图像等多种输入
+- **模型**: Gemini 2.5 Pro
+- **特点**: 
+  - 无需担心Token余额问题
+  - 响应质量高
+  - 支持长文本生成
+  - 多模态能力强
 
-### 为什么选择DeepSeek？
-- ✅ **无需VPN**：可在中国大陆直接访问
-- ✅ **高性能**：基于先进的大语言模型
-- ✅ **成本低廉**：比OpenAI更便宜的价格
-- ✅ **中文优化**：对中文支持更好
+### 2. DeepSeek AI - 备用服务
+- **用途**: 仅作为备用选项，当Google AI不可用时使用
+- **特点**:
+  - 成本相对较低
+  - 需要管理API余额
+  - 主要支持文本生成
 
-### 配置步骤
+## 🔧 配置方法
 
-#### 1. 获取API密钥
-1. 访问 [DeepSeek平台](https://platform.deepseek.com)
-2. 注册账号并登录
-3. 前往 [API密钥页面](https://platform.deepseek.com/api_keys)
-4. 点击"创建新密钥"
-5. 复制生成的API密钥（格式：`sk-xxxxxxxxxxxxxxxx`）
+### Google AI 配置 (推荐)
 
-#### 2. 配置项目
-1. 在项目根目录创建 `.env.local` 文件
-2. 添加以下配置：
+1. **获取API密钥**:
+   - 访问 [Google AI Studio](https://aistudio.google.com/)
+   - 创建新的API密钥
+   - 或使用现有的Firebase Vertex AI配置
+
+2. **环境变量配置**:
+   ```bash
+   # 方法1: 直接使用Gemini API密钥
+   GOOGLE_GENAI_API_KEY=your-gemini-api-key
+   
+   # 方法2: 使用Google Cloud服务账号
+   GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account-key.json
+   GCLOUD_PROJECT=your-gcp-project-id
+   ```
+
+3. **Firebase配置**:
+   确保Firebase项目已启用Vertex AI服务
+
+### DeepSeek AI 配置 (可选)
+
+⚠️ **注意**: DeepSeek现在仅作为备用服务，不是必需的配置。
+
+1. **获取API密钥** (可选):
+   - 访问 [DeepSeek平台](https://platform.deepseek.com/)
+   - 注册账号并获取API密钥
+   - 充值账户余额
+
+2. **环境变量配置** (可选):
+   ```bash
+   # 可选：仅在需要备用服务时配置
+   NEXT_PUBLIC_DEEPSEEK_API_KEY=sk-your_deepseek_api_key_here
+   ```
+
+## 🚀 自动切换机制
+
+系统具有智能的错误处理和服务切换机制：
+
+1. **优先使用Google AI**: 系统默认使用Google AI (Gemini)
+2. **自动故障切换**: 当主要服务出现问题时，自动切换到可用的备用服务
+3. **错误恢复**: 提供友好的错误信息和重试机制
+4. **余额监控**: 检测DeepSeek余额不足错误，自动切换服务
+
+## 📊 服务状态监控
+
+在应用的**管理页面 → AI服务状态**中，您可以：
+
+- 查看当前使用的AI服务
+- 测试各个服务的连接状态
+- 手动切换AI服务提供者
+- 查看服务的优先级和状态
+
+## 🔍 故障排除
+
+### Google AI 问题
+- 检查API密钥是否正确
+- 确认Firebase项目配置
+- 验证网络连接
+
+### DeepSeek API 问题
+- 检查账户余额
+- 验证API密钥有效性
+- 确认服务地区可用性
+
+### 通用问题
+- 检查网络连接
+- 查看浏览器控制台错误信息
+- 确认环境变量配置正确
+
+## 📝 最佳实践
+
+1. **主要依赖Google AI**: 确保Google AI配置正确，这是系统的主要服务
+2. **备用服务可选**: DeepSeek配置是可选的，仅在需要额外冗余时配置
+3. **监控服务状态**: 定期检查AI服务状态页面
+4. **保持API密钥更新**: 定期轮换和更新API密钥以确保安全
+
+## 🎯 推荐配置
+
+对于大多数用户，我们推荐：
+
 ```bash
-# DeepSeek AI 配置
-NEXT_PUBLIC_DEEPSEEK_API_KEY=sk-your_deepseek_api_key
+# 必需：Google AI配置
+GOOGLE_GENAI_API_KEY=your-gemini-api-key
+
+# 可选：备用服务（仅在需要额外冗余时配置）
+# NEXT_PUBLIC_DEEPSEEK_API_KEY=sk-your_deepseek_api_key_here
 ```
 
-#### 3. 重启开发服务器
-```bash
-npm run dev
-```
-
-#### 4. 验证配置
-- 访问 `/test-admin` 页面
-- 查看"AI服务状态"卡片
-- 确认DeepSeek显示为"已配置"和"当前使用"
-
-## 🌍 国际用户：Google AI (Vertex AI)
-
-### 注意事项
-- ⚠️ **需要VPN**：在中国大陆需要VPN才能访问
-- ⚠️ **配置复杂**：需要Google Cloud项目配置
-
-### 使用条件
-如果没有配置DeepSeek API密钥，系统会自动尝试使用Google AI服务。Google AI通过Firebase Vertex AI提供，使用项目的Firebase配置。
-
-### 验证Google AI可用性
-1. 确保你的Firebase项目已启用Vertex AI
-2. 检查网络连接（中国大陆用户需要VPN）
-3. 查看浏览器控制台是否有错误信息
-
-## AI服务切换机制
-
-### 自动选择逻辑
-系统会按照以下优先级自动选择AI服务：
-
-1. **DeepSeek** (优先级1)
-   - 如果配置了有效的DeepSeek API密钥
-   - 自动选择为主要AI服务
-
-2. **Google AI** (优先级2)
-   - 如果DeepSeek不可用
-   - 且Google AI可以正常访问
-
-### 手动切换
-在 `/test-admin` 页面的"AI服务状态"卡片中，你可以：
-- 查看所有可用的AI服务
-- 手动切换between不同的服务
-- 实时查看服务状态
-
-## 故障排查
-
-### DeepSeek相关问题
-
-#### 问题：DeepSeek显示"未配置"
-**解决方案：**
-1. 检查 `.env.local` 文件是否存在
-2. 确认API密钥格式正确（以 `sk-` 开头）
-3. 重启开发服务器
-
-#### 问题：DeepSeek API调用失败
-**解决方案：**
-1. 检查API密钥是否有效
-2. 确认账户余额充足
-3. 检查网络连接
-
-### Google AI相关问题
-
-#### 问题：Google AI显示"不可用"
-**解决方案：**
-1. 检查是否需要VPN（中国大陆用户）
-2. 确认Firebase项目配置正确
-3. 检查Vertex AI是否已启用
-
-## 费用说明
-
-### DeepSeek费用
-- 按Token使用量计费
-- 比OpenAI便宜约50-70%
-- 支持预付费充值
-
-### Google AI费用
-- 使用Firebase Vertex AI计费
-- 需要升级到Blaze计划
-- 按使用量付费
-
-## 开发者注意事项
-
-### 添加新的AI服务提供商
-1. 创建新的Provider类（参考 `DeepSeekProvider`）
-2. 在 `AIProviderManager` 中注册新服务
-3. 更新类型定义和配置
-
-### API兼容性
-项目使用统一的API接口，所有AI服务提供商都实现相同的接口：
-- `generateChatResponse()` - 单次对话
-- `generateChatResponseStream()` - 流式对话
-- `generateText()` - 文本生成
-
-## 推荐配置
-
-### 生产环境
-- **中国大陆**：DeepSeek
-- **海外**：Google AI 或 DeepSeek
-- **开发测试**：DeepSeek（成本更低）
-
-### 环境变量示例
-```bash
-# .env.local
-# DeepSeek配置（推荐）
-NEXT_PUBLIC_DEEPSEEK_API_KEY=sk-your_deepseek_api_key
-
-# Firebase配置（可选，有默认值）
-NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-# ... 其他Firebase配置
-```
-
-## 技术支持
-
-如果遇到配置问题：
-1. 检查浏览器控制台错误信息
-2. 访问 `/test-admin` 查看详细状态
-3. 查看项目文档 `/docs` 目录 
+这样的配置确保了系统的稳定性，同时避免了不必要的复杂性。 

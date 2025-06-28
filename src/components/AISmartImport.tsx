@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { 
   Upload, Bot, FileText, Book, CheckCircle, AlertCircle, 
-  Eye, Download, Sparkles, Loader2, Trash2, Edit
+  Eye, Download, Sparkles, Loader2, Trash2, Edit, Wand2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button'
@@ -16,7 +16,7 @@ import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/AuthContext'
 import { savePublicVocabularyPack, savePublicDialogue } from '../lib/firestore-service'
 import { VocabularyPack, Dialogue } from '../lib/data'
-import { LexiconAIService } from '../lib/ai-service'
+import { LexiconAIService } from '../lib/ai/core-service'
 import { useToast } from '../hooks/use-toast'
 import {
   Dialog,
@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "../components/ui/dialog"
 import { ScrollArea } from '../components/ui/scroll-area'
+import { Input } from './ui/input'
 
 interface ParsedData {
   contentType: 'vocabulary' | 'dialogue' | 'mixed';
@@ -162,8 +163,8 @@ export function AISmartImport() {
         await savePublicVocabularyPack(vocabularyPack, user.id);
         results.push(`✅ 成功导入 ${parsedData.vocabulary.length} 个词汇到公共词库`);
         
-        if (exampleResults.errors.length > 0) {
-          results.push(`⚠️ ${exampleResults.errors.length} 个词汇使用了备用例句`);
+        if (exampleResults.failed.length > 0) {
+          results.push(`⚠️ ${exampleResults.failed.length} 个词汇使用了备用例句`);
         }
         
         setProgress(60);

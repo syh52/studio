@@ -22,6 +22,7 @@ export interface UserProfile {
   level: string;
   goals: string[];
   availableTime: number;
+  focusArea?: string;
   weakAreas?: string[];
 }
 
