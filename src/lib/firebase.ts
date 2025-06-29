@@ -6,6 +6,74 @@ import { getAuth } from "firebase/auth";
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Cloudflare Worker 代理配置
+const PROXY_URL = "https://yellow-fire-20d4.beelzebub1949.workers.dev";
+const FIREBASE_HOSTS = [
+  'identitytoolkit.googleapis.com',
+  'securetoken.googleapis.com', 
+  'firestore.googleapis.com',
+  'firebaseml.googleapis.com',
+  'aiplatform.googleapis.com',
+  'firebase.googleapis.com',
+  'www.googleapis.com'
+];
+
+// 设置全局 fetch 拦截器，将 Firebase 请求重定向到代理
+function setupFirebaseProxy() {
+  if (typeof window === 'undefined') return; // 只在客户端执行
+  
+  const originalFetch = window.fetch;
+  
+  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit) {
+    let url: string;
+    
+    // 处理不同类型的 input
+    if (typeof input === 'string') {
+      url = input;
+    } else if (input instanceof URL) {
+      url = input.toString();
+    } else if (input instanceof Request) {
+      url = input.url;
+    } else {
+      return originalFetch(input, init);
+    }
+    
+    // 检查是否是 Firebase API 请求
+    const urlObj = new URL(url);
+    const isFirebaseRequest = FIREBASE_HOSTS.some(host => urlObj.hostname === host);
+    
+    if (isFirebaseRequest && isProduction && window.location.hostname.includes('lexiconlab.cn')) {
+      // 重定向到代理
+      const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+      
+      console.log(`🔄 代理 Firebase 请求: ${urlObj.hostname}${urlObj.pathname}`);
+      
+      // 创建新的请求，使用代理 URL
+      if (input instanceof Request) {
+        const newRequest = new Request(proxyUrl, {
+          method: input.method,
+          headers: input.headers,
+          body: input.body,
+          mode: 'cors',
+          credentials: 'omit'
+        });
+        return originalFetch(newRequest);
+      } else {
+        return originalFetch(proxyUrl, {
+          ...init,
+          mode: 'cors',
+          credentials: 'omit'
+        });
+      }
+    }
+    
+    // 非 Firebase 请求，直接传递
+    return originalFetch(input, init);
+  };
+  
+  console.log('🚀 Firebase 代理拦截器已启动');
+}
+
 // 您的 Firebase 项目配置 (来自您的原始代码)
 const defaultConfig = {
   apiKey: "AIzaSyDtARFXghjPrzCOUYtucYkUJI22HzcmHcY",
@@ -33,13 +101,19 @@ try {
   firebaseApp = initializeApp(firebaseConfig);
 }
 
+// 在生产环境设置代理拦截器
+if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+  setupFirebaseProxy();
+}
+
 // 立即初始化 Auth 和 Firestore
 export const auth = getAuth(firebaseApp);
 export const db: Firestore = getFirestore(firebaseApp);
 
 // --- ★ 代理确认逻辑 ★ ---
 if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-  console.log('🚀 应用于生产环境，所有 Firebase 后端请求将由 Cloudflare Worker 透明代理。');
+  console.log('🚀 Firebase 代理已启动：所有 Firebase API 请求将通过 Cloudflare Worker 代理');
+  console.log(`🔗 代理服务器: ${PROXY_URL.replace('https://', '')}`);
 }
 
 // ######################################################################
