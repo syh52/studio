@@ -49,7 +49,21 @@ try {
 
 // 初始化 Auth 和 Firestore
 export const auth = getAuth(firebaseApp);
+
+// 🔥 Firestore初始化，支持WebChannel问题的备用方案
 export const db = getFirestore(firebaseApp);
+
+// 🚨 WebChannel连接问题的紧急处理
+if (typeof window !== 'undefined') {
+  // 监听未处理的网络错误
+  window.addEventListener('unhandledrejection', (event) => {
+    if (event.reason?.message?.includes('WebChannelConnection') || 
+        event.reason?.message?.includes('transport errored')) {
+      console.warn('🔥 检测到WebChannel连接问题，建议使用离线模式');
+      console.log('💡 可以运行以下命令禁用实时功能: localStorage.setItem("disable-realtime", "true")');
+    }
+  });
+}
 
 // 🚨 紧急调试：添加代理禁用开关
 // 在浏览器控制台输入 localStorage.setItem('disable-proxy', 'true') 可禁用代理

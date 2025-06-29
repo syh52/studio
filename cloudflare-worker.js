@@ -96,15 +96,43 @@ export default {
     // 重建目标 URL
     const targetPath = '/' + pathParts.slice(1).join('/');
     const targetUrl = `https://${targetHost}${targetPath}${url.search}`;
+    
+    // 🔥 检测WebChannel连接（Firestore实时连接）
+    const isWebChannel = targetPath.includes('/channel') && 
+                        (targetPath.includes('Firestore/Write') || targetPath.includes('Firestore/Listen'));
+    
+    if (isWebChannel) {
+      console.log(`🔥 WebChannel请求: ${targetUrl}`);
+    } else {
+      console.log(`🌐 代理请求: ${request.method} ${targetUrl}`);
+    }
 
-    console.log(`🌐 代理请求: ${request.method} ${targetUrl}`);
-
-    // 创建新的请求，保持原始请求的所有属性
-    const newRequest = new Request(targetUrl, {
+    // 🔧 修复Request构造，特别处理WebChannel连接
+    const requestOptions = {
       method: request.method,
-      headers: request.headers,
-      body: request.body
-    });
+      headers: new Headers(request.headers) // 使用Headers对象确保正确复制
+    };
+    
+    // 🔥 WebChannel特殊处理
+    if (isWebChannel) {
+      // 确保WebChannel必需的头部存在
+      if (!requestOptions.headers.has('Cache-Control')) {
+        requestOptions.headers.set('Cache-Control', 'no-cache');
+      }
+      if (!requestOptions.headers.has('Connection')) {
+        requestOptions.headers.set('Connection', 'keep-alive');
+      }
+      
+      console.log('🔥 WebChannel头部:', Object.fromEntries(requestOptions.headers.entries()));
+    }
+    
+    // 仅在有body时添加body和duplex参数
+    if (request.body) {
+      requestOptions.body = request.body;
+      requestOptions.duplex = 'half'; // 必需的Web标准参数
+    }
+    
+    const newRequest = new Request(targetUrl, requestOptions);
     
     try {
       const response = await fetch(newRequest);
@@ -117,8 +145,24 @@ export default {
       newHeaders.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type, X-Firebase-AppCheck');
       newHeaders.set('Access-Control-Allow-Credentials', 'true');
       newHeaders.set('Access-Control-Max-Age', '86400');
-
-      console.log(`✅ 代理成功: ${response.status} ${response.statusText}`);
+      
+      // 🔥 WebChannel特殊响应处理
+      if (isWebChannel) {
+        // 保持WebChannel的流式特性
+        newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        newHeaders.set('Pragma', 'no-cache');
+        newHeaders.set('Expires', '0');
+        
+        // 确保Content-Type正确传递
+        if (response.headers.has('Content-Type')) {
+          newHeaders.set('Content-Type', response.headers.get('Content-Type'));
+        }
+        
+        console.log(`🔥 WebChannel响应: ${response.status} ${response.statusText}`);
+        console.log('🔥 响应头部:', Object.fromEntries(newHeaders.entries()));
+      } else {
+        console.log(`✅ 代理成功: ${response.status} ${response.statusText}`);
+      }
 
       return new Response(response.body, {
         status: response.status,
@@ -127,12 +171,22 @@ export default {
       });
 
     } catch (error) {
-      console.error(`❌ 代理失败: ${error.message}`);
+      if (isWebChannel) {
+        console.error(`🔥 WebChannel代理失败: ${error.message}`);
+        console.error(`🔥 目标URL: ${targetUrl}`);
+        console.error(`🔥 请求方法: ${request.method}`);
+      } else {
+        console.error(`❌ 代理失败: ${error.message}`);
+      }
       
       return new Response(JSON.stringify({ 
-        error: 'Proxy request failed', 
+        error: isWebChannel ? 'WebChannel proxy failed' : 'Proxy request failed', 
         message: error.message,
-        targetUrl: targetUrl
+        targetUrl: targetUrl,
+        isWebChannel: isWebChannel,
+        troubleshooting: isWebChannel ? 
+          'WebChannel连接失败可能是由于流式协议兼容性问题。尝试刷新页面或检查网络连接。' :
+          '代理请求失败。请检查网络连接和目标服务状态。'
       }), {
         status: 502,
         headers: { 
