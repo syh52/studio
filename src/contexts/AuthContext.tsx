@@ -184,6 +184,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      
+      // 代理状态检查
+      if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+        console.log('🔐 Firebase Auth 请求将通过代理发送...');
+      }
+      
+      console.log('🔐 尝试登录用户:', email);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
       // 更新最后登录时间（异步，不阻塞）
@@ -239,6 +246,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
+      
+      // 代理状态检查
+      if (process.env.NODE_ENV === 'production' && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+        console.log('🔐 Firebase Auth 注册请求将通过代理发送...');
+      }
+      
+      console.log('🔐 尝试注册用户:', email);
       
       // 创建用户账户
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);

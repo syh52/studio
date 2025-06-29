@@ -22,6 +22,18 @@ const nextConfig: NextConfig = {
       tls: false,
     };
     
+    // 配置文件监听，忽略非必要文件以消除警告
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        '**/*.bat',           // 忽略批处理文件
+        '**/*.cmd',           // 忽略命令文件
+        '**/.git/**',         // 忽略 git 目录
+        '**/node_modules/**', // 忽略 node_modules
+        '**/.next/**',        // 忽略 Next.js 构建目录
+      ],
+    };
+    
     return config;
   },
 

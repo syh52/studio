@@ -7,6 +7,17 @@ import { DeepSeekProvider, DeepSeekMessage } from './deepseek-provider';
 import { getAIInstance } from '../firebase';
 import type { AIResponse, ConversationMessage } from '../ai/types';
 
+// ！！！代理配置 - 与 firebase.ts 保持一致 ！！！
+const proxyUrl = "https://yellow-fire-20d4.beelzebub1949.workers.dev"; // 您的 Worker 地址
+const isProduction = process.env.NODE_ENV === 'production';
+
+/**
+ * AI 服务代理说明：
+ * - 在生产环境且域名包含 'lexiconlab.cn' 时，所有 AI 请求将通过 Cloudflare Worker 透明代理
+ * - 代理在网络层工作，无需修改 Vertex AI SDK 的具体配置
+ * - 真正的 AI 初始化在 firebase.ts 中完成，这里主要添加代理状态提示
+ */
+
 export type AIProviderType = 'google' | 'deepseek';
 
 export interface AIProviderConfig {
@@ -39,6 +50,12 @@ export class AIProviderManager {
   private initializeProvidersAsync() {
     // 异步初始化，优先检查Google AI
     if (typeof window !== 'undefined') {
+      // --- ★ AI 代理确认逻辑 ★ ---
+      if (isProduction && window.location.hostname.includes('lexiconlab.cn')) {
+        console.log('🚀 AI服务代理状态: 所有 AI 请求将通过 Cloudflare Worker 透明代理');
+        console.log(`🔗 代理服务器: ${new URL(proxyUrl).host}`);
+      }
+      
       console.log('🤖 优先初始化 Google AI (Gemini)...');
       
       // 优先检查Google AI
@@ -159,6 +176,11 @@ export class AIProviderManager {
       // 首先尝试Google AI
       if (this.isGoogleAvailable) {
         try {
+          // AI 代理状态提示
+          if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+            console.log('🤖 Google AI 请求将通过代理发送...');
+          }
+          
           const { model } = await getAIInstance();
           const result = await model.generateContent({
             contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -215,6 +237,11 @@ export class AIProviderManager {
       // 首先尝试Google AI
       if (this.isGoogleAvailable) {
         try {
+          // AI 代理状态提示
+          if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+            console.log('🤖 Google AI 对话请求将通过代理发送...');
+          }
+          
           const { model } = await getAIInstance();
           const conversationHistory: ConversationMessage[] = messages
             .filter(msg => msg.role !== 'system') // 过滤掉system消息，因为ConversationMessage不支持
@@ -289,6 +316,11 @@ export class AIProviderManager {
   async* generateStreamingResponse(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): AsyncGenerator<string> {
     try {
       if (this.isGoogleAvailable) {
+        // AI 代理状态提示
+        if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+          console.log('🤖 Google AI 流式响应将通过代理发送...');
+        }
+        
         const { model } = await getAIInstance();
         const conversationHistory: ConversationMessage[] = messages
           .filter(msg => msg.role !== 'system') // 过滤掉system消息，因为ConversationMessage不支持
