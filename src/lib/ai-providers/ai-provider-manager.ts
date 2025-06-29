@@ -8,7 +8,11 @@ import { getAIInstance } from '../firebase';
 import type { AIResponse, ConversationMessage } from '../ai/types';
 
 // ！！！代理配置 - 与 firebase.ts 保持一致 ！！！
-const proxyUrl = "https://yellow-fire-20d4.beelzebub1949.workers.dev"; // 您的 Worker 地址
+const proxyUrl = "https://yellow-fire-20d4.beelzebub1949.workers.dev"; // 当前不可用
+// 备选方案（与firebase.ts同步更新）：
+// const proxyUrl = 'https://your-new-worker.your-username.workers.dev'; // 新建 Worker
+// const proxyUrl = 'https://proxy.yourdomain.com'; // 自定义域名（推荐）
+// const proxyUrl = 'https://firebase-cn-proxy.your-username.workers.dev'; // 专用中国区Worker
 const isProduction = process.env.NODE_ENV === 'production';
 
 /**

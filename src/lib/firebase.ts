@@ -7,7 +7,14 @@ import { getAuth } from "firebase/auth";
 const isProduction = process.env.NODE_ENV === 'production';
 
 // Cloudflare Worker 代理配置
-const PROXY_URL = "https://yellow-fire-20d4.beelzebub1949.workers.dev";
+// 选择一个在中国大陆可访问的代理 URL
+const PROXY_URL = 'https://yellow-fire-20d4.beelzebub1949.workers.dev'; // 当前不可用
+
+// 备选方案（请取消注释其中一个）：
+// const PROXY_URL = 'https://your-new-worker.your-username.workers.dev'; // 新建 Worker
+// const PROXY_URL = 'https://proxy.yourdomain.com'; // 自定义域名（推荐）
+// const PROXY_URL = 'https://firebase-cn-proxy.your-username.workers.dev'; // 专用中国区Worker
+
 const FIREBASE_HOSTS = [
   'identitytoolkit.googleapis.com',
   'securetoken.googleapis.com', 
