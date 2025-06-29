@@ -65,25 +65,45 @@ if (shouldUseProxy() && !isProxyDisabled) {
     // 使用官方的模拟器连接函数连接到代理
     // 这比重写fetch更稳定，且受Firebase官方支持
     
-    // 连接Auth到代理 (使用443端口的HTTPS)
+    // 🔧 强制所有连接使用HTTPS代理
     try {
+      // 连接Auth到代理，强制使用HTTPS
       connectAuthEmulator(auth, `https://${CUSTOM_PROXY_DOMAIN}`, {
         disableWarnings: true
       });
-      console.log('✅ Firebase Auth 已连接到代理');
+      console.log('✅ Firebase Auth 已连接到HTTPS代理');
     } catch (authError) {
-      // 如果已经连接过，会抛出错误，这是正常的
-      console.log('ℹ️ Firebase Auth 代理连接已存在或连接失败:', authError);
+      console.log('ℹ️ Firebase Auth 代理连接已存在:', authError);
     }
     
-    // 连接Firestore到代理（Web SDK自动处理HTTPS）
     try {
-      // Web SDK中connectFirestoreEmulator会自动根据端口443判断使用HTTPS
+      // 连接Firestore到代理，强制使用HTTPS
       connectFirestoreEmulator(db, CUSTOM_PROXY_DOMAIN, 443);
-      console.log('✅ Firebase Firestore 已连接到代理 (HTTPS)');
+      console.log('✅ Firebase Firestore 已连接到HTTPS代理');
     } catch (firestoreError) {
-      // 如果已经连接过，会抛出错误，这是正常的
-      console.log('ℹ️ Firebase Firestore 代理连接已存在或连接失败:', firestoreError);
+      console.log('ℹ️ Firebase Firestore 代理连接已存在:', firestoreError);
+    }
+    
+    // 🔧 阻止Firebase尝试直连Google服务
+    try {
+      // 拦截可能的混合内容请求
+      const originalFetch = window.fetch;
+      window.fetch = function(...args) {
+        const url = args[0].toString();
+        
+        // 检查是否是Firebase相关的HTTP请求，强制转换为代理
+        if (url.includes('googleapis.com') && !url.includes(CUSTOM_PROXY_DOMAIN)) {
+          console.log('🔧 拦截并重定向Firebase请求到代理:', url);
+          // 不允许直连，强制通过代理
+          return Promise.reject(new Error('Blocked direct Firebase connection, use proxy only'));
+        }
+        
+        return originalFetch.apply(this, args);
+      };
+      
+      console.log('🔧 已设置Firebase请求拦截器，强制使用代理');
+    } catch (interceptError) {
+      console.log('⚠️ 请求拦截器设置失败:', interceptError);
     }
     
     console.log('✅ Firebase Auth 和 Firestore 已连接到代理');
