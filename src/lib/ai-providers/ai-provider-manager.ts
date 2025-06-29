@@ -8,7 +8,9 @@ import { getAIInstance } from '../firebase';
 import type { AIResponse, ConversationMessage } from '../ai/types';
 
 // ！！！代理配置 - 与 firebase.ts 保持一致 ！！！
-const proxyUrl = "https://yellow-fire-20d4.beelzebub1949.workers.dev"; // 您的 Worker 地址
+// 临时禁用代理，因为 Cloudflare Worker 代理服务不可用
+// const proxyUrl = "https://yellow-fire-20d4.beelzebub1949.workers.dev"; // 您的 Worker 地址
+const proxyUrl = ""; // 临时清空代理URL
 const isProduction = process.env.NODE_ENV === 'production';
 
 /**
@@ -51,10 +53,13 @@ export class AIProviderManager {
     // 异步初始化，优先检查Google AI
     if (typeof window !== 'undefined') {
       // --- ★ AI 代理确认逻辑 ★ ---
-      if (isProduction && window.location.hostname.includes('lexiconlab.cn')) {
-        console.log('🚀 AI服务代理状态: 所有 AI 请求将通过 Cloudflare Worker 透明代理');
-        console.log(`🔗 代理服务器: ${new URL(proxyUrl).host}`);
-      }
+      // 临时禁用代理提示
+      console.log('⚠️ AI服务代理已临时禁用，直接连接 AI 服务');
+      // TODO: 修复或重新配置 Cloudflare Worker 代理
+      // if (isProduction && window.location.hostname.includes('lexiconlab.cn')) {
+      //   console.log('🚀 AI服务代理状态: 所有 AI 请求将通过 Cloudflare Worker 透明代理');
+      //   console.log(`🔗 代理服务器: ${new URL(proxyUrl).host}`);
+      // }
       
       console.log('🤖 优先初始化 Google AI (Gemini)...');
       
@@ -176,10 +181,8 @@ export class AIProviderManager {
       // 首先尝试Google AI
       if (this.isGoogleAvailable) {
         try {
-          // AI 代理状态提示
-          if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-            console.log('🤖 Google AI 请求将通过代理发送...');
-          }
+          // AI 代理状态提示（已禁用）
+          console.log('🤖 Google AI 直接连接中...');
           
           const { model } = await getAIInstance();
           const result = await model.generateContent({
@@ -237,10 +240,8 @@ export class AIProviderManager {
       // 首先尝试Google AI
       if (this.isGoogleAvailable) {
         try {
-          // AI 代理状态提示
-          if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-            console.log('🤖 Google AI 对话请求将通过代理发送...');
-          }
+          // AI 代理状态提示（已禁用）
+          console.log('🤖 Google AI 对话直接连接中...');
           
           const { model } = await getAIInstance();
           const conversationHistory: ConversationMessage[] = messages
@@ -316,10 +317,8 @@ export class AIProviderManager {
   async* generateStreamingResponse(messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>): AsyncGenerator<string> {
     try {
       if (this.isGoogleAvailable) {
-        // AI 代理状态提示
-        if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-          console.log('🤖 Google AI 流式响应将通过代理发送...');
-        }
+        // AI 代理状态提示（已禁用）
+        console.log('🤖 Google AI 流式响应直接连接中...');
         
         const { model } = await getAIInstance();
         const conversationHistory: ConversationMessage[] = messages

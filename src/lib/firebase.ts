@@ -38,9 +38,13 @@ export const auth = getAuth(firebaseApp);
 export const db: Firestore = getFirestore(firebaseApp);
 
 // --- ★ 代理确认逻辑 ★ ---
-if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-  console.log('🚀 应用于生产环境，所有 Firebase 后端请求将由 Cloudflare Worker 透明代理。');
-}
+// 临时禁用代理，因为 Cloudflare Worker 代理服务不可用
+// TODO: 修复或重新配置 Cloudflare Worker 代理
+console.log('⚠️ 代理已临时禁用，直接连接 Firebase 服务');
+
+// if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
+//   console.log('🚀 应用于生产环境，所有 Firebase 后端请求将由 Cloudflare Worker 透明代理。');
+// }
 
 // ######################################################################
 // #  下面的 AI 初始化代码完全是您原来写的，我们原封不动地保留了下来     #
