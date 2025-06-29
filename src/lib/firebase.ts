@@ -4,8 +4,6 @@ import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-const isProduction = process.env.NODE_ENV === 'production';
-
 // Cloudflare Worker 代理配置
 // 选择一个在中国大陆可访问的代理 URL
 const PROXY_URL = 'https://yellow-fire-20d4.beelzebub1949.workers.dev'; // 当前不可用
@@ -25,62 +23,81 @@ const FIREBASE_HOSTS = [
   'www.googleapis.com'
 ];
 
-// 中国大陆专用：强制使用代理，不使用直连
-
-// 设置全局 fetch 拦截器，强制使用代理（中国大陆专用）
-function setupFirebaseProxy() {
-  if (typeof window === 'undefined') return; // 只在客户端执行
+// 🚀 中国大陆专用：立即设置代理拦截器
+// 必须在 Firebase 初始化之前设置，否则拦截无效
+if (typeof window !== 'undefined') {
+  // 环境检测：生产环境或包含特定域名
+  const isProductionLike = 
+    process.env.NODE_ENV === 'production' || 
+    window.location.hostname.includes('lexiconlab.cn') ||
+    window.location.hostname.includes('firebaseapp.com');
   
-  const originalFetch = window.fetch;
-  
-  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit) {
-    let url: string;
+  if (isProductionLike) {
+    console.log('🇨🇳 检测到生产环境，设置Firebase代理拦截器...');
+    console.log(`🔗 代理服务器: ${PROXY_URL.replace('https://', '')}`);
+    console.log(`🌍 当前域名: ${window.location.hostname}`);
     
-    // 处理不同类型的 input
-    if (typeof input === 'string') {
-      url = input;
-    } else if (input instanceof URL) {
-      url = input.toString();
-    } else if (input instanceof Request) {
-      url = input.url;
-    } else {
-      return originalFetch(input, init);
-    }
+    // 保存原始 fetch 引用
+    (window as any).__originalFetch__ = window.fetch;
+    const originalFetch = window.fetch;
     
-    // 检查是否是 Firebase API 请求
-    const urlObj = new URL(url);
-    const isFirebaseRequest = FIREBASE_HOSTS.some(host => urlObj.hostname === host);
-    
-    if (isFirebaseRequest && isProduction && window.location.hostname.includes('lexiconlab.cn')) {
-      // 强制重定向到代理（中国大陆用户必须使用代理）
-      const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+    // 重写全局 fetch 函数
+    window.fetch = async function(input: RequestInfo | URL, init?: RequestInit) {
+      let url: string;
       
-      console.log(`🇨🇳 强制代理 Firebase 请求: ${urlObj.hostname}${urlObj.pathname}`);
-      
-      // 创建新的请求，使用代理 URL
-      if (input instanceof Request) {
-        const newRequest = new Request(proxyUrl, {
-          method: input.method,
-          headers: input.headers,
-          body: input.body,
-          mode: 'cors',
-          credentials: 'omit'
-        });
-        return originalFetch(newRequest);
+      // 处理不同类型的 input
+      if (typeof input === 'string') {
+        url = input;
+      } else if (input instanceof URL) {
+        url = input.toString();
+      } else if (input instanceof Request) {
+        url = input.url;
       } else {
-        return originalFetch(proxyUrl, {
-          ...init,
-          mode: 'cors',
-          credentials: 'omit'
-        });
+        return originalFetch(input, init);
       }
-    }
+      
+      // 检查是否是 Firebase API 请求
+      const urlObj = new URL(url);
+      const isFirebaseRequest = FIREBASE_HOSTS.some(host => urlObj.hostname === host);
+      
+      if (isFirebaseRequest) {
+        // 强制重定向到代理（中国大陆用户必须使用代理）
+        const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+        
+        console.log(`🇨🇳 拦截Firebase请求: ${urlObj.hostname}${urlObj.pathname} -> 代理`);
+        
+        // 创建新的请求，使用代理 URL
+        try {
+          if (input instanceof Request) {
+            const newRequest = new Request(proxyUrl, {
+              method: input.method,
+              headers: input.headers,
+              body: input.body,
+              mode: 'cors',
+              credentials: 'omit'
+            });
+            return originalFetch(newRequest);
+          } else {
+            return originalFetch(proxyUrl, {
+              ...init,
+              mode: 'cors',
+              credentials: 'omit'
+            });
+          }
+        } catch (error) {
+          console.error(`❌ 代理请求失败: ${urlObj.hostname}`, error);
+          throw error;
+        }
+      }
+      
+      // 非 Firebase 请求，直接传递
+      return originalFetch(input, init);
+    };
     
-    // 非 Firebase 请求，直接传递
-    return originalFetch(input, init);
-  };
-  
-  console.log('🇨🇳 Firebase 强制代理已启动（中国大陆专用）');
+    console.log('✅ Firebase 强制代理拦截器已设置（中国大陆专用）');
+  } else {
+    console.log('🔧 开发环境，使用直连Firebase');
+  }
 }
 
 // 您的 Firebase 项目配置 (来自您的原始代码)
@@ -110,21 +127,9 @@ try {
   firebaseApp = initializeApp(firebaseConfig);
 }
 
-// 在生产环境设置代理拦截器
-if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-  setupFirebaseProxy();
-}
-
-// 立即初始化 Auth 和 Firestore
+// 立即初始化 Auth 和 Firestore（代理拦截器已在上面设置）
 export const auth = getAuth(firebaseApp);
 export const db: Firestore = getFirestore(firebaseApp);
-
-// --- ★ 代理确认逻辑 ★ ---
-if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-  console.log('🇨🇳 Firebase 强制代理已启动：所有 Firebase 请求将通过 Cloudflare Worker 代理');
-  console.log(`🔗 代理服务器: ${PROXY_URL.replace('https://', '')}`);
-  console.log('⚠️ 注意：如果代理不可用，应用将无法访问 Firebase 服务');
-}
 
 // ######################################################################
 // #  下面的 AI 初始化代码完全是您原来写的，我们原封不动地保留了下来     #
