@@ -1,11 +1,11 @@
-// Cloudflare Worker: lexicon-cn-proxy (Optimized Version)
+// Cloudflare Worker: lexicon-cn-proxy (CORS 修复版)
 // 部署指南：将此代码部署到Cloudflare Worker，并绑定自定义域名 api.lexiconlab.cn
 
 // 需要代理的 Firebase 服务域名（完整列表）
 const FIREBASE_HOSTS = [
   'identitytoolkit.googleapis.com', // Firebase Auth (大部分功能)
   'securetoken.googleapis.com',     // Firebase Auth (Token刷新等)
-  'firestore.googleapis.com',       // Firestore 数据库
+  'firestore.googleapis.com',       // Firestore 数据库 + WebChannel  
   'firebasestorage.googleapis.com', // Firebase Storage
   'www.googleapis.com',             // Google APIs
   'aiplatform.googleapis.com',      // Vertex AI
@@ -20,49 +20,62 @@ const ALLOWED_ORIGINS = [
   'https://www.lexiconlab.cn',
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:9002',   // Next.js开发服务器常用端口
+  'http://localhost:9002',
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
   'http://127.0.0.1:9002',
-  'file://'                  // 支持本地文件直接访问
+  'file://'
 ];
+
+// ✅ 统一的 CORS 头部生成函数
+function createCORSHeaders(origin) {
+  const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+  const corsOrigin = isAllowedOrigin ? origin : ALLOWED_ORIGINS[0];
+  
+  return {
+    'Access-Control-Allow-Origin': corsOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck, x-firebase-client, x-firebase-client-log-type, x-firebase-client-version',
+    'Access-Control-Allow-Credentials': 'true', // ⚡ 关键修复：强制设置为 true
+    'Access-Control-Expose-Headers': 'Content-Length, Content-Type, X-Firebase-AppCheck, Grpc-Metadata-Debug',
+    'Access-Control-Max-Age': '86400'
+  };
+}
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin') || '';
+    
+    console.log(`🔄 请求: ${request.method} ${url.pathname} | 来源: ${origin}`);
 
-    // 检查来源是否在允许列表中
-    const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
-    const corsOrigin = isAllowedOrigin ? origin : ALLOWED_ORIGINS[0]; // 默认使用生产域名
-
-    // 处理 OPTIONS 预检请求（CORS）
+    // ✅ 改进的 OPTIONS 预检请求处理
     if (request.method === 'OPTIONS') {
+      console.log('🚀 处理 OPTIONS 预检请求');
       return new Response(null, {
-        status: 204, // 使用 204 No Content 更标准
-        headers: {
-          'Access-Control-Allow-Origin': corsOrigin,
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck, x-firebase-client, x-firebase-client-log-type, x-firebase-client-version',
-          'Access-Control-Allow-Credentials': 'true',
-          'Access-Control-Max-Age': '86400'
-        }
+        status: 204,
+        headers: createCORSHeaders(origin)
       });
     }
 
-    // 直接返回根路径的状态信息，方便测试连通性
+    // 状态检查端点
     if (url.pathname === '/' || url.pathname === '/health') {
-        return new Response(JSON.stringify({
-            status: 'online',
-            service: 'Lexicon Firebase CN Proxy',
-            timestamp: new Date().toISOString(),
-            message: '🇨🇳 Firebase代理服务运行正常'
-        }), {
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*' // 状态页允许所有来源访问
-            }
-        });
+      return new Response(JSON.stringify({
+        status: 'online',
+        service: 'Lexicon Firebase CN Proxy (CORS 修复版)',
+        timestamp: new Date().toISOString(),
+        message: '🇨🇳 Firebase代理服务运行正常',
+        corsTest: {
+          origin: origin,
+          allowedOrigins: ALLOWED_ORIGINS,
+          corsHeaders: createCORSHeaders(origin)
+        }
+      }), {
+        headers: { 
+          'Content-Type': 'application/json',
+          ...createCORSHeaders(origin)
+        }
+      });
     }
 
     // 解析目标主机和路径
@@ -74,20 +87,26 @@ export default {
         usage: 'https://api.lexiconlab.cn/{firebase-host}/{path}'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': corsOrigin }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...createCORSHeaders(origin)
+        }
       });
     }
 
     const targetHost = pathParts[0];
 
-    // 验证目标主机是否在允许列表中
+    // 验证目标主机
     if (!FIREBASE_HOSTS.includes(targetHost)) {
       return new Response(JSON.stringify({ 
         error: `Unsupported host: ${targetHost}`,
         supportedHosts: FIREBASE_HOSTS
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': corsOrigin }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...createCORSHeaders(origin)
+        }
       });
     }
     
@@ -95,23 +114,48 @@ export default {
     const targetPath = '/' + pathParts.slice(1).join('/');
     const targetUrl = `https://${targetHost}${targetPath}${url.search}`;
     
-    // 关键改动：直接复用原始请求来构造新请求，以保证所有属性被完整克隆
-    // This is the most important change. It ensures that method, headers, body, and duplex information
-    // are all correctly carried over to the new request.
-    const newRequest = new Request(targetUrl, request);
+    // ✅ 检测 WebChannel 请求
+    const isWebChannel = targetPath.includes('/channel') && 
+                        (targetPath.includes('Firestore/Write') || targetPath.includes('Firestore/Listen'));
     
+    if (isWebChannel) {
+      console.log(`🔥 WebChannel 请求: ${targetUrl}`);
+    }
+
     try {
+      // ✅ 正确构造代理请求
+      const newRequest = new Request(targetUrl, {
+        method: request.method,
+        headers: request.headers,
+        body: request.body,
+        // ✅ 对于有 body 的请求，添加 duplex 参数
+        ...(request.body ? { duplex: 'half' } : {})
+      });
+      
+      console.log(`🌐 代理到: ${targetUrl}`);
       const response = await fetch(newRequest);
       
-      // 创建新的响应，添加完整的CORS头部
+      // ✅ 创建响应时强制添加 CORS 头部
       const newHeaders = new Headers(response.headers);
       
-      // 设置CORS头部
-      newHeaders.set('Access-Control-Allow-Origin', corsOrigin);
-      newHeaders.set('Access-Control-Allow-Credentials', 'true');
-      // 可以暴露一些通常被CORS策略隐藏的头部
-      newHeaders.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type, X-Firebase-AppCheck, Grpc-Metadata-Debug');
+      // 强制设置 CORS 头部，覆盖任何现有值
+      const corsHeaders = createCORSHeaders(origin);
+      Object.entries(corsHeaders).forEach(([key, value]) => {
+        newHeaders.set(key, value);
+      });
+      
+      // ✅ WebChannel 特殊处理
+      if (isWebChannel) {
+        // 确保 WebChannel 必需的头部
+        newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        newHeaders.set('Pragma', 'no-cache');
+        newHeaders.set('Expires', '0');
+        
+        console.log(`🔥 WebChannel 响应: ${response.status} | CORS: ${newHeaders.get('Access-Control-Allow-Credentials')}`);
+      }
 
+      console.log(`✅ 代理成功: ${response.status} ${response.statusText}`);
+      
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -119,17 +163,20 @@ export default {
       });
 
     } catch (error) {
-      console.error(`❌ Proxy failed: ${error.message}`);
+      console.error(`❌ 代理失败: ${error.message}`);
+      
       return new Response(JSON.stringify({ 
-        error: 'Proxy request failed', 
+        error: isWebChannel ? 'WebChannel proxy failed' : 'Proxy request failed', 
         message: error.message,
+        targetUrl: targetUrl,
+        timestamp: new Date().toISOString()
       }), {
         status: 502,
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': corsOrigin
+          ...createCORSHeaders(origin)
         }
       });
     }
-  },
+  }
 };
