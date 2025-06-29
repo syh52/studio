@@ -18,48 +18,9 @@ const FIREBASE_HOSTS = [
   'www.googleapis.com'
 ];
 
-// 全局代理状态跟踪
-let proxyHealthy = true;
-let proxyTestPromise: Promise<boolean> | null = null;
+// 中国大陆专用：强制使用代理，不使用直连
 
-// 测试代理连接性
-async function testProxyConnection(): Promise<boolean> {
-  if (proxyTestPromise) return proxyTestPromise;
-  
-  proxyTestPromise = (async () => {
-    try {
-      console.log('🔍 测试代理连接性...');
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超时
-      
-      const response = await fetch(PROXY_URL, {
-        method: 'GET',
-        signal: controller.signal,
-        mode: 'cors'
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok || response.status === 404) { // 404 是正常的，说明Worker在线
-        console.log('✅ 代理连接正常');
-        return true;
-      } else {
-        console.warn('⚠️ 代理响应异常:', response.status);
-        return false;
-      }
-    } catch (error) {
-      console.warn('❌ 代理连接失败:', error instanceof Error ? error.message : '未知错误');
-      return false;
-    } finally {
-      // 1分钟后重置测试，允许重新测试
-      setTimeout(() => { proxyTestPromise = null; }, 60000);
-    }
-  })();
-  
-  return proxyTestPromise;
-}
-
-// 设置全局 fetch 拦截器，支持智能回退
+// 设置全局 fetch 拦截器，强制使用代理（中国大陆专用）
 function setupFirebaseProxy() {
   if (typeof window === 'undefined') return; // 只在客户端执行
   
@@ -83,67 +44,36 @@ function setupFirebaseProxy() {
     const urlObj = new URL(url);
     const isFirebaseRequest = FIREBASE_HOSTS.some(host => urlObj.hostname === host);
     
-    if (isFirebaseRequest && isProduction && window.location.hostname.includes('lexiconlab.cn') && proxyHealthy) {
-      try {
-        // 重定向到代理
-        const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
-        
-        console.log(`🔄 尝试代理请求: ${urlObj.hostname}${urlObj.pathname}`);
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-        
-        // 创建新的请求，使用代理 URL
-        let proxyResponse;
-        if (input instanceof Request) {
-          const newRequest = new Request(proxyUrl, {
-            method: input.method,
-            headers: input.headers,
-            body: input.body,
-            mode: 'cors',
-            credentials: 'omit',
-            signal: controller.signal
-          });
-          proxyResponse = await originalFetch(newRequest);
-        } else {
-          proxyResponse = await originalFetch(proxyUrl, {
-            ...init,
-            mode: 'cors',
-            credentials: 'omit',
-            signal: controller.signal
-          });
-        }
-        
-        clearTimeout(timeoutId);
-        
-        if (proxyResponse.ok) {
-          console.log(`✅ 代理成功: ${urlObj.hostname}`);
-          return proxyResponse;
-        } else {
-          throw new Error(`代理响应错误: ${proxyResponse.status}`);
-        }
-        
-      } catch (error) {
-        console.warn(`⚠️ 代理失败，回退到直连: ${urlObj.hostname}`, error instanceof Error ? error.message : '未知错误');
-        proxyHealthy = false;
-        
-        // 5分钟后重新启用代理尝试
-        setTimeout(() => {
-          proxyHealthy = true;
-          console.log('🔄 代理已重新启用，将在下次请求时尝试');
-        }, 300000);
-        
-        // 回退到直连
-        console.log(`🔄 直连请求: ${urlObj.hostname}${urlObj.pathname}`);
-        return originalFetch(input, init);
+    if (isFirebaseRequest && isProduction && window.location.hostname.includes('lexiconlab.cn')) {
+      // 强制重定向到代理（中国大陆用户必须使用代理）
+      const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+      
+      console.log(`🇨🇳 强制代理 Firebase 请求: ${urlObj.hostname}${urlObj.pathname}`);
+      
+      // 创建新的请求，使用代理 URL
+      if (input instanceof Request) {
+        const newRequest = new Request(proxyUrl, {
+          method: input.method,
+          headers: input.headers,
+          body: input.body,
+          mode: 'cors',
+          credentials: 'omit'
+        });
+        return originalFetch(newRequest);
+      } else {
+        return originalFetch(proxyUrl, {
+          ...init,
+          mode: 'cors',
+          credentials: 'omit'
+        });
       }
     }
     
-    // 非 Firebase 请求或代理不健康时，直接传递
+    // 非 Firebase 请求，直接传递
     return originalFetch(input, init);
   };
   
-  console.log('🚀 Firebase 智能代理拦截器已启动（支持自动回退）');
+  console.log('🇨🇳 Firebase 强制代理已启动（中国大陆专用）');
 }
 
 // 您的 Firebase 项目配置 (来自您的原始代码)
@@ -184,18 +114,9 @@ export const db: Firestore = getFirestore(firebaseApp);
 
 // --- ★ 代理确认逻辑 ★ ---
 if (isProduction && typeof window !== 'undefined' && window.location.hostname.includes('lexiconlab.cn')) {
-  console.log('🚀 Firebase 智能代理已启动：尝试通过 Cloudflare Worker 代理，失败时自动回退直连');
+  console.log('🇨🇳 Firebase 强制代理已启动：所有 Firebase 请求将通过 Cloudflare Worker 代理');
   console.log(`🔗 代理服务器: ${PROXY_URL.replace('https://', '')}`);
-  
-  // 异步测试代理连接
-  testProxyConnection().then(healthy => {
-    if (healthy) {
-      console.log('✅ 代理预检通过，Firebase 请求将优先使用代理');
-    } else {
-      console.log('⚠️ 代理预检失败，Firebase 请求将使用直连模式');
-      proxyHealthy = false;
-    }
-  });
+  console.log('⚠️ 注意：如果代理不可用，应用将无法访问 Firebase 服务');
 }
 
 // ######################################################################
