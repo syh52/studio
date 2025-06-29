@@ -76,10 +76,11 @@ if (shouldUseProxy() && !isProxyDisabled) {
       console.log('ℹ️ Firebase Auth 代理连接已存在或连接失败:', authError);
     }
     
-    // 连接Firestore到代理
+    // 连接Firestore到代理（Web SDK自动处理HTTPS）
     try {
+      // Web SDK中connectFirestoreEmulator会自动根据端口443判断使用HTTPS
       connectFirestoreEmulator(db, CUSTOM_PROXY_DOMAIN, 443);
-      console.log('✅ Firebase Firestore 已连接到代理');
+      console.log('✅ Firebase Firestore 已连接到代理 (HTTPS)');
     } catch (firestoreError) {
       // 如果已经连接过，会抛出错误，这是正常的
       console.log('ℹ️ Firebase Firestore 代理连接已存在或连接失败:', firestoreError);
