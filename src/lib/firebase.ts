@@ -51,9 +51,15 @@ try {
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
+// 🚨 紧急调试：添加代理禁用开关
+// 在浏览器控制台输入 localStorage.setItem('disable-proxy', 'true') 可禁用代理
+const isProxyDisabled = typeof window !== 'undefined' && 
+  localStorage.getItem('disable-proxy') === 'true';
+
 // 🇨🇳 中国大陆代理配置：使用fetch拦截方法
-if (shouldUseProxy()) {
+if (shouldUseProxy() && !isProxyDisabled) {
   console.log(`🇨🇳 检测到中国大陆环境，设置Firebase代理: https://${CUSTOM_PROXY_DOMAIN}`);
+  console.log('💡 如需禁用代理调试，请在控制台运行: localStorage.setItem("disable-proxy", "true") 然后刷新页面');
   
   // 保存原始fetch
   const originalFetch = window.fetch;
@@ -92,35 +98,67 @@ if (shouldUseProxy()) {
         const proxyUrl = `https://${CUSTOM_PROXY_DOMAIN}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
         console.log(`🌐 代理Firebase请求: ${urlObj.hostname}${urlObj.pathname}`);
         
-        // 创建新请求
+        // 🔧 修复Request构造问题，添加duplex参数
         if (input instanceof Request) {
-          const newRequest = new Request(proxyUrl, {
+          // 检查是否有body并设置正确的duplex参数
+          const hasBody = input.body !== null;
+          const requestOptions: RequestInit = {
             method: input.method,
             headers: input.headers,
-            body: input.body,
             mode: 'cors',
             credentials: 'omit'
-          });
+          };
+          
+          // 仅在有body时添加body和duplex参数
+          if (hasBody) {
+            requestOptions.body = input.body;
+            // @ts-ignore - duplex是新的Web标准，TypeScript可能还未更新
+            requestOptions.duplex = 'half';
+          }
+          
+          const newRequest = new Request(proxyUrl, requestOptions);
           return originalFetch(newRequest);
         } else {
-          return originalFetch(proxyUrl, {
+          // 处理非Request类型的input
+          const requestOptions: RequestInit = {
             ...init,
             mode: 'cors',
             credentials: 'omit'
-          });
+          };
+          
+          // 如果有body，添加duplex参数
+          if (init?.body) {
+            // @ts-ignore - duplex是新的Web标准
+            requestOptions.duplex = 'half';
+          }
+          
+          return originalFetch(proxyUrl, requestOptions);
         }
       }
     } catch (error) {
       console.warn('代理URL解析失败:', error);
+      // 代理失败时回退到原始请求
+      console.log('🔄 代理失败，回退到直连');
     }
     
-    // 非Firebase请求直接通过
-    return originalFetch(input, init);
+    // 非Firebase请求或代理失败时直接通过
+    try {
+      return originalFetch(input, init);
+    } catch (fetchError) {
+      console.error('🚨 Firebase请求失败:', fetchError);
+      console.log('💡 建议尝试禁用代理调试: localStorage.setItem("disable-proxy", "true")');
+      throw fetchError;
+    }
   };
   
   console.log('✅ Firebase fetch代理已设置');
 } else {
-  console.log('🔧 非生产环境，使用Firebase直连');
+  if (isProxyDisabled) {
+    console.log('🚨 代理已手动禁用，使用Firebase直连');
+    console.log('💡 要重新启用代理，请运行: localStorage.removeItem("disable-proxy") 然后刷新页面');
+  } else {
+    console.log('🔧 非生产环境，使用Firebase直连');
+  }
 }
 
 // ######################################################################
