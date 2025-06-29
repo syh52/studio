@@ -1,7 +1,7 @@
-// --- 优化的Firebase代理解决方案 ---
+// --- 优化的Firebase代理解决方案 (完全自定义方法) ---
 import { initializeApp, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, initializeFirestore } from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getAI, getGenerativeModel } from "firebase/ai";
 
 // 自定义代理域名配置
@@ -30,19 +30,66 @@ const defaultConfig = {
   appId: "1:461284748566:web:917008c87daa9bfa38f437"
 };
 
-// 🇨🇳 中国大陆优化的Firebase配置
-const chinaOptimizedConfig = {
-  ...defaultConfig,
-  // 🔧 使用代理域名进行初始化
-  authDomain: CUSTOM_PROXY_DOMAIN,
-  databaseURL: `https://${CUSTOM_PROXY_DOMAIN}/aviation-lexicon-trainer-default-rtdb.asia-southeast1.firebasedatabase.app`
-};
-
 // 全局变量
 let app: FirebaseApp | null = null;
 let auth: any = null;
 let db: any = null;
 let ai: any = null;
+
+// 🔧 强力代理拦截器 - 这次我们需要更彻底的方法
+function setupAdvancedProxyInterceptor() {
+  if (typeof window === 'undefined') return;
+  
+  console.log('🔧 设置强力代理拦截器...');
+  
+  // 保存原始fetch
+  const originalFetch = window.fetch;
+  
+  // 重写fetch，强制所有Firebase请求通过代理
+  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    
+    // 检查是否是Firebase相关请求
+    const isFirebaseRequest = 
+      url.includes('googleapis.com') ||
+      url.includes('firestore.googleapis.com') ||
+      url.includes('identitytoolkit.googleapis.com') ||
+      url.includes('securetoken.googleapis.com') ||
+      url.includes('firebasestorage.googleapis.com');
+    
+    if (isFirebaseRequest && !url.includes(CUSTOM_PROXY_DOMAIN)) {
+      // 提取目标域名和路径
+      const urlObj = new URL(url);
+      const targetHost = urlObj.hostname;
+      const targetPath = urlObj.pathname + urlObj.search;
+      
+      // 构建代理URL
+      const proxyUrl = `https://${CUSTOM_PROXY_DOMAIN}/${targetHost}${targetPath}`;
+      
+      console.log(`🔧 拦截Firebase请求: ${url}`);
+      console.log(`🔧 重定向到代理: ${proxyUrl}`);
+      
+      // 创建新的请求对象，保持所有原始头部和选项
+      const proxyInit = {
+        ...init,
+        headers: {
+          ...init?.headers,
+          // 确保关键的Firebase头部被正确传递
+          'Origin': window.location.origin,
+          'Referer': window.location.href
+        }
+      };
+      
+      // 使用代理URL调用原始fetch
+      return originalFetch(proxyUrl, proxyInit);
+    }
+    
+    // 非Firebase请求，正常处理
+    return originalFetch(input, init);
+  };
+  
+  console.log('✅ 强力代理拦截器设置完成');
+}
 
 // 初始化Firebase
 function initializeFirebaseApp(): FirebaseApp {
@@ -59,13 +106,13 @@ function initializeFirebaseApp(): FirebaseApp {
     
     console.log(`🔥 Firebase初始化 - 环境: ${useProxy ? '中国大陆' : '海外'}`);
     
+    // 🔧 如果需要代理，先设置拦截器
     if (useProxy && !isProxyDisabled) {
-      console.log(`🇨🇳 使用中国大陆优化配置`);
-      return initializeApp(chinaOptimizedConfig);
-    } else {
-      console.log(`🌍 使用标准配置`);
-      return initializeApp(defaultConfig);
+      setupAdvancedProxyInterceptor();
     }
+    
+    console.log(`🌍 使用标准Firebase配置初始化`);
+    return initializeApp(defaultConfig);
   }
 }
 
@@ -87,7 +134,7 @@ export function initializeFirebaseServices() {
     // 初始化Auth
     auth = getAuth(app);
     
-    // 🇨🇳 仅对Auth使用模拟器连接（推荐的官方方式）
+    // 🇨🇳 只对Auth使用模拟器连接（这个是安全的）
     if (useProxy && !isProxyDisabled) {
       try {
         connectAuthEmulator(auth, `https://${CUSTOM_PROXY_DOMAIN}`, {
@@ -99,23 +146,12 @@ export function initializeFirebaseServices() {
       }
     }
     
-    // 🔧 初始化Firestore - 根据环境选择配置
+    // 🔧 对于Firestore，使用标准初始化，依赖我们的拦截器
+    db = getFirestore(app);
+    
     if (useProxy && !isProxyDisabled) {
-      // 🇨🇳 中国大陆环境：使用特殊配置初始化Firestore
-      try {
-        db = initializeFirestore(app, {
-          host: CUSTOM_PROXY_DOMAIN,
-          ssl: true,
-          experimentalForceLongPolling: true, // 强制长轮询，避免WebSocket问题
-        });
-        console.log('✅ Firebase Firestore 已使用代理配置初始化');
-      } catch (firestoreError) {
-        console.log('ℹ️ Firestore已初始化，使用现有实例:', firestoreError);
-        db = getFirestore(app);
-      }
+      console.log('✅ Firebase Firestore 已初始化，使用代理拦截器');
     } else {
-      // 🌍 标准环境：使用默认配置
-      db = getFirestore(app);
       console.log('✅ Firebase Firestore 已使用标准配置初始化');
     }
     
@@ -129,7 +165,8 @@ export function initializeFirebaseServices() {
     }
 
     if (useProxy && !isProxyDisabled) {
-      console.log('✅ Firebase 服务已全部初始化（中国大陆优化配置）');
+      console.log('✅ Firebase 服务已全部初始化（使用强力代理拦截器）');
+      console.log('💡 如需禁用代理调试，请运行: localStorage.setItem("disable-proxy", "true")');
     } else {
       console.log('✅ Firebase 服务已全部初始化（标准配置）');
     }
