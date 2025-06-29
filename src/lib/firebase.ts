@@ -4,14 +4,50 @@ import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
 import { getFirestore, Firestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// Cloudflare Worker 代理配置
-// 选择一个在中国大陆可访问的代理 URL
-const PROXY_URL = 'https://yellow-fire-20d4.beelzebub1949.workers.dev'; // 当前不可用
+// Cloudflare Worker 代理配置 - 多个备用Worker自动切换
+const PROXY_URLS = [
+  'https://firebase-cn-proxy.beelzebub1949.workers.dev',
+  'https://firebase-proxy-backup.beelzebub1949.workers.dev', 
+  'https://cn-firebase-api.beelzebub1949.workers.dev',
+  'https://firebase-proxy-2024.beelzebub1949.workers.dev',
+  'https://yellow-fire-20d4.beelzebub1949.workers.dev' // 原来的作为最后备选
+];
 
-// 备选方案（请取消注释其中一个）：
-// const PROXY_URL = 'https://your-new-worker.your-username.workers.dev'; // 新建 Worker
-// const PROXY_URL = 'https://proxy.yourdomain.com'; // 自定义域名（推荐）
-// const PROXY_URL = 'https://firebase-cn-proxy.your-username.workers.dev'; // 专用中国区Worker
+// 当前使用的代理URL（将自动测试并选择可用的）
+let CURRENT_PROXY_URL = PROXY_URLS[0];
+
+// 测试代理连接性并选择可用的Worker
+async function selectWorkingProxy(): Promise<string> {
+  console.log('🔍 测试多个Worker代理，寻找可用的...');
+  
+  for (const proxyUrl of PROXY_URLS) {
+    try {
+      console.log(`⏰ 测试: ${proxyUrl.replace('https://', '')}`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3秒超时
+      
+      const response = await fetch(proxyUrl, {
+        method: 'GET',
+        signal: controller.signal,
+        mode: 'cors'
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (response.ok || response.status === 404) {
+        console.log(`✅ 找到可用Worker: ${proxyUrl.replace('https://', '')}`);
+        CURRENT_PROXY_URL = proxyUrl;
+        return proxyUrl;
+      }
+    } catch (error) {
+      console.log(`❌ Worker不可用: ${proxyUrl.replace('https://', '')} - ${error instanceof Error ? error.message : '连接失败'}`);
+    }
+  }
+  
+  console.warn('⚠️ 所有Worker代理都不可用，使用第一个作为默认');
+  return PROXY_URLS[0];
+}
 
 const FIREBASE_HOSTS = [
   'identitytoolkit.googleapis.com',
@@ -34,8 +70,16 @@ if (typeof window !== 'undefined') {
   
   if (isProductionLike) {
     console.log('🇨🇳 检测到生产环境，设置Firebase代理拦截器...');
-    console.log(`🔗 代理服务器: ${PROXY_URL.replace('https://', '')}`);
+    console.log(`🔗 默认代理服务器: ${CURRENT_PROXY_URL.replace('https://', '')}`);
     console.log(`🌍 当前域名: ${window.location.hostname}`);
+    
+    // 异步选择可用的Worker（不阻塞初始化）
+    selectWorkingProxy().then(selectedProxy => {
+      CURRENT_PROXY_URL = selectedProxy;
+      console.log(`🎯 最终选择的代理: ${selectedProxy.replace('https://', '')}`);
+    }).catch(error => {
+      console.error('❌ 选择代理失败:', error);
+    });
     
     // 保存原始 fetch 引用
     (window as any).__originalFetch__ = window.fetch;
@@ -62,7 +106,7 @@ if (typeof window !== 'undefined') {
       
       if (isFirebaseRequest) {
         // 强制重定向到代理（中国大陆用户必须使用代理）
-        const proxyUrl = `${PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+        const proxyUrl = `${CURRENT_PROXY_URL}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
         
         console.log(`🇨🇳 拦截Firebase请求: ${urlObj.hostname}${urlObj.pathname} -> 代理`);
         

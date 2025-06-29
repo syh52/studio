@@ -44,32 +44,48 @@ export default function ProxyDiagnostic() {
 
   const testProxy = async () => {
     try {
-      setProxyTest('测试中...');
+      setProxyTest('测试多个Worker中...');
       
-      // 测试当前代理
-      const proxyUrl = 'https://yellow-fire-20d4.beelzebub1949.workers.dev';
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      // 测试多个Worker代理
+      const proxyUrls = [
+        'https://firebase-cn-proxy.beelzebub1949.workers.dev',
+        'https://firebase-proxy-backup.beelzebub1949.workers.dev', 
+        'https://cn-firebase-api.beelzebub1949.workers.dev',
+        'https://firebase-proxy-2024.beelzebub1949.workers.dev',
+        'https://yellow-fire-20d4.beelzebub1949.workers.dev'
+      ];
       
-      const response = await fetch(proxyUrl, {
-        method: 'GET',
-        signal: controller.signal,
-        mode: 'cors'
-      });
+      const results: string[] = [];
       
-      clearTimeout(timeoutId);
-      
-      if (response.ok || response.status === 404) {
-        setProxyTest('✅ 代理连接成功');
-      } else {
-        setProxyTest(`⚠️ 代理响应异常 (${response.status})`);
+      for (const proxyUrl of proxyUrls) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const response = await fetch(proxyUrl, {
+            method: 'GET',
+            signal: controller.signal,
+            mode: 'cors'
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (response.ok || response.status === 404) {
+            results.push(`✅ ${proxyUrl.split('//')[1].split('.')[0]}`);
+            // 找到第一个可用的就停止
+            setProxyTest(`✅ 找到可用Worker: ${proxyUrl.split('//')[1].split('.')[0]}`);
+            return;
+          } else {
+            results.push(`⚠️ ${proxyUrl.split('//')[1].split('.')[0]} (${response.status})`);
+          }
+        } catch (error: any) {
+          results.push(`❌ ${proxyUrl.split('//')[1].split('.')[0]} (超时)`);
+        }
       }
+      
+      setProxyTest(`❌ 所有Worker都不可用 (${results.length}个测试)`);
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        setProxyTest('❌ 代理连接超时 (5s)');
-      } else {
-        setProxyTest(`❌ 代理连接失败: ${error.message}`);
-      }
+      setProxyTest(`❌ 测试失败: ${error.message}`);
     }
   };
 
@@ -125,7 +141,12 @@ export default function ProxyDiagnostic() {
           <strong>详细信息:</strong><br/>
           • 用户代理: {info.userAgent}<br/>
           • 当前URL: {typeof window !== 'undefined' ? window.location.href : 'N/A'}<br/>
-          • 代理URL: https://yellow-fire-20d4.beelzebub1949.workers.dev
+          • 备用Workers: <br/>
+          &nbsp;&nbsp;- firebase-cn-proxy.beelzebub1949.workers.dev<br/>
+          &nbsp;&nbsp;- firebase-proxy-backup.beelzebub1949.workers.dev<br/>
+          &nbsp;&nbsp;- cn-firebase-api.beelzebub1949.workers.dev<br/>
+          &nbsp;&nbsp;- firebase-proxy-2024.beelzebub1949.workers.dev<br/>
+          &nbsp;&nbsp;- yellow-fire-20d4.beelzebub1949.workers.dev
         </div>
         
         <div className="mt-4">
@@ -133,7 +154,7 @@ export default function ProxyDiagnostic() {
             onClick={testProxy}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            重新测试代理
+            测试所有Worker代理
           </button>
         </div>
       </CardContent>
