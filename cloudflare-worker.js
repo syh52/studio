@@ -20,8 +20,11 @@ const ALLOWED_ORIGINS = [
   'https://www.lexiconlab.cn',
   'http://localhost:3000',
   'http://localhost:3001',
+  'http://localhost:9002',  // Next.js开发服务器常用端口
   'http://127.0.0.1:3000',
-  'http://127.0.0.1:3001'
+  'http://127.0.0.1:3001',
+  'http://127.0.0.1:9002',
+  'file://'  // 支持本地文件直接访问
 ];
 
 export default {
