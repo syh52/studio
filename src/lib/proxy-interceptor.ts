@@ -191,20 +191,31 @@ class FirebaseProxyInterceptor {
           Object.defineProperty(this, 'responseText', { value: responseText, writable: false });
           Object.defineProperty(this, 'response', { value: responseText, writable: false });
           
-          // 触发事件
+          // 触发事件 - 使用正确的ProgressEvent类型
           if (this.onreadystatechange) {
-            this.onreadystatechange.call(this, new Event('readystatechange'));
+            const event = new Event('readystatechange') as any;
+            this.onreadystatechange.call(this, event);
           }
           if (this.onload) {
-            this.onload.call(this, new Event('load'));
+            const progressEvent = new ProgressEvent('load', {
+              lengthComputable: false,
+              loaded: 0,
+              total: 0
+            });
+            this.onload.call(this, progressEvent);
           }
           
         } catch (error) {
           console.error('XMLHttpRequest代理失败:', error);
           
-          // 触发错误事件
+          // 触发错误事件 - 使用正确的ProgressEvent类型
           if (this.onerror) {
-            this.onerror.call(this, new Event('error'));
+            const progressEvent = new ProgressEvent('error', {
+              lengthComputable: false,
+              loaded: 0,
+              total: 0
+            });
+            this.onerror.call(this, progressEvent);
           }
         }
       }
