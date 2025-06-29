@@ -94,13 +94,25 @@ export default {
       });
     }
 
-    const targetHost = pathParts[0];
+    let targetHost = pathParts[0];
+    let targetPath = '/' + pathParts.slice(1).join('/');
+    
+    // 🔧 特殊处理 WebChannel 请求
+    // WebChannel URL 格式: /google.firestore.v1.Firestore/Listen/channel
+    // 应该转换为: firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel
+    if (targetHost === 'google.firestore.v1.Firestore') {
+      console.log('🔥 检测到 WebChannel 请求，重写主机名');
+      targetHost = 'firestore.googleapis.com';
+      targetPath = '/' + pathParts.join('/');  // 保持完整路径
+    }
 
     // 验证目标主机
     if (!FIREBASE_HOSTS.includes(targetHost)) {
       return new Response(JSON.stringify({ 
         error: `Unsupported host: ${targetHost}`,
-        supportedHosts: FIREBASE_HOSTS
+        supportedHosts: FIREBASE_HOSTS,
+        originalPath: url.pathname,
+        parsedHost: targetHost
       }), {
         status: 400,
         headers: { 
@@ -111,7 +123,6 @@ export default {
     }
     
     // 重建目标 URL
-    const targetPath = '/' + pathParts.slice(1).join('/');
     const targetUrl = `https://${targetHost}${targetPath}${url.search}`;
     
     // ✅ 检测 WebChannel 请求
