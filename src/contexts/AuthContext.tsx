@@ -244,8 +244,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 注册
+  // 注册 - 改进错误处理，区分核心和辅助操作
   const register = async (username: string, email: string, password: string): Promise<boolean> => {
+    let userCredential: any = null;
+    
     try {
       setIsLoading(true);
       
@@ -256,18 +258,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log('🔐 尝试注册用户:', email);
       
-      // 创建用户账户
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      // 🔥 核心步骤1：创建用户账户（最重要）
+      userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('✅ 用户账户创建成功');
       
-      // 更新用户显示名称
+      // 🔥 核心步骤2：更新用户显示名称
       await updateProfile(userCredential.user, {
         displayName: username
       });
+      console.log('✅ 用户信息更新成功');
       
-      // 发送验证邮件
+      // 🔥 核心步骤3：发送验证邮件
       await sendEmailVerification(userCredential.user);
+      console.log('✅ 验证邮件发送成功');
       
-      // 在 Firestore 中创建用户文档
+      // 🔥 辅助步骤：在Firestore中创建用户文档（非阻塞）
       const userData = {
         email,
         username,
@@ -283,18 +288,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         Object.entries(userData).filter(([_, value]) => value !== undefined)
       );
       
-      await setDoc(doc(db, 'users', userCredential.user.uid), cleanUserData);
-      
-      toast({
-        title: "注册成功",
-        description: "验证邮件已发送，请查收邮箱",
-      });
+      try {
+        await setDoc(doc(db, 'users', userCredential.user.uid), cleanUserData);
+        console.log('✅ 用户文档创建成功');
+        
+        toast({
+          title: "注册成功",
+          description: "验证邮件已发送，请查收邮箱",
+        });
+      } catch (firestoreError) {
+        console.warn('⚠️ 用户文档创建失败（不影响登录）:', firestoreError);
+        
+        toast({
+          title: "注册成功",
+          description: "账户已创建，验证邮件已发送。用户资料将在首次登录时自动创建。",
+        });
+      }
       
       return true;
+      
     } catch (error: any) {
       console.error('注册错误:', error);
       
-      // 处理特定错误
+      // 如果用户已创建但后续步骤失败，仍视为成功
+      if (userCredential) {
+        console.log('🔄 用户账户已创建，尝试完成剩余步骤...');
+        
+        // 异步完成剩余步骤，不阻塞用户
+        setTimeout(async () => {
+          try {
+            if (!userCredential.user.displayName) {
+              await updateProfile(userCredential.user, { displayName: username });
+            }
+            if (!userCredential.user.emailVerified) {
+              await sendEmailVerification(userCredential.user);
+            }
+          } catch (retryError) {
+            console.warn('后台操作失败:', retryError);
+          }
+        }, 1000);
+        
+        toast({
+          title: "注册成功",
+          description: "账户已创建！验证邮件可能稍有延迟，请稍后查收邮箱。",
+        });
+        
+        return true;
+      }
+      
+      // 处理真正的注册失败
       let errorMessage = '注册失败，请重试';
       switch (error.code) {
         case 'auth/email-already-in-use':
@@ -308,6 +350,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           break;
         case 'auth/operation-not-allowed':
           errorMessage = '注册功能暂时不可用';
+          break;
+        case 'auth/network-request-failed':
+          errorMessage = '网络连接问题，请检查网络后重试';
           break;
       }
       
