@@ -141,13 +141,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // 监听认证状态变化 - 优化版本
+  // 监听认证状态变化 - 性能优化版本
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setFirebaseUser(firebaseUser);
       
       if (firebaseUser) {
-        // 先设置基本信息，快速完成初始化
+        // 🚀 立即设置基本用户信息，加快页面加载
         const basicUser: User = {
           id: firebaseUser.uid,
           email: firebaseUser.email || '',
@@ -161,16 +161,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         };
         
         setUser(basicUser);
-        setIsLoading(false); // 快速完成初始化
+        setIsLoading(false); // 🚀 立即完成初始化，不等待数据库查询
         
-        // 异步获取完整用户数据
-        fetchUserData(firebaseUser).then(fullUser => {
-          if (fullUser) {
-            setUser(fullUser);
-          }
-        }).catch(error => {
-          console.error('异步获取用户数据失败:', error);
-        });
+        // 🔄 异步获取完整数据，不阻塞UI
+        setTimeout(() => {
+          fetchUserData(firebaseUser).then(fullUser => {
+            if (fullUser) {
+              setUser(fullUser);
+            }
+          }).catch(error => {
+            console.error('异步获取用户数据失败(不影响使用):', error);
+          });
+        }, 100); // 延迟100ms，让页面先渲染
       } else {
         setUser(null);
         setIsLoading(false);

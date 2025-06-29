@@ -62,20 +62,23 @@ export default function AIServiceChecker() {
     }
   };
 
-  // 组件挂载时检查一次
+  // 组件挂载时检查一次 - 大幅延迟避免阻塞初始加载
   useEffect(() => {
-    // 延迟检查，避免阻塞页面加载，同时增加超时保护
+    // 🚀 性能优化：延迟AI检查到10秒后，让页面先完全加载
     const timer = setTimeout(() => {
-      checkAIStatus().catch(error => {
-        console.warn('AI服务检查失败，但不影响应用加载:', error);
-        setStatus({
-          isAvailable: false,
-          isChecking: false,
-          lastCheck: new Date(),
-          error: 'AI服务检查超时，请手动重试'
+      // 仅在用户停留足够时间后才检查，避免无意义的网络请求
+      if (document.visibilityState === 'visible') {
+        checkAIStatus().catch(error => {
+          console.warn('AI服务检查失败，但不影响应用加载:', error);
+          setStatus({
+            isAvailable: false,
+            isChecking: false,
+            lastCheck: new Date(),
+            error: 'AI服务需要手动初始化'
+          });
         });
-      });
-    }, 3000); // 增加延迟时间到3秒
+      }
+    }, 10000); // 延迟到10秒，让页面完全加载完成
     return () => clearTimeout(timer);
   }, []);
 
