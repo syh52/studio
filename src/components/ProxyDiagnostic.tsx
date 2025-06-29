@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
+import { firebaseProxyInterceptor } from '../lib/proxy-interceptor';
 
 interface DiagnosticInfo {
   isProduction: boolean;
@@ -10,23 +11,31 @@ interface DiagnosticInfo {
   userAgent: string;
   proxyConditionMet: boolean;
   fetchIntercepted: boolean;
+  monkeyPatchActive: boolean;
   nodeEnv: string;
 }
 
 export default function ProxyDiagnostic() {
   const [info, setInfo] = useState<DiagnosticInfo | null>(null);
   const [proxyTest, setProxyTest] = useState<string>('等待测试...');
+  const [monkeyPatchTest, setMonkeyPatchTest] = useState<string>('等待测试...');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       // 检查环境和条件
       const isProduction = process.env.NODE_ENV === 'production';
       const hostname = window.location.hostname;
-      const proxyConditionMet = isProduction && hostname.includes('lexiconlab.cn');
+      const proxyConditionMet = 
+        isProduction || 
+        hostname.includes('lexiconlab.cn') ||
+        hostname.includes('firebaseapp.com');
       
       // 检查是否已设置拦截器
       const originalFetch = (window as any).__originalFetch__;
       const fetchIntercepted = typeof originalFetch !== 'undefined';
+      
+      // 检查Monkey-patching拦截器是否激活
+      const monkeyPatchActive = window.fetch !== fetch;
 
       setInfo({
         isProduction,
@@ -34,11 +43,13 @@ export default function ProxyDiagnostic() {
         userAgent: navigator.userAgent.substring(0, 50) + '...',
         proxyConditionMet,
         fetchIntercepted,
+        monkeyPatchActive,
         nodeEnv: process.env.NODE_ENV || 'undefined'
       });
 
       // 测试代理连接
       testProxy();
+      testMonkeyPatch();
     }
   }, []);
 
@@ -89,6 +100,23 @@ export default function ProxyDiagnostic() {
     }
   };
 
+  const testMonkeyPatch = async () => {
+    try {
+      setMonkeyPatchTest('测试Monkey-patching代理...');
+      
+      // 测试强力代理拦截器
+      const testResult = await firebaseProxyInterceptor.testProxyConnection();
+      
+      if (testResult) {
+        setMonkeyPatchTest('✅ Monkey-patching代理工作正常');
+      } else {
+        setMonkeyPatchTest('❌ Monkey-patching代理测试失败');
+      }
+    } catch (error: any) {
+      setMonkeyPatchTest(`❌ 测试失败: ${error.message}`);
+    }
+  };
+
   if (!info) {
     return <div>加载诊断信息...</div>;
   }
@@ -132,8 +160,20 @@ export default function ProxyDiagnostic() {
           </div>
           
           <div>
-            <strong>代理测试:</strong>
+            <strong>Monkey-patching:</strong>
+            <Badge variant={info.monkeyPatchActive ? 'default' : 'destructive'} className="ml-2">
+              {info.monkeyPatchActive ? '已激活' : '未激活'}
+            </Badge>
+          </div>
+          
+          <div>
+            <strong>Worker测试:</strong>
             <Badge variant="outline" className="ml-2">{proxyTest}</Badge>
+          </div>
+          
+          <div>
+            <strong>强力代理测试:</strong>
+            <Badge variant="outline" className="ml-2">{monkeyPatchTest}</Badge>
           </div>
         </div>
         
@@ -149,12 +189,18 @@ export default function ProxyDiagnostic() {
           &nbsp;&nbsp;- yellow-fire-20d4.beelzebub1949.workers.dev
         </div>
         
-        <div className="mt-4">
+        <div className="mt-4 flex gap-2">
           <button 
             onClick={testProxy}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            测试所有Worker代理
+            测试Worker代理
+          </button>
+          <button 
+            onClick={testMonkeyPatch}
+            className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+          >
+            测试强力代理
           </button>
         </div>
       </CardContent>
