@@ -14,16 +14,31 @@ const FIREBASE_HOSTS = [
   'storage.googleapis.com'          // Google Cloud Storage
 ];
 
+// 允许的来源域名列表
+const ALLOWED_ORIGINS = [
+  'https://lexiconlab.cn',
+  'https://www.lexiconlab.cn',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001'
+];
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    const origin = request.headers.get('Origin') || '';
+    
+    // 检查来源是否在允许列表中
+    const isAllowedOrigin = ALLOWED_ORIGINS.includes(origin);
+    const corsOrigin = isAllowedOrigin ? origin : ALLOWED_ORIGINS[0]; // 默认使用生产域名
 
     // 处理 OPTIONS 预检请求（CORS）
     if (request.method === 'OPTIONS') {
       return new Response(null, {
         status: 200,
         headers: {
-          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Origin': corsOrigin,
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck, x-firebase-client, x-firebase-client-log-type, x-firebase-client-version',
           'Access-Control-Allow-Credentials': 'true',
@@ -39,11 +54,14 @@ export default {
         service: 'Lexicon Firebase CN Proxy',
         timestamp: new Date().toISOString(),
         supportedHosts: FIREBASE_HOSTS,
+        allowedOrigins: ALLOWED_ORIGINS,
+        currentOrigin: origin,
         message: '🇨🇳 Firebase代理服务运行正常'
       }), {
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOrigin,
+          'Access-Control-Allow-Credentials': 'true'
         }
       });
     }
@@ -56,7 +74,8 @@ export default {
       }), {
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOrigin,
+          'Access-Control-Allow-Credentials': 'true'
         }
       });
     }
@@ -72,7 +91,8 @@ export default {
         status: 400,
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOrigin,
+          'Access-Control-Allow-Credentials': 'true'
         }
       });
     }
@@ -88,7 +108,8 @@ export default {
         status: 400,
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOrigin,
+          'Access-Control-Allow-Credentials': 'true'
         }
       });
     }
@@ -103,6 +124,7 @@ export default {
     
     if (isWebChannel) {
       console.log(`🔥 WebChannel请求: ${targetUrl}`);
+      console.log(`🔥 来源: ${origin}`);
     } else {
       console.log(`🌐 代理请求: ${request.method} ${targetUrl}`);
     }
@@ -123,6 +145,22 @@ export default {
         requestOptions.headers.set('Connection', 'keep-alive');
       }
       
+      // 对于WebChannel，确保包含所有必要的Firebase相关头部
+      const firebaseHeaders = [
+        'X-Goog-Api-Client',
+        'X-Firebase-Gmpid', 
+        'X-Client-Version',
+        'x-firebase-client',
+        'x-firebase-client-log-type',
+        'x-firebase-client-version'
+      ];
+      
+      for (const header of firebaseHeaders) {
+        if (request.headers.has(header)) {
+          requestOptions.headers.set(header, request.headers.get(header));
+        }
+      }
+      
       console.log('🔥 WebChannel头部:', Object.fromEntries(requestOptions.headers.entries()));
     }
     
@@ -139,7 +177,9 @@ export default {
       
       // 创建新的响应，添加完整的CORS头部
       const newHeaders = new Headers(response.headers);
-      newHeaders.set('Access-Control-Allow-Origin', '*');
+      
+      // 设置CORS头部 - 使用确切的来源而非通配符
+      newHeaders.set('Access-Control-Allow-Origin', corsOrigin);
       newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
       newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck, x-firebase-client, x-firebase-client-log-type, x-firebase-client-version');
       newHeaders.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type, X-Firebase-AppCheck');
@@ -159,6 +199,7 @@ export default {
         }
         
         console.log(`🔥 WebChannel响应: ${response.status} ${response.statusText}`);
+        console.log(`🔥 响应CORS来源: ${corsOrigin}`);
         console.log('🔥 响应头部:', Object.fromEntries(newHeaders.entries()));
       } else {
         console.log(`✅ 代理成功: ${response.status} ${response.statusText}`);
@@ -175,6 +216,7 @@ export default {
         console.error(`🔥 WebChannel代理失败: ${error.message}`);
         console.error(`🔥 目标URL: ${targetUrl}`);
         console.error(`🔥 请求方法: ${request.method}`);
+        console.error(`🔥 请求来源: ${origin}`);
       } else {
         console.error(`❌ 代理失败: ${error.message}`);
       }
@@ -184,6 +226,7 @@ export default {
         message: error.message,
         targetUrl: targetUrl,
         isWebChannel: isWebChannel,
+        origin: origin,
         troubleshooting: isWebChannel ? 
           'WebChannel连接失败可能是由于流式协议兼容性问题。尝试刷新页面或检查网络连接。' :
           '代理请求失败。请检查网络连接和目标服务状态。'
@@ -191,7 +234,8 @@ export default {
         status: 502,
         headers: { 
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Access-Control-Allow-Origin': corsOrigin,
+          'Access-Control-Allow-Credentials': 'true'
         }
       });
     }
