@@ -69,12 +69,14 @@ export const db = (() => {
       host: CUSTOM_PROXY_DOMAIN,
       ssl: true, // 强制使用 HTTPS，解决 Mixed Content 问题
       cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+      experimentalForceLongPolling: true, // ✅ 启用长轮询，提高连接稳定性
     });
   } else {
     console.log('🔧 非代理环境，使用Firebase直连');
     // 在非代理环境下，使用不带参数的 initializeFirestore
     return initializeFirestore(firebaseApp, {
       cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+      experimentalForceLongPolling: true, // ✅ 启用长轮询，提高连接稳定性
     });
   }
 })();

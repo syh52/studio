@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            background-color: #f4f4f4;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebChannel CORS测试</h1>
+    <button onclick="testWebChannel()">测试WebChannel连接</button>
+    <pre id="result"></pre>
+
+    <script>
+    async function testWebChannel() {
+        const result = document.getElementById('result');
+        result.textContent = '测试中...\n';
+        
+        try {
+            // 测试代理服务器状态
+            result.textContent += '1. 测试代理服务器状态...\n';
+            const proxyResponse = await fetch('https://api.lexiconlab.cn/', {
+                credentials: 'include'
+            });
+            const proxyData = await proxyResponse.json();
+            result.textContent += '代理服务器状态: ' + JSON.stringify(proxyData, null, 2) + '\n\n';
+            
+            // 测试WebChannel请求
+            result.textContent += '2. 测试WebChannel请求...\n';
+            const testUrl = 'https://api.lexiconlab.cn/firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?VER=8&database=projects%2Faviation-lexicon-trainer%2Fdatabases%2F(default)&RID=88546&CVER=22&X-HTTP-Session-Id=gsessionid&zx=testcors&t=1';
+            
+            const webChannelResponse = await fetch(testUrl, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': '*/*',
+                    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            result.textContent += 'WebChannel响应状态: ' + webChannelResponse.status + ' ' + webChannelResponse.statusText + '\n';
+            result.textContent += '\n响应头:\n';
+            
+            // 显示所有响应头
+            const headers = {};
+            webChannelResponse.headers.forEach((value, key) => {
+                headers[key] = value;
+            });
+            result.textContent += JSON.stringify(headers, null, 2) + '\n';
+            
+            // 特别检查CORS头
+            result.textContent += '\n✅ CORS关键头部:\n';
+            result.textContent += '  Access-Control-Allow-Origin: ' + webChannelResponse.headers.get('access-control-allow-origin') + '\n';
+            result.textContent += '  Access-Control-Allow-Credentials: ' + webChannelResponse.headers.get('access-control-allow-credentials') + '\n';
+            
+        } catch (error) {
+            result.textContent += '\n❌ 错误: ' + error.message + '\n';
+            if (error.stack) {
+                result.textContent += '\n堆栈跟踪:\n' + error.stack;
+            }
+        }
+    }
+    </script>
+</body>
+</html> 

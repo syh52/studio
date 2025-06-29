@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络诊断</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .test { margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>🔍 网络诊断工具</h1>
+    
+    <div class="test">
+        <h3>1. 测试直接访问Firebase（无代理）</h3>
+        <button onclick="testDirect()">测试Firebase直连</button>
+        <div id="direct-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>2. 测试代理服务器</h3>
+        <button onclick="testProxy()">测试代理</button>
+        <div id="proxy-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>3. 测试其他公共API</h3>
+        <button onclick="testPublic()">测试公共API</button>
+        <div id="public-result"></div>
+    </div>
+    
+    <div class="test">
+        <h3>4. 命令行测试（PowerShell）</h3>
+        <p>请在PowerShell中运行以下命令：</p>
+        <pre style="background: #333; color: #0f0; padding: 10px;">
+# 设置代理
+$env:http_proxy="http://127.0.0.1:7890"
+$env:https_proxy="http://127.0.0.1:7890"
+
+# 测试代理连接
+Invoke-RestMethod -Uri "https://api.lexiconlab.cn/"
+
+# 测试直接访问
+Invoke-RestMethod -Uri "https://www.google.com/" -MaximumRedirection 0
+        </pre>
+    </div>
+
+    <script>
+    async function testDirect() {
+        const result = document.getElementById('direct-result');
+        result.innerHTML = '测试中...';
+        
+        try {
+            const response = await fetch('https://identitytoolkit.googleapis.com/v1/projects', {
+                method: 'GET',
+                mode: 'no-cors'
+            });
+            result.innerHTML = '<span class="success">✅ 可以访问Google API（no-cors模式）</span>';
+        } catch (error) {
+            result.innerHTML = `<span class="error">❌ 无法访问: ${error.message}</span>`;
+        }
+    }
+    
+    async function testProxy() {
+        const result = document.getElementById('proxy-result');
+        result.innerHTML = '测试中...';
+        
+        // 测试多个可能的代理地址
+        const proxyUrls = [
+            'https://api.lexiconlab.cn/',
+            'https://api.lexiconlab.cn/test',
+            'http://api.lexiconlab.cn/'  // 尝试HTTP
+        ];
+        
+        for (const url of proxyUrls) {
+            try {
+                result.innerHTML += `<br>尝试: ${url}...`;
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    credentials: 'omit'  // 先不带凭据测试
+                });
+                result.innerHTML += `<br><span class="success">✅ ${url} - 状态: ${response.status}</span>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    result.innerHTML += `<br>响应: ${JSON.stringify(data).substring(0, 100)}...`;
+                }
+            } catch (error) {
+                result.innerHTML += `<br><span class="error">❌ ${url} - ${error.message}</span>`;
+            }
+        }
+    }
+    
+    async function testPublic() {
+        const result = document.getElementById('public-result');
+        result.innerHTML = '测试中...';
+        
+        try {
+            // 测试一个公共API
+            const response = await fetch('https://httpbin.org/get', {
+                mode: 'cors'
+            });
+            const data = await response.json();
+            result.innerHTML = `<span class="success">✅ 可以访问公共API<br>您的IP: ${data.origin}</span>`;
+        } catch (error) {
+            result.innerHTML = `<span class="error">❌ 网络可能有问题: ${error.message}</span>`;
+        }
+    }
+    </script>
+</body>
+</html> 

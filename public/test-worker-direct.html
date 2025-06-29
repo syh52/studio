@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直接Worker测试</title>
+    <style>
+        body { font-family: Arial; margin: 40px; }
+        .test { margin: 20px 0; padding: 20px; background: #f0f0f0; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #333; color: #0f0; padding: 15px; overflow-x: auto; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>🔍 直接Worker测试</h1>
+    <p>测试直接访问Cloudflare Worker URL，绕过自定义域名</p>
+    
+    <div class="test">
+        <h3>Worker列表</h3>
+        <p>您的Worker URL应该类似：https://lexicon-cn-proxy.您的用户名.workers.dev</p>
+        <input type="text" id="workerUrl" placeholder="输入您的Worker URL" style="width: 400px; padding: 5px;">
+        <button onclick="saveWorkerUrl()">保存</button>
+    </div>
+    
+    <div class="test">
+        <button onclick="testWorkerStatus()">测试Worker状态</button>
+        <button onclick="testWebChannel()">测试WebChannel</button>
+        <button onclick="clearLog()">清空日志</button>
+        <pre id="log"></pre>
+    </div>
+
+    <script>
+    const log = document.getElementById('log');
+    const workerUrlInput = document.getElementById('workerUrl');
+    
+    // 从localStorage加载保存的URL
+    const savedUrl = localStorage.getItem('workerUrl');
+    if (savedUrl) {
+        workerUrlInput.value = savedUrl;
+    }
+    
+    function saveWorkerUrl() {
+        const url = workerUrlInput.value.trim();
+        if (url) {
+            localStorage.setItem('workerUrl', url);
+            addLog('✅ Worker URL已保存', 'success');
+        }
+    }
+    
+    function addLog(message, type = '') {
+        const timestamp = new Date().toLocaleTimeString();
+        const className = type ? ` class="${type}"` : '';
+        log.innerHTML += `<span${className}>[${timestamp}] ${message}</span>\n`;
+        log.scrollTop = log.scrollHeight;
+    }
+    
+    function clearLog() {
+        log.innerHTML = '';
+    }
+    
+    async function testWorkerStatus() {
+        const workerUrl = workerUrlInput.value.trim();
+        if (!workerUrl) {
+            addLog('❌ 请先输入Worker URL', 'error');
+            return;
+        }
+        
+        addLog('测试Worker状态...');
+        
+        try {
+            // 测试Worker根路径
+            const response = await fetch(workerUrl, {
+                mode: 'cors',
+                credentials: 'include'
+            });
+            
+            addLog(`响应状态: ${response.status}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                addLog('Worker信息:', 'success');
+                addLog(JSON.stringify(data, null, 2));
+            } else {
+                const text = await response.text();
+                addLog(`错误响应: ${text}`, 'error');
+            }
+            
+        } catch (error) {
+            addLog(`❌ 错误: ${error.message}`, 'error');
+        }
+    }
+    
+    async function testWebChannel() {
+        const workerUrl = workerUrlInput.value.trim();
+        if (!workerUrl) {
+            addLog('❌ 请先输入Worker URL', 'error');
+            return;
+        }
+        
+        addLog('测试WebChannel连接...');
+        
+        const params = new URLSearchParams({
+            VER: '8',
+            database: 'projects/aviation-lexicon-trainer/databases/(default)',
+            RID: '88546',
+            CVER: '22',
+            'X-HTTP-Session-Id': 'gsessionid',
+            zx: 'test' + Date.now(),
+            t: '1'
+        });
+        
+        const testUrl = `${workerUrl}/firestore.googleapis.com/google.firestore.v1.Firestore/Listen/channel?${params}`;
+        
+        try {
+            addLog(`请求URL: ${testUrl}`);
+            
+            const response = await fetch(testUrl, {
+                method: 'GET',
+                mode: 'cors',
+                credentials: 'include',
+                headers: {
+                    'Accept': '*/*',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+            
+            addLog(`响应状态: ${response.status} ${response.statusText}`);
+            
+            // 显示响应头
+            const headers = {};
+            response.headers.forEach((value, key) => {
+                headers[key] = value;
+            });
+            addLog('响应头:');
+            addLog(JSON.stringify(headers, null, 2));
+            
+            // 检查CORS
+            const corsOrigin = response.headers.get('access-control-allow-origin');
+            const corsCredentials = response.headers.get('access-control-allow-credentials');
+            
+            if (corsOrigin && corsCredentials === 'true') {
+                addLog(`✅ CORS正确设置: Origin=${corsOrigin}, Credentials=${corsCredentials}`, 'success');
+            } else {
+                addLog(`❌ CORS错误: Origin=${corsOrigin}, Credentials=${corsCredentials}`, 'error');
+            }
+            
+            // 如果是错误响应，读取内容
+            if (!response.ok) {
+                const text = await response.text();
+                addLog('响应内容:');
+                addLog(text.substring(0, 500) + (text.length > 500 ? '...' : ''));
+            }
+            
+        } catch (error) {
+            addLog(`❌ 请求失败: ${error.message}`, 'error');
+            addLog(error.stack);
+        }
+    }
+    
+    // 页面加载时的提示
+    window.addEventListener('load', () => {
+        addLog('请输入您的Cloudflare Worker URL，例如：');
+        addLog('https://lexicon-cn-proxy.您的用户名.workers.dev');
+        addLog('可以在Cloudflare Dashboard的Workers & Pages中找到');
+    });
+    </script>
+</body>
+</html> 
