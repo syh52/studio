@@ -1,7 +1,7 @@
-// --- 优雅的Firebase代理解决方案 ---
+// --- 优化的Firebase代理解决方案 ---
 import { initializeApp, getApp, FirebaseApp } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
 
 // 自定义代理域名配置（替代复杂的Worker切换逻辑）
@@ -51,25 +51,74 @@ try {
 export const auth = getAuth(firebaseApp);
 export const db = getFirestore(firebaseApp);
 
-// 🇨🇳 中国大陆代理配置：使用官方SDK方法
+// 🇨🇳 中国大陆代理配置：使用fetch拦截方法
 if (shouldUseProxy()) {
-  console.log(`🇨🇳 检测到中国大陆环境，配置Firebase代理: https://${CUSTOM_PROXY_DOMAIN}`);
+  console.log(`🇨🇳 检测到中国大陆环境，设置Firebase代理: https://${CUSTOM_PROXY_DOMAIN}`);
   
-  // 使用官方方法连接到自定义代理
-  // 这比Monkey-patching更稳定且官方支持
-  try {
-    // Auth服务连接到代理
-    connectAuthEmulator(auth, `https://${CUSTOM_PROXY_DOMAIN}/identitytoolkit.googleapis.com`, { 
-      disableWarnings: true 
-    });
+  // 保存原始fetch
+  const originalFetch = window.fetch;
+  
+  // 重写fetch以支持Firebase代理
+  window.fetch = async function(input: RequestInfo | URL, init?: RequestInit) {
+    let url: string;
     
-    // Firestore服务连接到代理 
-    connectFirestoreEmulator(db, CUSTOM_PROXY_DOMAIN, 443);
+    // 处理不同类型的input
+    if (typeof input === 'string') {
+      url = input;
+    } else if (input instanceof URL) {
+      url = input.toString();
+    } else if (input instanceof Request) {
+      url = input.url;
+    } else {
+      return originalFetch(input, init);
+    }
     
-    console.log('✅ Firebase服务已连接到自定义代理');
-  } catch (error) {
-    console.warn('⚠️ 代理连接失败，将使用直连:', error);
-  }
+    // Firebase服务域名列表
+    const firebaseHosts = [
+      'identitytoolkit.googleapis.com',
+      'securetoken.googleapis.com', 
+      'firestore.googleapis.com',
+      'www.googleapis.com',
+      'aiplatform.googleapis.com',
+      'firebase.googleapis.com'
+    ];
+    
+    try {
+      const urlObj = new URL(url);
+      const isFirebaseRequest = firebaseHosts.some(host => urlObj.hostname === host);
+      
+      if (isFirebaseRequest) {
+        // 重定向到代理
+        const proxyUrl = `https://${CUSTOM_PROXY_DOMAIN}/${urlObj.hostname}${urlObj.pathname}${urlObj.search}`;
+        console.log(`🌐 代理Firebase请求: ${urlObj.hostname}${urlObj.pathname}`);
+        
+        // 创建新请求
+        if (input instanceof Request) {
+          const newRequest = new Request(proxyUrl, {
+            method: input.method,
+            headers: input.headers,
+            body: input.body,
+            mode: 'cors',
+            credentials: 'omit'
+          });
+          return originalFetch(newRequest);
+        } else {
+          return originalFetch(proxyUrl, {
+            ...init,
+            mode: 'cors',
+            credentials: 'omit'
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('代理URL解析失败:', error);
+    }
+    
+    // 非Firebase请求直接通过
+    return originalFetch(input, init);
+  };
+  
+  console.log('✅ Firebase fetch代理已设置');
 } else {
   console.log('🔧 非生产环境，使用Firebase直连');
 }

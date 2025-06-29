@@ -24,8 +24,9 @@ export default {
         status: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck',
+          'Access-Control-Allow-Credentials': 'true',
           'Access-Control-Max-Age': '86400'
         }
       });
@@ -108,12 +109,14 @@ export default {
     try {
       const response = await fetch(newRequest);
       
-      // 创建新的响应，添加CORS头部
+      // 创建新的响应，添加完整的CORS头部
       const newHeaders = new Headers(response.headers);
       newHeaders.set('Access-Control-Allow-Origin', '*');
-      newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-      newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key');
-      newHeaders.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+      newHeaders.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      newHeaders.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Goog-Api-Client, X-Firebase-Gmpid, X-Goog-Api-Key, X-Client-Version, X-Firebase-AppCheck');
+      newHeaders.set('Access-Control-Expose-Headers', 'Content-Length, Content-Type, X-Firebase-AppCheck');
+      newHeaders.set('Access-Control-Allow-Credentials', 'true');
+      newHeaders.set('Access-Control-Max-Age', '86400');
 
       console.log(`✅ 代理成功: ${response.status} ${response.statusText}`);
 
