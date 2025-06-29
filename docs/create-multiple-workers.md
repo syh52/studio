@@ -1,5 +1,16 @@
 # 🚀 创建多个 Cloudflare Workers 指南
 
+## ⚠️ 注意：此方案已被更优方案替代
+
+**✅ 当前推荐方案**：使用自定义域名 `api.lexiconlab.cn` 作为统一代理
+- 更稳定：不受 workers.dev 域名封锁影响
+- 更简单：无需管理多个 Worker
+- 已部署：当前系统正在使用
+
+**📋 本指南状态**：仅供参考和紧急备用，正常情况下无需执行
+
+---
+
 ## 🎯 目标
 
 创建 5 个不同名称的 Cloudflare Workers，增加在中国大陆的可访问性。
@@ -10,7 +21,7 @@
 2. `firebase-proxy-backup` - 备用代理
 3. `cn-firebase-api` - 中国专用API代理
 4. `firebase-proxy-2024` - 年份标识代理
-5. `yellow-fire-20d4` - 原有的（保留作为最后备选）
+5. ~~`yellow-fire-20d4`~~ - ❌ 已弃用（原有的测试Worker）
 
 ## 🛠️ 创建步骤
 
@@ -180,13 +191,15 @@ worker_name: 'firebase-proxy-backup',
 
 ## 🎯 Worker URLs 清单
 
-创建完成后，您应该有以下 5 个 Worker URLs：
+如果按照本指南创建，您将有以下 Worker URLs：
 
 1. `https://firebase-cn-proxy.beelzebub1949.workers.dev`
 2. `https://firebase-proxy-backup.beelzebub1949.workers.dev`
 3. `https://cn-firebase-api.beelzebub1949.workers.dev`
 4. `https://firebase-proxy-2024.beelzebub1949.workers.dev`
-5. `https://yellow-fire-20d4.beelzebub1949.workers.dev` (已存在)
+5. ~~`https://yellow-fire-20d4.beelzebub1949.workers.dev`~~ ❌ 已弃用，无需创建
+
+**⚠️ 重要提醒**：当前系统使用 `https://api.lexiconlab.cn`，无需创建上述 Workers
 
 ## 🚀 完成后的步骤
 

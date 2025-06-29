@@ -1,12 +1,21 @@
 # 🇨🇳 中国大陆代理解决方案
 
-## 问题描述
+## ✅ 问题已解决
 
-当前 Worker 域名 `yellow-fire-20d4.beelzebub1949.workers.dev` 在中国大陆无法访问，导致 Firebase 认证失败。
+~~当前 Worker 域名 `yellow-fire-20d4.beelzebub1949.workers.dev` 在中国大陆无法访问，导致 Firebase 认证失败。~~
 
-## 🛠️ 解决方案
+**✅ 已解决**：现在使用自定义域名 `api.lexiconlab.cn` 作为统一代理地址，完全解决了中国大陆访问问题。
 
-### 方案 1：创建新的 Cloudflare Worker（推荐）
+## 🎯 当前使用方案
+
+**正在使用：方案2（自定义域名）**
+- ✅ 代理地址：`https://api.lexiconlab.cn`
+- ✅ 稳定性：长期稳定，不受 workers.dev 封锁影响
+- ✅ 状态：已部署并正常工作
+
+## 🛠️ 历史解决方案（仅供参考）
+
+### 方案 1：创建新的 Cloudflare Worker
 
 1. **创建新 Worker**：
    - 访问 [Cloudflare Dashboard](https://dash.cloudflare.com/)
@@ -33,33 +42,31 @@
 
 3. **更新应用配置**：
    ```typescript
-   // 在 src/lib/firebase.ts 中更新：
-   const PROXY_URL = 'https://你的新Worker名称.你的用户名.workers.dev';
-   
-   // 在 src/lib/ai-providers/ai-provider-manager.ts 中同步更新：
-   const proxyUrl = 'https://你的新Worker名称.你的用户名.workers.dev';
+   // 现在统一使用：
+   const PROXY_URL = 'https://api.lexiconlab.cn';
+   const proxyUrl = 'https://api.lexiconlab.cn';
    ```
 
-### 方案 2：绑定自定义域名（最稳定）
+### 方案 2：绑定自定义域名（✅ 当前使用）
 
 1. **准备自定义域名**：
-   - 使用您自己的域名，如：`proxy.yourdomain.com`
-   - 确保域名在中国大陆可访问
+   - ✅ 使用：`api.lexiconlab.cn`
+   - ✅ 在中国大陆完全可访问
 
 2. **在 Cloudflare 中绑定**：
-   - Worker 设置 → Triggers → Custom Domains → Add Custom Domain
-   - 添加：`proxy.yourdomain.com`
+   - ✅ Worker 设置 → Triggers → Custom Domains
+   - ✅ 已添加：`api.lexiconlab.cn`
 
-3. **更新代码**：
+3. **代码配置**：
    ```typescript
-   // 使用自定义域名
-   const PROXY_URL = 'https://proxy.yourdomain.com';
-   const proxyUrl = 'https://proxy.yourdomain.com';
+   // ✅ 当前配置
+   const CUSTOM_PROXY_DOMAIN = 'api.lexiconlab.cn';
+   const proxyUrl = "https://api.lexiconlab.cn";
    ```
 
-### 方案 3：测试多个 Worker 域名
+### 方案 3：多 Worker 备用方案
 
-尝试创建多个不同名称的 Worker，测试哪个在中国大陆可访问：
+如需创建备用 Worker，可使用以下名称：
 
 ```
 firebase-proxy-1.username.workers.dev
@@ -69,58 +76,47 @@ cn-firebase-api.username.workers.dev
 firebase-cn.username.workers.dev
 ```
 
-## 🚀 部署步骤
+## 🚀 当前部署状态
 
-1. **更新代理 URL**：
+**✅ 已完成**：
+1. ✅ 代理 URL 统一更新为 `api.lexiconlab.cn`
+2. ✅ Firebase 服务代理配置完成
+3. ✅ AI 服务代理配置完成
+4. ✅ WebChannel 连接问题已修复
+
+**配置文件**：
+- ✅ `src/lib/firebase.ts` - Firebase 代理配置
+- ✅ `src/lib/ai-providers/ai-provider-manager.ts` - AI 服务代理配置
+
+## ✅ 验证结果
+
+1. **连接测试**：
    ```bash
-   # 编辑 firebase.ts
-   # 取消注释并更新新的代理 URL
-   const PROXY_URL = 'https://your-new-worker.your-username.workers.dev';
+   ✅ curl -I https://api.lexiconlab.cn
+   # 返回：200 OK
    ```
 
-2. **同步更新 AI Provider**：
-   ```bash
-   # 编辑 ai-provider-manager.ts
-   # 同步更新代理 URL
-   const proxyUrl = 'https://your-new-worker.your-username.workers.dev';
-   ```
+2. **功能测试**：
+   - ✅ 访问 `https://lexiconlab.cn` 正常
+   - ✅ 注册/登录功能正常
+   - ✅ 控制台显示 `🇨🇳 检测到中国大陆环境，Firebase请求将通过代理路由`
 
-3. **提交并部署**：
-   ```bash
-   git add .
-   git commit -m "feat: 更新中国大陆可用的代理URL"
-   git push origin studio02-backup
-   ```
+## 🎯 最终状态
 
-## ✅ 验证方法
+**✅ 完全解决**：
+- 统一代理地址：`api.lexiconlab.cn`
+- Firebase 和 AI 服务代理配置一致
+- 中国大陆用户访问完全正常
+- WebChannel 连接稳定
 
-1. **本地测试**：
-   ```bash
-   # 测试新 Worker 连接性
-   curl -I https://your-new-worker.your-username.workers.dev
-   ```
+**❌ 已弃用**：
+- `yellow-fire-20d4.beelzebub1949.workers.dev` 
+- 所有其他 workers.dev 测试域名
 
-2. **浏览器测试**：
-   - 访问 `https://lexiconlab.cn`
-   - 尝试注册/登录功能
-   - 检查控制台日志是否显示 `🇨🇳 强制代理 Firebase 请求`
+## 📞 维护说明
 
-## 🎯 推荐方案
-
-**最佳选择：方案2（自定义域名）**
-- 稳定性最高
-- 完全可控
-- 避免 workers.dev 域名限制
-
-**备选方案：方案1（新Worker）**  
-- 快速实施
-- 无需额外域名
-- 可能仍有网络限制风险
-
-## 📞 技术支持
-
-如遇问题，请检查：
-1. Worker 代码是否部署成功
-2. 代理 URL 是否在中国大陆可访问
-3. Firebase Console 中授权域名是否正确
-4. 控制台是否显示代理请求日志 
+当前方案无需额外维护：
+1. ✅ 自定义域名长期稳定
+2. ✅ 代理服务自动运行
+3. ✅ 不受 workers.dev 域名封锁影响
+4. ✅ 支持所有 Firebase 和 AI 服务 
