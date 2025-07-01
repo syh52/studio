@@ -1,0 +1,26 @@
+# Docker构建忽略文件 - 排除Cloud Functions
+functions/
+functions/**
+!functions/package.json
+
+# 其他构建文件
+.git/
+.gitignore
+README.md
+*.log
+.DS_Store
+.env.local
+.env.*.local
+
+# 开发依赖
+node_modules/
+.next/
+.cache/
+.tmp/
+.temp/
+
+# 文档和脚本
+docs/
+scripts/
+*.md
+!README.md 

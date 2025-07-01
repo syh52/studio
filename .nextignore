@@ -1,0 +1,15 @@
+# Next.js构建忽略文件 - 排除Cloud Functions
+functions/
+functions/**/*
+
+# 文档
+docs/
+*.md
+!README.md
+
+# 脚本
+scripts/
+
+# 临时文件
+*.log
+.DS_Store 
