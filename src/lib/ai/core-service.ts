@@ -131,8 +131,8 @@ export class LexiconAIService {
    */
   static async generateText(prompt: string, config?: GenerationConfig): Promise<AIResponse> {
     try {
-      console.log('生成文本，使用AI服务:', aiProviderManager.getCurrentProvider());
-      return aiProviderManager.generateText(prompt);
+      console.log('生成文本，使用Firebase AI Logic');
+      return firebaseAIManager.generateText(prompt);
     } catch (error: any) {
       console.error('生成文本失败:', error);
       return {

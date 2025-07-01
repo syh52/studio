@@ -80,7 +80,7 @@ export class FirebaseAIManager {
       
       const checkPromise = getAIInstance();
       
-      const result = await Promise.race([checkPromise, timeoutPromise]);
+      const result = await Promise.race([checkPromise, timeoutPromise]) as { ai: any; model: any };
       
       if (result && result.model) {
         this.isFirebaseAIAvailable = true;

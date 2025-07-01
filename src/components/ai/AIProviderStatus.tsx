@@ -4,130 +4,129 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { CheckCircle, XCircle, Loader2, RefreshCw, Crown, Shield } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, RefreshCw, Shield, User, Settings } from 'lucide-react';
 
-interface AIProvider {
+interface FirebaseAIStatus {
   name: string;
-  type: string;
-  status: 'connected' | 'disconnected' | 'testing';
-  isPrimary: boolean;
-  isEnabled: boolean;
-  priority: number;
-  description: string;
+  status: 'connected' | 'disconnected' | 'testing' | 'auth_required';
+  available: boolean;
+  initialized: boolean;
+  lastError?: string;
   lastTestTime?: Date;
-  error?: string;
 }
 
 export function AIProviderStatus() {
-  const [providers, setProviders] = useState<AIProvider[]>([]);
-  const [currentProvider, setCurrentProvider] = useState<string>('');
+  const [aiStatus, setAIStatus] = useState<FirebaseAIStatus>({
+    name: 'Firebase AI Logic (Gemini 2.5 Pro)',
+    status: 'disconnected',
+    available: false,
+    initialized: false
+  });
   const [isLoading, setIsLoading] = useState(false);
 
-  // 初始化提供者状态
+  // 初始化Firebase AI状态
   useEffect(() => {
-    const loadProviderStatus = async () => {
+    const loadAIStatus = async () => {
       try {
-        const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
-        const availableProviders = aiProviderManager.getAvailableProviders();
-        const current = aiProviderManager.getCurrentProvider();
+        const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
+        const status = firebaseAIManager.getStatus();
         
-        const providersData: AIProvider[] = availableProviders.map(provider => ({
-          name: provider.name,
-          type: provider.type,
-          status: provider.enabled ? 'connected' : 'disconnected',
-          isPrimary: provider.type === current,
-          isEnabled: provider.enabled,
-          priority: provider.priority,
-          description: provider.description
+        setAIStatus(prev => ({
+          ...prev,
+          available: status.available,
+          initialized: status.initialized,
+          lastError: status.lastError,
+          status: status.available ? 'connected' : 'disconnected'
         }));
-
-        setProviders(providersData);
-        setCurrentProvider(current);
       } catch (error) {
-        console.error('加载AI提供者状态失败:', error);
+        console.error('加载Firebase AI状态失败:', error);
+        setAIStatus(prev => ({
+          ...prev,
+          status: 'disconnected',
+          lastError: error instanceof Error ? error.message : '加载失败'
+        }));
       }
     };
 
-    loadProviderStatus();
+    loadAIStatus();
   }, []);
 
-  const testAIProvider = async (providerType: string) => {
+  const testFirebaseAI = async () => {
     setIsLoading(true);
-    setProviders(prev => prev.map(p => 
-      p.type === providerType 
-        ? { ...p, status: 'testing' as const }
-        : p
-    ));
+    setAIStatus(prev => ({ ...prev, status: 'testing' }));
 
     try {
-      const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
+      const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
       
-      // 临时切换到要测试的提供者
-      const originalProvider = aiProviderManager.getCurrentProvider();
-      const switched = aiProviderManager.setProvider(providerType as any);
+      // 等待初始化完成
+      await firebaseAIManager.waitForInitialization();
       
-      if (switched) {
-        // 测试提供者
-        const isWorking = await aiProviderManager.testCurrentProvider();
-        
-        setProviders(prev => prev.map(p => 
-          p.type === providerType 
-            ? { 
-                ...p, 
-                status: isWorking ? 'connected' as const : 'disconnected' as const,
-                lastTestTime: new Date(),
-                error: isWorking ? undefined : '测试失败'
-              }
-            : p
-        ));
-        
-        // 如果测试成功且不是原提供者，询问是否切换
-        if (isWorking && providerType !== originalProvider) {
-          console.log(`✅ ${providerType} 测试成功`);
-        } else {
-          // 恢复原提供者
-          aiProviderManager.setProvider(originalProvider);
-        }
-      } else {
-        throw new Error('无法切换到该提供者');
+      // 测试AI功能
+      const isWorking = await firebaseAIManager.testFirebaseAI();
+      
+      setAIStatus(prev => ({
+        ...prev,
+        status: isWorking ? 'connected' : 'disconnected',
+        available: isWorking,
+        lastTestTime: new Date(),
+        lastError: isWorking ? undefined : '测试失败'
+      }));
+      
+      if (isWorking) {
+        console.log('✅ Firebase AI Logic 测试成功');
       }
     } catch (error) {
-      setProviders(prev => prev.map(p => 
-        p.type === providerType 
-          ? { 
-              ...p, 
-              status: 'disconnected' as const,
-              error: error instanceof Error ? error.message : '连接失败'
-            }
-          : p
-      ));
+      console.error('Firebase AI测试失败:', error);
+      
+      let status: 'disconnected' | 'auth_required' = 'disconnected';
+      let errorMessage = error instanceof Error ? error.message : '连接失败';
+      
+      if (errorMessage.includes('需要用户登录') || errorMessage.includes('认证失败')) {
+        status = 'auth_required';
+      }
+      
+      setAIStatus(prev => ({
+        ...prev,
+        status,
+        available: false,
+        lastError: errorMessage,
+        lastTestTime: new Date()
+      }));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const switchProvider = async (providerType: string) => {
+  const reinitializeAI = async () => {
+    setIsLoading(true);
+    setAIStatus(prev => ({ ...prev, status: 'testing' }));
+
     try {
-      const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
-      const switched = aiProviderManager.setProvider(providerType as any);
+      const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
+      const success = await firebaseAIManager.reinitialize();
       
-      if (switched) {
-        setCurrentProvider(providerType);
-        setProviders(prev => prev.map(p => ({
-          ...p,
-          isPrimary: p.type === providerType
-        })));
+      if (success) {
+        const status = firebaseAIManager.getStatus();
+        setAIStatus(prev => ({
+          ...prev,
+          status: 'connected',
+          available: status.available,
+          initialized: status.initialized,
+          lastError: undefined,
+          lastTestTime: new Date()
+        }));
+      } else {
+        throw new Error('重新初始化失败');
       }
     } catch (error) {
-      console.error('切换AI提供者失败:', error);
-    }
-  };
-
-  const testAllProviders = async () => {
-    for (const provider of providers) {
-      if (provider.isEnabled) {
-        await testAIProvider(provider.type);
-      }
+      setAIStatus(prev => ({
+        ...prev,
+        status: 'disconnected',
+        available: false,
+        lastError: error instanceof Error ? error.message : '重新初始化失败'
+      }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -139,6 +138,8 @@ export function AIProviderStatus() {
         return <XCircle className="h-4 w-4 text-red-400" />;
       case 'testing':
         return <Loader2 className="h-4 w-4 text-blue-400 animate-spin" />;
+      case 'auth_required':
+        return <User className="h-4 w-4 text-yellow-400" />;
       default:
         return <XCircle className="h-4 w-4 text-gray-400" />;
     }
@@ -152,6 +153,8 @@ export function AIProviderStatus() {
         return <Badge variant="destructive">未连接</Badge>;
       case 'testing':
         return <Badge variant="secondary">测试中...</Badge>;
+      case 'auth_required':
+        return <Badge variant="outline" className="border-yellow-400 text-yellow-400">需要登录</Badge>;
       default:
         return <Badge variant="outline">未知</Badge>;
     }
@@ -163,99 +166,89 @@ export function AIProviderStatus() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-white flex items-center gap-2">
             <Shield className="h-5 w-5 text-blue-400" />
-            AI 服务状态
+            Firebase AI Logic 状态
           </CardTitle>
           <Button
-            onClick={testAllProviders}
+            onClick={testFirebaseAI}
             disabled={isLoading}
             variant="outline"
             size="sm"
             className="glass-card-strong border-white/30 text-white hover:bg-white/10"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-            测试所有
+            测试连接
           </Button>
         </div>
         <p className="text-gray-400 text-sm">
-          当前使用: <span className="text-blue-400 font-medium">{providers.find(p => p.isPrimary)?.name || '未知'}</span>
+          专注于Firebase AI Logic (Gemini 2.5 Pro)
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
-        {providers
-          .sort((a, b) => a.priority - b.priority)
-          .map((provider, index) => (
-          <div
-            key={provider.type}
-            className={`flex items-center justify-between p-4 rounded-xl border transition-all ${
-              provider.isPrimary 
-                ? 'bg-blue-500/10 border-blue-500/30' 
-                : 'bg-white/5 border-white/10'
-            }`}
-          >
-            <div className="flex items-center space-x-3">
-              {getStatusIcon(provider.status)}
-              <div className="flex-1">
-                <div className="flex items-center space-x-2">
-                  <h3 className="text-white font-medium">{provider.name}</h3>
-                  {provider.isPrimary && (
-                    <Crown className="h-4 w-4 text-yellow-400" />
-                  )}
-                  {provider.priority === 1 && (
-                    <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
-                      首选
-                    </Badge>
-                  )}
-                  {provider.priority > 1 && (
-                    <Badge variant="outline" className="text-xs border-orange-400 text-orange-400">
-                      备用
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-gray-400 text-sm">{provider.description}</p>
-                {provider.error && (
-                  <p className="text-red-400 text-sm mt-1">错误: {provider.error}</p>
-                )}
-                {provider.lastTestTime && (
-                  <p className="text-gray-400 text-xs mt-1">
-                    最后测试: {provider.lastTestTime.toLocaleTimeString()}
-                  </p>
-                )}
+        <div className="flex items-center justify-between p-4 rounded-xl border bg-blue-500/10 border-blue-500/30">
+          <div className="flex items-center space-x-3">
+            {getStatusIcon(aiStatus.status)}
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <h3 className="text-white font-medium">{aiStatus.name}</h3>
+                <Badge variant="outline" className="text-xs border-blue-400 text-blue-400">
+                  主要服务
+                </Badge>
               </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              {getStatusBadge(provider.status)}
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => testAIProvider(provider.type)}
-                  disabled={isLoading || provider.status === 'testing'}
-                  variant="outline"
-                  size="sm"
-                  className="glass-card border-white/20 text-white hover:bg-white/10"
-                >
-                  {provider.status === 'testing' ? '测试中...' : '测试'}
-                </Button>
-                {!provider.isPrimary && provider.isEnabled && (
-                  <Button
-                    onClick={() => switchProvider(provider.type)}
-                    disabled={isLoading}
-                    variant="outline"
-                    size="sm"
-                    className="glass-card border-blue-400/20 text-blue-400 hover:bg-blue-500/10"
-                  >
-                    切换
-                  </Button>
-                )}
+              <p className="text-gray-400 text-sm">
+                Firebase AI Logic SDK - Google Gemini 2.5 Pro模型
+              </p>
+              {aiStatus.lastError && (
+                <p className="text-red-400 text-sm mt-1">错误: {aiStatus.lastError}</p>
+              )}
+              {aiStatus.lastTestTime && (
+                <p className="text-gray-400 text-xs mt-1">
+                  最后测试: {aiStatus.lastTestTime.toLocaleTimeString()}
+                </p>
+              )}
+              <div className="flex gap-2 mt-2">
+                <span className="text-xs text-gray-400">
+                  初始化: {aiStatus.initialized ? '✅ 完成' : '❌ 未完成'}
+                </span>
+                <span className="text-xs text-gray-400">
+                  可用性: {aiStatus.available ? '✅ 可用' : '❌ 不可用'}
+                </span>
               </div>
             </div>
           </div>
-        ))}
+          <div className="flex items-center space-x-3">
+            {getStatusBadge(aiStatus.status)}
+            <div className="flex gap-2">
+              <Button
+                onClick={testFirebaseAI}
+                disabled={isLoading || aiStatus.status === 'testing'}
+                variant="outline"
+                size="sm"
+                className="glass-card border-white/20 text-white hover:bg-white/10"
+              >
+                {aiStatus.status === 'testing' ? '测试中...' : '测试'}
+              </Button>
+              {aiStatus.status === 'auth_required' && (
+                <Button
+                  onClick={reinitializeAI}
+                  disabled={isLoading}
+                  variant="outline"
+                  size="sm"
+                  className="glass-card border-yellow-400/20 text-yellow-400 hover:bg-yellow-500/10"
+                >
+                  <Settings className="h-3 w-3 mr-1" />
+                  重新初始化
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
         
         <div className="pt-4 border-t border-white/10">
           <div className="text-gray-400 text-sm space-y-1">
-            <p>• <span className="text-blue-400">Google AI (Gemini)</span> - 功能强大的多模态AI，首选服务</p>
-            <p>• <span className="text-orange-400">DeepSeek (备用)</span> - 仅在主要服务不可用时使用</p>
-            <p>• 系统会自动选择可用的服务，无需手动切换</p>
-            <p>• 如遇余额不足等错误，系统会自动切换到可用服务</p>
+            <p>• <span className="text-blue-400">Firebase AI Logic</span> - 基于Google Gemini 2.5 Pro的AI服务</p>
+            <p>• <span className="text-green-400">身份验证要求</span> - 需要用户登录后才能使用AI功能</p>
+            <p>• <span className="text-purple-400">云端代理</span> - 通过Cloudflare Worker代理访问</p>
+            <p>• 如遇认证问题，请先登录账户或尝试重新初始化</p>
           </div>
         </div>
       </CardContent>

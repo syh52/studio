@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
 
     // 转换消息格式为ConversationMessage
     const conversationHistory = messages.map((msg, index) => ({
-      role: msg.role === 'assistant' ? 'model' : 'user',
+      role: (msg.role === 'assistant' ? 'model' : 'user') as 'model' | 'user',
       parts: [{ text: msg.content }]
     }));
 

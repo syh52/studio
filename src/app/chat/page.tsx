@@ -249,21 +249,21 @@ export default function ChatPage() {
       if (!result.success && result.error) {
         console.log('🔄 当前AI服务失败，尝试切换到备用服务...');
         
-        // 检查是否是DeepSeek余额不足错误
-        if (result.error.includes('402') || result.error.includes('Insufficient Balance')) {
-          console.log('💰 DeepSeek余额不足，自动切换到Google AI');
+        // 检查是否是Firebase AI认证错误
+        if (result.error.includes('401') || result.error.includes('需要用户登录')) {
+          console.log('🔐 Firebase AI需要用户登录');
           
-          // 导入AI提供者管理器并尝试切换
+          // 尝试重新初始化Firebase AI
           try {
-            const { aiProviderManager } = await import('../../lib/ai-providers/ai-provider-manager');
-            const switched = aiProviderManager.setProvider('google');
+            const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
+            const reinitialized = await firebaseAIManager.reinitialize();
             
-            if (switched) {
-              console.log('✅ 已切换到Google AI，重新尝试生成回复');
+            if (reinitialized) {
+              console.log('✅ Firebase AI重新初始化成功，重新尝试生成回复');
               result = await LexiconAIService.generateChatResponse(conversationHistory);
             }
-          } catch (switchError) {
-            console.error('切换AI服务失败:', switchError);
+          } catch (reinitError) {
+            console.error('重新初始化Firebase AI失败:', reinitError);
           }
         }
       }
