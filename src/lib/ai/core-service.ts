@@ -1,6 +1,6 @@
 import { getAIInstance } from '../firebase';
 import { KnowledgeBase } from '../knowledge-base';
-import { aiProviderManager } from '../ai-providers/ai-provider-manager';
+import { firebaseAIManager } from '../ai-providers/ai-provider-manager';
 import type { AIResponse, ConversationMessage, GenerationConfig } from './types';
 
 /**
@@ -42,10 +42,10 @@ export class LexiconAIService {
         throw new Error('最后一条消息必须是用户消息');
       }
 
-      // 调试：打印角色序列和当前AI服务
+      // 调试：打印角色序列和Firebase AI状态
       const roleSequence = conversationHistory.map(msg => msg.role).join(' -> ');
       console.log('AI服务收到的角色序列:', roleSequence);
-      console.log('当前使用的AI服务:', aiProviderManager.getCurrentProvider());
+      console.log('Firebase AI Logic状态:', firebaseAIManager.getStatus());
 
       // 如果只有一条用户消息（第一次对话），尝试添加知识库上下文
       if (conversationHistory.length === 1) {
@@ -67,7 +67,7 @@ export class LexiconAIService {
           content: msg.parts[0].text
         }));
         
-        return aiProviderManager.generateChatResponse(providerMessages);
+        return firebaseAIManager.generateChatResponse(providerMessages);
       }
 
       // 多轮对话：检查并添加知识库上下文
@@ -92,7 +92,7 @@ export class LexiconAIService {
         content: msg.parts[0].text
       }));
       
-      return aiProviderManager.generateChatResponse(providerMessages);
+      return firebaseAIManager.generateChatResponse(providerMessages);
     } catch (error) {
       console.error('多轮对话生成失败:', error);
       return {
@@ -109,16 +109,16 @@ export class LexiconAIService {
    */
   static async* generateChatResponseStream(conversationHistory: ConversationMessage[]): AsyncGenerator<string> {
     try {
-      console.log('开始流式生成，使用AI服务:', aiProviderManager.getCurrentProvider());
-      // 转换为AI Provider Manager格式
+      console.log('开始流式生成，使用Firebase AI Logic');
+      // 转换为Firebase AI Manager格式
       const providerMessages = conversationHistory.map(msg => ({
         role: (msg.role === 'model' ? 'assistant' : msg.role) as 'user' | 'assistant' | 'system',
         content: msg.parts[0].text
       }));
       
-      yield* aiProviderManager.generateStreamingResponse(providerMessages);
+      yield* firebaseAIManager.generateStreamingResponse(providerMessages);
     } catch (error) {
-      console.error('流式多轮对话生成失败:', error);
+      console.error('Firebase AI Logic流式生成失败:', error);
       yield `抱歉，生成失败: ${error instanceof Error ? error.message : '未知错误'}`;
     }
   }

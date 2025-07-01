@@ -76,20 +76,12 @@
         <div id="proxy-result"></div>
     </div>
 
-    <!-- Google AI测试 -->
+    <!-- Firebase AI Logic测试 -->
     <div class="test-card">
-        <h3><span id="google-status" class="status-indicator status-error"></span>Google AI (Gemini)</h3>
-        <p>检查Firebase AI服务可用性</p>
-        <button onclick="testGoogleAI()">测试Google AI</button>
-        <div id="google-result"></div>
-    </div>
-
-    <!-- DeepSeek测试 -->
-    <div class="test-card">
-        <h3><span id="deepseek-status" class="status-indicator status-error"></span>DeepSeek备用服务</h3>
-        <p>检查DeepSeek API配置和可用性</p>
-        <button onclick="testDeepSeek()">测试DeepSeek</button>
-        <div id="deepseek-result"></div>
+        <h3><span id="firebase-status" class="status-indicator status-error"></span>Firebase AI Logic (Gemini)</h3>
+        <p>检查Firebase AI Logic SDK可用性</p>
+        <button onclick="testFirebaseAI()">测试Firebase AI</button>
+        <div id="firebase-result"></div>
     </div>
 
     <!-- 完整AI对话测试 -->
@@ -161,18 +153,16 @@
             }
         }
 
-        // 测试Google AI
-        async function testGoogleAI() {
-            setStatus('google-status', 'testing');
-            log('开始测试Google AI...');
+        // 测试Firebase AI Logic
+        async function testFirebaseAI() {
+            setStatus('firebase-status', 'testing');
+            log('开始测试Firebase AI Logic...');
             
             try {
-                // 尝试通过Next.js API路由测试
                 const response = await fetch('/api/test-ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        provider: 'google',
                         message: '测试连接' 
                     })
                 });
@@ -180,59 +170,32 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
-                        setStatus('google-status', 'ok');
-                        log('Google AI测试成功', 'success');
-                        document.getElementById('google-result').innerHTML = 
-                            `<small style="color: #4caf50;">✅ 连接正常</small>`;
+                        setStatus('firebase-status', 'ok');
+                        log('Firebase AI Logic测试成功', 'success');
+                        
+                        // 显示详细状态信息
+                        const statusInfo = data.status ? 
+                            `状态: ${data.status.available ? '可用' : '不可用'}, 初始化: ${data.status.initialized ? '完成' : '未完成'}` : 
+                            '状态信息不可用';
+                        
+                        document.getElementById('firebase-result').innerHTML = 
+                            `<small style="color: #4caf50;">✅ 连接正常<br>${statusInfo}</small>`;
                         return true;
                     } else {
-                        throw new Error(data.error || '测试失败');
+                        // 显示详细错误信息和诊断
+                        let errorInfo = error.message || '测试失败';
+                        if (data.diagnosis) {
+                            errorInfo += '<br>诊断信息: ' + data.diagnosis.details.join(', ');
+                        }
+                        throw new Error(errorInfo);
                     }
                 } else {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
             } catch (error) {
-                setStatus('google-status', 'error');
-                log('Google AI测试失败: ' + error.message, 'error');
-                document.getElementById('google-result').innerHTML = 
-                    `<small style="color: #f44336;">❌ ${error.message}</small>`;
-                return false;
-            }
-        }
-
-        // 测试DeepSeek
-        async function testDeepSeek() {
-            setStatus('deepseek-status', 'testing');
-            log('开始测试DeepSeek...');
-            
-            try {
-                const response = await fetch('/api/test-ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        provider: 'deepseek',
-                        message: '测试连接' 
-                    })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        setStatus('deepseek-status', 'ok');
-                        log('DeepSeek测试成功', 'success');
-                        document.getElementById('deepseek-result').innerHTML = 
-                            `<small style="color: #4caf50;">✅ 连接正常</small>`;
-                        return true;
-                    } else {
-                        throw new Error(data.error || '测试失败');
-                    }
-                } else {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-            } catch (error) {
-                setStatus('deepseek-status', 'error');
-                log('DeepSeek测试失败: ' + error.message, 'error');
-                document.getElementById('deepseek-result').innerHTML = 
+                setStatus('firebase-status', 'error');
+                log('Firebase AI Logic测试失败: ' + error.message, 'error');
+                document.getElementById('firebase-result').innerHTML = 
                     `<small style="color: #f44336;">❌ ${error.message}</small>`;
                 return false;
             }
@@ -286,10 +249,7 @@
             const proxyOk = await testProxy();
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            const googleOk = await testGoogleAI();
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            const deepseekOk = await testDeepSeek();
+            const firebaseOk = await testFirebaseAI();
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             const chatOk = await testAIChat();
@@ -300,8 +260,7 @@
             
             let summaryHTML = '<ul>';
             summaryHTML += `<li>代理服务: ${proxyOk ? '✅ 正常' : '❌ 异常'}</li>`;
-            summaryHTML += `<li>Google AI: ${googleOk ? '✅ 可用' : '❌ 不可用'}</li>`;
-            summaryHTML += `<li>DeepSeek: ${deepseekOk ? '✅ 可用' : '❌ 不可用'}</li>`;
+            summaryHTML += `<li>Firebase AI Logic: ${firebaseOk ? '✅ 可用' : '❌ 不可用'}</li>`;
             summaryHTML += `<li>智能对话: ${chatOk ? '✅ 正常' : '❌ 异常'}</li>`;
             summaryHTML += '</ul>';
             
@@ -310,18 +269,16 @@
                 if (!proxyOk) {
                     summaryHTML += '<li>检查Cloudflare Worker代理服务</li>';
                 }
-                if (!googleOk && !deepseekOk) {
-                    summaryHTML += '<li>所有AI服务不可用，检查网络连接和API配置</li>';
-                }
-                if (!googleOk) {
-                    summaryHTML += '<li>Google AI不可用，检查Firebase权限和配额</li>';
-                }
-                if (!deepseekOk) {
-                    summaryHTML += '<li>DeepSeek不可用，检查API密钥配置</li>';
+                if (!firebaseOk) {
+                    summaryHTML += '<li>Firebase AI Logic不可用，检查以下项目：</li>';
+                    summaryHTML += '<li>  - Firebase项目配置和权限</li>';
+                    summaryHTML += '<li>  - API配额和计费状态</li>';
+                    summaryHTML += '<li>  - 网络连接和代理设置</li>';
+                    summaryHTML += '<li>  - Firebase AI Logic SDK初始化</li>';
                 }
                 summaryHTML += '</ul>';
             } else {
-                summaryHTML += '<p style="color: #4caf50;">✅ 智能对话功能正常工作！</p>';
+                summaryHTML += '<p style="color: #4caf50;">✅ Firebase AI Logic智能对话功能正常工作！</p>';
             }
             
             summaryContent.innerHTML = summaryHTML;
