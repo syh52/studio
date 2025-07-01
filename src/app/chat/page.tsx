@@ -695,7 +695,7 @@ export default function ChatPage() {
               }
               className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-400 resize-none min-h-[44px] max-h-32 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
               rows={1}
-              disabled={isStreaming || !isAIServiceAvailable}
+              disabled={!!(isStreaming || !isAIServiceAvailable)}
               style={{
                 height: 'auto',
                 minHeight: '44px'
@@ -708,7 +708,7 @@ export default function ChatPage() {
             />
             <Button
               onClick={!isAIServiceAvailable ? handleLoginRequired : sendChatMessage}
-              disabled={(!chatInput.trim() || isStreaming) && isAIServiceAvailable}
+              disabled={isAIServiceAvailable ? (!chatInput.trim() || isStreaming) : false}
               className={`rounded-xl px-4 h-11 flex-shrink-0 ${
                 !isAIServiceAvailable 
                   ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
