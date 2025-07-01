@@ -2,6 +2,7 @@
 
 // 配置和核心服务
 export { auth, db, storage, analytics } from './config';
+export { default as app } from './config';
 
 // 认证功能
 export {

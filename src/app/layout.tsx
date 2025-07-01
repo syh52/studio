@@ -3,7 +3,6 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import AppLayout from '@/components/layout/AppLayout';
 import PerformanceMonitor from '@/components/shared/PerformanceMonitor';
-import FirebaseCheck from '@/components/shared/FirebaseCheck';
 import Providers from '@/components/shared/Providers';
 
 export const metadata: Metadata = {
@@ -29,7 +28,6 @@ export default function RootLayout({
           </AppLayout>
           <Toaster />
           <PerformanceMonitor />
-          <FirebaseCheck />
         </Providers>
       </body>
     </html>

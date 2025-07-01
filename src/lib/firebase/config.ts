@@ -28,10 +28,21 @@ export const db = getFirestore(app);
 export const storage = getStorage(app);
 
 // Initialize Analytics (only in browser environment)
-let analytics: any = null;
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+
+// Enable offline persistence for Firestore
 if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
+  import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
+    enableIndexedDbPersistence(db).catch((err) => {
+      if (err.code === 'failed-precondition') {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        console.warn('Firebase persistence failed: Multiple tabs open');
+      } else if (err.code === 'unimplemented') {
+        // The current browser doesn't support persistence
+        console.warn('Firebase persistence not supported in this browser');
+      }
+    });
+  });
 }
-export { analytics };
 
 export default app; 
