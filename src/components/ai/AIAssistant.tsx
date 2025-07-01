@@ -8,9 +8,11 @@ import { Badge } from '../ui/badge'
 import { ScrollArea } from '../ui/scroll-area'
 import { LexiconAIService } from '../../lib/ai/core-service'
 import type { AIResponse } from '../../lib/ai/types'
-import { Loader2, Sparkles, MessageSquare, BookOpen, Calendar, Send, Trash2, UserCircle, Bot } from 'lucide-react';
+import { Loader2, Sparkles, MessageSquare, BookOpen, Calendar, Send, Trash2, UserCircle, Bot, Shield, AlertCircle } from 'lucide-react';
 import { vocabularyPacks, type VocabularyItem, type Dialogue } from '../../lib/data'
 import { Alert, AlertDescription } from '../ui/alert'
+import { useAuth } from '../../contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 
 interface ChatMessage {
   id: string;
@@ -35,6 +37,10 @@ export default function AIAssistant({ className }: AIAssistantProps) {
   const [streamingMessage, setStreamingMessage] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   
+  // 添加认证状态检查
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
+  
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,6 +48,111 @@ export default function AIAssistant({ className }: AIAssistantProps) {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, streamingMessage]);
+
+  // 检查AI服务是否可用（需要用户登录）
+  const isAIServiceAvailable = isAuthenticated && user;
+
+  // 处理未登录用户的导航
+  const handleLoginRequired = () => {
+    router.push('/login');
+  };
+
+  // 显示认证要求提示
+  const renderAuthenticationRequired = () => (
+    <Card className="bg-yellow-500/10 border-yellow-500/30">
+      <CardContent className="pt-6">
+        <div className="flex items-center space-x-3">
+          <Shield className="h-8 w-8 text-yellow-400" />
+          <div className="flex-1">
+            <h3 className="text-lg font-medium text-yellow-400">需要登录账户</h3>
+            <p className="text-gray-300 text-sm mt-1">
+              Firebase AI Logic 需要用户身份验证后才能使用。这是为了确保服务安全和个性化体验。
+            </p>
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-gray-400">登录后您可以享受：</p>
+              <ul className="text-sm text-gray-400 space-y-1 ml-4">
+                <li>• 🤖 智能AI助手对话</li>
+                <li>• 📚 个性化学习建议</li>
+                <li>• 🎯 专业对话练习</li>
+                <li>• 📅 定制学习计划</li>
+              </ul>
+            </div>
+            <Button
+              onClick={handleLoginRequired}
+              className="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              前往登录
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  // 如果认证状态正在加载
+  if (authLoading) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <Card className="glass-card border-purple-500/20">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-purple-400 mr-2" />
+              <span className="text-gray-400">正在检查用户身份...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // 如果用户未登录，显示认证要求
+  if (!isAIServiceAvailable) {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        <Card className="glass-card border-purple-500/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-white">
+              <Sparkles className="h-5 w-5 text-purple-400" />
+              AI 学习助手
+            </CardTitle>
+            <CardDescription className="text-gray-400">
+              使用 Firebase AI Logic SDK 为您提供个性化的航空英语学习建议
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {renderAuthenticationRequired()}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // 增强错误处理的AI调用函数
+  const callAIWithErrorHandling = async (aiFunction: () => Promise<AIResponse>): Promise<AIResponse> => {
+    try {
+      const result = await aiFunction();
+      
+      // 如果返回认证相关错误，提示用户重新登录
+      if (!result.success && result.error) {
+        if (result.error.includes('需要用户登录') || 
+            result.error.includes('认证失败') || 
+            result.error.includes('unauthorized')) {
+          return {
+            success: false,
+            error: '身份验证已过期，请重新登录后再试。'
+          };
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('AI调用失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '服务暂时不可用，请稍后重试'
+      };
+    }
+  };
 
   const handleVocabularyTip = async () => {
     setLoading(true);
@@ -51,7 +162,9 @@ export default function AIAssistant({ className }: AIAssistantProps) {
     const randomPack = vocabularyPacks[Math.floor(Math.random() * vocabularyPacks.length)];
     const randomVocab = randomPack.items[Math.floor(Math.random() * randomPack.items.length)];
     
-    const result: AIResponse = await LexiconAIService.generateVocabularyTip(randomVocab);
+    const result = await callAIWithErrorHandling(() => 
+      LexiconAIService.generateVocabularyTip(randomVocab)
+    );
     
     if (result.success && result.data) {
       setResponse(`📚 词汇: ${randomVocab.english} (${randomVocab.chinese})\n\n${result.data}`);
@@ -78,7 +191,9 @@ export default function AIAssistant({ className }: AIAssistantProps) {
       ]
     };
     
-    const result: AIResponse = await LexiconAIService.generateDialogueQuestions(mockDialogue);
+    const result = await callAIWithErrorHandling(() => 
+      LexiconAIService.generateDialogueQuestions(mockDialogue)
+    );
     
     if (result.success && result.data) {
       setResponse(`🎯 对话场景: ${mockDialogue.title}\n\n${result.data}`);
@@ -93,9 +208,8 @@ export default function AIAssistant({ className }: AIAssistantProps) {
     setLoading(true);
     setResponse('');
     
-    const result: AIResponse = await LexiconAIService.generateStudyPlan(
-      "初级", 
-      ["航空安全执勤"]
+    const result = await callAIWithErrorHandling(() => 
+      LexiconAIService.generateStudyPlan("初级", ["航空安全执勤"])
     );
     
     if (result.success && result.data) {
@@ -113,8 +227,8 @@ export default function AIAssistant({ className }: AIAssistantProps) {
     setLoading(true);
     setResponse('');
     
-    const result: AIResponse = await LexiconAIService.generateText(
-      `作为航空英语学习助手，请回答以下问题：\n\n${customPrompt}`
+    const result = await callAIWithErrorHandling(() => 
+      LexiconAIService.generateText(`作为航空英语学习助手，请回答以下问题：\n\n${customPrompt}`)
     );
     
     if (result.success && result.data) {
@@ -136,6 +250,18 @@ export default function AIAssistant({ className }: AIAssistantProps) {
   // 发送聊天消息
   const sendChatMessage = async () => {
     if (!chatInput.trim() || isStreaming) return;
+
+    // 再次检查认证状态
+    if (!isAIServiceAvailable) {
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        content: '抱歉，您需要登录后才能使用AI对话功能。请先登录您的账户。',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -182,8 +308,10 @@ export default function AIAssistant({ className }: AIAssistantProps) {
       const roleSequence = conversationHistory.map(msg => msg.role).join(' -> ');
       console.log('角色序列:', roleSequence);
 
-      // 使用多轮对话API
-      const result = await LexiconAIService.generateChatResponse(conversationHistory);
+      // 使用增强的错误处理调用多轮对话API
+      const result = await callAIWithErrorHandling(() => 
+        LexiconAIService.generateChatResponse(conversationHistory)
+      );
       
       if (result.success && result.data) {
         const aiMessage: ChatMessage = {
@@ -194,20 +322,37 @@ export default function AIAssistant({ className }: AIAssistantProps) {
         };
         setChatMessages(prev => [...prev, aiMessage]);
       } else {
+        let errorContent = `抱歉，我遇到了一些问题：${result.error}`;
+        
+        // 如果是认证相关错误，提供更友好的提示
+        if (result.error && (
+          result.error.includes('需要用户登录') || 
+          result.error.includes('认证失败') || 
+          result.error.includes('身份验证已过期')
+        )) {
+          errorContent = '身份验证已过期，请刷新页面重新登录后继续对话。';
+        }
+        
         const errorMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'model',
-          content: `抱歉，我遇到了一些问题：${result.error}`,
+          content: errorContent,
           timestamp: new Date()
         };
         setChatMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
       console.error('发送消息失败:', error);
+      
+      let errorContent = '抱歉，发生了意外错误，请稍后重试。';
+      if (error instanceof Error && error.message.includes('需要用户登录')) {
+        errorContent = '请先登录后再使用AI对话功能。';
+      }
+      
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        content: '抱歉，发生了意外错误，请稍后重试。',
+        content: errorContent,
         timestamp: new Date()
       };
       setChatMessages(prev => [...prev, errorMessage]);

@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '../../components/ui/button';
 import { Textarea } from '../../components/ui/textarea';
 import { ScrollArea } from '../../components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { LexiconAIService } from '../../lib/ai/core-service';
 import { KnowledgeBase } from '../../lib/knowledge-base';
 import { useAuth } from '../../contexts/AuthContext';
@@ -28,7 +29,9 @@ import {
   Brain,
   ExternalLink,
   Cloud,
-  CloudOff
+  CloudOff,
+  Shield,
+  AlertCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -52,7 +55,7 @@ interface FirestoreChatSession {
 
 export default function ChatPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -62,6 +65,100 @@ export default function ChatPage() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 检查AI服务是否可用（需要用户登录）
+  const isAIServiceAvailable = isAuthenticated && user;
+
+  // 处理未登录用户的导航
+  const handleLoginRequired = () => {
+    router.push('/login');
+  };
+
+  // 显示认证要求的组件
+  const renderAuthenticationRequired = () => (
+    <div className="flex items-center justify-center h-full min-h-[60vh]">
+      <Card className="bg-yellow-500/10 border-yellow-500/30 max-w-md mx-4">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-4">
+            <Shield className="h-12 w-12 text-yellow-400 mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium text-yellow-400 mb-2">需要登录账户</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                Firebase AI Logic 需要用户身份验证后才能使用智能对话功能。这是为了确保服务安全和提供个性化体验。
+              </p>
+            </div>
+            <div className="space-y-3">
+              <p className="text-sm text-gray-400">登录后您可以享受：</p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white/5 rounded-lg p-2 text-center">
+                  <div className="text-sm mb-1">🤖</div>
+                  <div className="text-gray-300">AI对话</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-2 text-center">
+                  <div className="text-sm mb-1">☁️</div>
+                  <div className="text-gray-300">云端同步</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-2 text-center">
+                  <div className="text-sm mb-1">📚</div>
+                  <div className="text-gray-300">个性化学习</div>
+                </div>
+                <div className="bg-white/5 rounded-lg p-2 text-center">
+                  <div className="text-sm mb-1">🎯</div>
+                  <div className="text-gray-300">专业建议</div>
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={handleLoginRequired}
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              前往登录
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
+  // 增强错误处理的AI调用函数
+  const callAIWithErrorHandling = async (conversationHistory: any[]) => {
+    try {
+      // 首先检查用户是否已登录
+      if (!isAIServiceAvailable) {
+        throw new Error('需要用户登录后才能使用AI对话功能');
+      }
+
+      const result = await LexiconAIService.generateChatResponse(conversationHistory);
+      
+      // 如果返回认证相关错误，提示用户重新登录
+      if (!result.success && result.error) {
+        if (result.error.includes('需要用户登录') || 
+            result.error.includes('认证失败') || 
+            result.error.includes('unauthorized')) {
+          
+          // 尝试重新初始化Firebase AI
+          try {
+            const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
+            const reinitialized = await firebaseAIManager.reinitialize();
+            
+            if (reinitialized) {
+              console.log('✅ Firebase AI重新初始化成功，重新尝试生成回复');
+              return await LexiconAIService.generateChatResponse(conversationHistory);
+            }
+          } catch (reinitError) {
+            console.error('重新初始化Firebase AI失败:', reinitError);
+          }
+          
+          throw new Error('身份验证已过期，请刷新页面重新登录。');
+        }
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('AI调用失败:', error);
+      throw error;
+    }
+  };
 
   // 保存对话历史到 Firestore
   const saveChatHistory = async (messages: ChatMessage[]) => {
@@ -202,6 +299,18 @@ export default function ChatPage() {
   const sendChatMessage = async () => {
     if (!chatInput.trim() || isStreaming) return;
 
+    // 检查用户是否已登录
+    if (!isAIServiceAvailable) {
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'model',
+        content: '抱歉，您需要登录后才能使用AI对话功能。请先登录您的账户以享受完整的智能对话体验。',
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -242,31 +351,8 @@ export default function ChatPage() {
         });
       }
 
-      // 使用多轮对话API，带有智能错误重试
-      let result = await LexiconAIService.generateChatResponse(conversationHistory);
-      
-      // 如果当前AI服务失败，尝试切换到其他可用服务
-      if (!result.success && result.error) {
-        console.log('🔄 当前AI服务失败，尝试切换到备用服务...');
-        
-        // 检查是否是Firebase AI认证错误
-        if (result.error.includes('401') || result.error.includes('需要用户登录')) {
-          console.log('🔐 Firebase AI需要用户登录');
-          
-          // 尝试重新初始化Firebase AI
-          try {
-            const { firebaseAIManager } = await import('../../lib/ai-providers/ai-provider-manager');
-            const reinitialized = await firebaseAIManager.reinitialize();
-            
-            if (reinitialized) {
-              console.log('✅ Firebase AI重新初始化成功，重新尝试生成回复');
-              result = await LexiconAIService.generateChatResponse(conversationHistory);
-            }
-          } catch (reinitError) {
-            console.error('重新初始化Firebase AI失败:', reinitError);
-          }
-        }
-      }
+      // 使用增强的错误处理调用AI
+      const result = await callAIWithErrorHandling(conversationHistory);
       
       if (result.success && result.data) {
         const aiMessage: ChatMessage = {
@@ -281,11 +367,13 @@ export default function ChatPage() {
         let errorMsg = '抱歉，我遇到了一些问题';
         
         if (result.error?.includes('402') || result.error?.includes('Insufficient Balance')) {
-          errorMsg = '😅 当前AI服务余额不足，请稍后重试或联系管理员充值。我们已尝试切换到备用服务。';
+          errorMsg = '😅 当前AI服务余额不足，请稍后重试或联系管理员充值。';
         } else if (result.error?.includes('网络')) {
           errorMsg = '🌐 网络连接出现问题，请检查您的网络连接后重试。';
         } else if (result.error?.includes('超时')) {
           errorMsg = '⏰ 服务响应超时，请稍后重试。';
+        } else if (result.error?.includes('身份验证已过期')) {
+          errorMsg = '🔐 身份验证已过期，请刷新页面重新登录后继续对话。';
         } else if (result.error) {
           errorMsg = `🤖 AI服务暂时不可用：${result.error}`;
         }
@@ -305,12 +393,16 @@ export default function ChatPage() {
       let errorMsg = '抱歉，发生了意外错误，请稍后重试。';
       
       if (error instanceof Error) {
-        if (error.message.includes('fetch')) {
+        if (error.message.includes('需要用户登录')) {
+          errorMsg = '🔐 请先登录后再使用AI对话功能。点击右上角的登录按钮进行登录。';
+        } else if (error.message.includes('fetch')) {
           errorMsg = '🌐 网络连接失败，请检查网络连接后重试。';
         } else if (error.message.includes('timeout')) {
           errorMsg = '⏰ 请求超时，请稍后重试。';
         } else if (error.message.includes('402')) {
           errorMsg = '💰 AI服务余额不足，我们正在尝试切换到备用服务。';
+        } else if (error.message.includes('身份验证已过期')) {
+          errorMsg = '🔐 身份验证已过期，请刷新页面重新登录。';
         }
       }
       
@@ -349,6 +441,20 @@ export default function ChatPage() {
     router.back();
   };
 
+  // 如果认证状态正在加载
+  if (authLoading) {
+    return (
+      <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-purple-400 mx-auto" />
+            <p className="text-white">正在检查用户身份...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-blue-900">
       {/* 顶部导航栏 - 手机友好 */}
@@ -370,6 +476,13 @@ export default function ChatPage() {
               <h1 className="text-lg font-semibold text-white">智能对话</h1>
               <p className="text-xs text-gray-400">
                 航空英语学习助手
+                {/* 认证状态指示器 */}
+                {!isAIServiceAvailable && (
+                  <span className="ml-2 flex items-center gap-1 text-yellow-400">
+                    <Shield className="h-3 w-3" />
+                    <span>需要登录</span>
+                  </span>
+                )}
                 {isAuthenticated && chatMessages.length > 0 && (
                   <span className="ml-2 flex items-center gap-1">
                     {isSyncing ? (
@@ -404,6 +517,19 @@ export default function ChatPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* 登录提示按钮 */}
+          {!isAIServiceAvailable && (
+            <Button
+              onClick={handleLoginRequired}
+              variant="ghost"
+              size="sm"
+              className="text-yellow-400 hover:text-yellow-300 hover:bg-yellow-500/10 flex items-center gap-1"
+            >
+              <Shield className="h-4 w-4" />
+              <span className="text-xs">登录</span>
+            </Button>
+          )}
+          
           {/* 知识库状态指示器 */}
           <Button
             onClick={() => router.push('/knowledge')}
@@ -435,61 +561,60 @@ export default function ChatPage() {
         <ScrollArea className="flex-1 px-4">
           <div className="py-4 space-y-4">
             {chatMessages.length === 0 ? (
-              // 欢迎界面 - 手机优化
-              <div className="flex items-center justify-center h-full min-h-[60vh]">
-                <div className="text-center space-y-6 max-w-sm px-4">
-                  <div className="p-6 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 w-fit mx-auto">
-                    <Bot className="h-12 w-12 text-purple-400" />
-                  </div>
-                  <div className="space-y-3">
-                    <h2 className="text-xl font-bold text-white">
-                      航空英语学习助手
-                    </h2>
-                    <p className="text-gray-300 text-sm leading-relaxed">
-                      我是您的专业航空英语学习伙伴，可以帮助您：
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-lg mb-1">🗣️</div>
-                        <div className="text-gray-300">练习对话</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-lg mb-1">📚</div>
-                        <div className="text-gray-300">学习词汇</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-lg mb-1">🎯</div>
-                        <div className="text-gray-300">模拟场景</div>
-                      </div>
-                      <div className="bg-white/5 rounded-lg p-3 text-center">
-                        <div className="text-lg mb-1">📝</div>
-                        <div className="text-gray-300">答疑解惑</div>
-                      </div>
+              // 根据认证状态显示不同的欢迎界面
+              !isAIServiceAvailable ? (
+                renderAuthenticationRequired()
+              ) : (
+                // 原有的欢迎界面
+                <div className="flex items-center justify-center h-full min-h-[60vh]">
+                  <div className="text-center space-y-6 max-w-sm px-4">
+                    <div className="p-6 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 w-fit mx-auto">
+                      <Bot className="h-12 w-12 text-purple-400" />
                     </div>
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-center gap-2 text-green-300 text-xs">
-                        <Brain className="h-3 w-3" />
-                        <span>已载入 {knowledgeCount} 条专业知识</span>
+                    <div className="space-y-3">
+                      <h2 className="text-xl font-bold text-white">
+                        航空英语学习助手
+                      </h2>
+                      <p className="text-gray-300 text-sm leading-relaxed">
+                        我是您的专业航空英语学习伙伴，可以帮助您：
+                      </p>
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <div className="text-lg mb-1">🗣️</div>
+                          <div className="text-gray-300">练习对话</div>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <div className="text-lg mb-1">📚</div>
+                          <div className="text-gray-300">学习词汇</div>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <div className="text-lg mb-1">🎯</div>
+                          <div className="text-gray-300">模拟场景</div>
+                        </div>
+                        <div className="bg-white/5 rounded-lg p-3 text-center">
+                          <div className="text-lg mb-1">📝</div>
+                          <div className="text-gray-300">答疑解惑</div>
+                        </div>
                       </div>
-                      <div className="text-center text-xs text-gray-400">
-                        {isAuthenticated ? (
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center justify-center gap-2 text-green-300 text-xs">
+                          <Brain className="h-3 w-3" />
+                          <span>已载入 {knowledgeCount} 条专业知识</span>
+                        </div>
+                        <div className="text-center text-xs text-gray-400">
                           <span className="flex items-center justify-center gap-1">
                             <Cloud className="h-3 w-3" />
                             对话历史云端同步，跨设备访问
                           </span>
-                        ) : (
-                          <span className="text-yellow-400">
-                            💡 登录后可云端保存对话历史
-                          </span>
-                        )}
+                        </div>
+                        <p className="text-purple-300 text-sm font-medium">
+                          开始输入您的问题吧！
+                        </p>
                       </div>
-                      <p className="text-purple-300 text-sm font-medium">
-                        开始输入您的问题吧！
-                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
+              )
             ) : (
               // 对话消息列表
               <>
@@ -561,10 +686,16 @@ export default function ChatPage() {
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder={chatMessages.length === 0 ? "试试问：如何用英语处理紧急情况？" : "输入您的问题..."}
+              placeholder={
+                !isAIServiceAvailable 
+                  ? "请先登录以使用AI对话功能..."
+                  : chatMessages.length === 0 
+                    ? "试试问：如何用英语处理紧急情况？" 
+                    : "输入您的问题..."
+              }
               className="flex-1 bg-white/5 border-white/20 text-white placeholder:text-gray-400 resize-none min-h-[44px] max-h-32 rounded-xl focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50"
               rows={1}
-              disabled={isStreaming}
+              disabled={isStreaming || !isAIServiceAvailable}
               style={{
                 height: 'auto',
                 minHeight: '44px'
@@ -576,11 +707,17 @@ export default function ChatPage() {
               }}
             />
             <Button
-              onClick={sendChatMessage}
-              disabled={!chatInput.trim() || isStreaming}
-              className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl px-4 h-11 flex-shrink-0"
+              onClick={!isAIServiceAvailable ? handleLoginRequired : sendChatMessage}
+              disabled={(!chatInput.trim() || isStreaming) && isAIServiceAvailable}
+              className={`rounded-xl px-4 h-11 flex-shrink-0 ${
+                !isAIServiceAvailable 
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-black'
+                  : 'bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white'
+              }`}
             >
-              {isStreaming ? (
+              {!isAIServiceAvailable ? (
+                <Shield className="h-5 w-5" />
+              ) : isStreaming ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <Send className="h-5 w-5" />
@@ -592,7 +729,10 @@ export default function ChatPage() {
           {chatMessages.length === 0 && (
             <div className="text-center mt-3">
               <p className="text-xs text-gray-500">
-                按 Enter 发送，Shift + Enter 换行
+                {!isAIServiceAvailable 
+                  ? "登录后享受完整的AI对话体验" 
+                  : "按 Enter 发送，Shift + Enter 换行"
+                }
               </p>
             </div>
           )}
