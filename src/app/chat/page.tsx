@@ -67,7 +67,7 @@ export default function ChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 检查AI服务是否可用（需要用户登录）
-  const isAIServiceAvailable = isAuthenticated && user;
+  const isAIServiceAvailable = !!(isAuthenticated && user);
 
   // 处理未登录用户的导航
   const handleLoginRequired = () => {

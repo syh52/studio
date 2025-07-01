@@ -50,7 +50,7 @@ export default function AIAssistant({ className }: AIAssistantProps) {
   }, [chatMessages, streamingMessage]);
 
   // 检查AI服务是否可用（需要用户登录）
-  const isAIServiceAvailable = isAuthenticated && user;
+  const isAIServiceAvailable = !!(isAuthenticated && user);
 
   // 处理未登录用户的导航
   const handleLoginRequired = () => {
