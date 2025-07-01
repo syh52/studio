@@ -46,9 +46,10 @@ class CloudFunctionsService {
       const user = auth.currentUser;
       const token = user ? await user.getIdToken() : null;
       
-      const headers: HeadersInit = {
+      // 🔧 修复TypeScript类型错误 - 使用Record类型支持动态添加头部
+      const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(options.headers as Record<string, string> || {}),
       };
       
       if (token) {
