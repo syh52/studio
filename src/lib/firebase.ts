@@ -96,26 +96,72 @@ if (typeof window !== 'undefined') {
 
 let ai: any = null;
 let model: any = null;
+let currentUserId: string | null = null;
 
 export async function getAIInstance(): Promise<{ ai: any; model: any }> {
+  // 检查用户身份验证状态
+  const currentUser = auth.currentUser;
+  
+  if (!currentUser) {
+    throw new Error('Firebase AI Logic需要用户登录后才能使用。请先登录您的账户。');
+  }
+  
+  // 如果用户ID发生变化，重新初始化AI
+  if (currentUserId !== currentUser.uid) {
+    ai = null;
+    model = null;
+    currentUserId = currentUser.uid;
+  }
+  
   if (ai && model) {
     return { ai, model };
   }
   
   try {
-    console.log('🤖 初始化 Firebase AI...');
+    console.log('🤖 为已登录用户初始化 Firebase AI Logic...');
+    console.log('👤 用户ID:', currentUser.uid);
+    console.log('📧 用户邮箱:', currentUser.email);
+    
+    // 确保用户已通过身份验证
+    const idToken = await currentUser.getIdToken();
+    console.log('🔐 获取到身份验证令牌');
+    
     ai = getAI(firebaseApp, { backend: new VertexAIBackend('us-central1') });
     model = getGenerativeModel(ai, { 
       model: "gemini-2.5-pro",
     });
-    console.log('✅ Firebase AI 初始化成功');
+    console.log('✅ Firebase AI Logic 初始化成功');
     return { ai, model };
   } catch (error: any) {
-    console.error('❌ Firebase AI 初始化失败:', error);
+    console.error('❌ Firebase AI Logic 初始化失败:', error);
     ai = null; 
     model = null;
-    throw new Error('AI 服务暂时不可用，请稍后重试');
+    currentUserId = null;
+    
+    // 提供更详细的错误信息
+    if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-user-token') {
+      throw new Error('用户身份验证已过期，请重新登录。');
+    } else if (error.code === 'permission-denied') {
+      throw new Error('您没有权限使用AI功能，请联系管理员。');
+    } else if (error.message.includes('401') || error.message.includes('unauthorized')) {
+      throw new Error('Firebase AI Logic认证失败，请重新登录后重试。');
+    } else {
+      throw new Error(`AI 服务暂时不可用: ${error.message}`);
+    }
   }
+}
+
+// 添加用户状态监听，当用户登出时清理AI实例
+if (typeof window !== 'undefined') {
+  auth.onAuthStateChanged((user) => {
+    if (!user) {
+      // 用户登出时清理AI实例
+      ai = null;
+      model = null;
+      currentUserId = null;
+      console.log('🔄 用户登出，已清理Firebase AI Logic实例');
+    }
+  });
 }
 
 export { firebaseApp };

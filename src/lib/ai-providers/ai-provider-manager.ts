@@ -101,7 +101,20 @@ export class FirebaseAIManager {
       }
     } catch (error) {
       this.isFirebaseAIAvailable = false;
-      console.error('🤖 Firebase AI Logic状态: ❌ 不可用 -', error instanceof Error ? error.message : '未知错误');
+      
+      // 根据错误类型提供具体的诊断信息
+      if (error instanceof Error) {
+        if (error.message.includes('需要用户登录')) {
+          console.log('🔐 Firebase AI Logic状态: ⚠️ 需要用户登录');
+        } else if (error.message.includes('认证失败') || error.message.includes('401')) {
+          console.error('🔐 Firebase AI Logic状态: ❌ 认证失败');
+        } else {
+          console.error('🤖 Firebase AI Logic状态: ❌ 不可用 -', error.message);
+        }
+      } else {
+        console.error('🤖 Firebase AI Logic状态: ❌ 不可用 - 未知错误');
+      }
+      
       throw error;
     }
   }
