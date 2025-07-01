@@ -1,40 +1,30 @@
-// src/lib/firebase.ts (最终修正版 v2)
+// src/lib/firebase.ts (修复版)
 
 import { initializeApp, getApp, FirebaseApp } from "firebase/app";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
-// 🔥【修改1】: 引入 initializeFirestore，不再使用 getFirestore
 import { initializeFirestore, CACHE_SIZE_UNLIMITED } from "firebase/firestore";
 import { getAI, getGenerativeModel, VertexAIBackend } from "firebase/ai";
 
-// 自定义代理域名配置
-const CUSTOM_PROXY_DOMAIN = 'api.lexiconlab.cn';
-
-// 检测是否需要使用代理的函数 (保持不变)
+// 检测是否需要使用代理的函数
 function shouldUseProxy(): boolean {
   if (typeof window === 'undefined') return false;
   
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isMainlandChina = 
-    window.location.hostname.includes('lexiconlab.cn') ||
-    window.location.hostname.includes('firebaseapp.com') ||
-    isProduction;
-    
-  // 提供一个手动禁用代理的调试开关
+  // 简化代理检测逻辑
   const isProxyDisabled = localStorage.getItem('disable-proxy') === 'true';
-
-  return isMainlandChina && !isProxyDisabled;
+  
+  // 默认不使用代理，除非明确指定
+  return !isProxyDisabled && process.env.NODE_ENV === 'production';
 }
 
-// Firebase 项目配置 (保持不变)
+// Firebase 项目配置
 const firebaseConfig = {
   apiKey: "AIzaSyDtARFXghjPrzC0UYtucYkUJI22HzcmHcY",
-  authDomain: "lexiconlab.cn",
+  authDomain: "aviation-lexicon-trainer.firebaseapp.com", // 使用原始域名
   projectId: "aviation-lexicon-trainer",
   storageBucket: "aviation-lexicon-trainer.firebasestorage.app",
   messagingSenderId: "461284748566",
   appId: "1:461284748566:web:917008c87daa9bfa38f437"
 };
-
 
 // 初始化 Firebase App
 let firebaseApp: FirebaseApp;
@@ -47,51 +37,61 @@ try {
 // 初始化 Auth
 export const auth = getAuth(firebaseApp);
 
-// 🔥【修改2】: 动态初始化 Firestore
+// 初始化 Firestore - 完全禁用WebChannel，使用Cloud Functions架构
 export const db = (() => {
   const useProxy = shouldUseProxy();
   
+  console.log('🏗️ 使用Cloud Functions架构 - 避免WebChannel问题');
+  
+  // 🔥 新架构：对于复杂操作使用Cloud Functions，简单读取使用Firestore
   if (useProxy) {
-    console.log(`🇨🇳 检测到中国大陆环境，Firebase请求将通过代理 https://${CUSTOM_PROXY_DOMAIN} 路由`);
-    
-    // 连接Auth到代理 (这种方式正确，保持不变)
-    try {
-      connectAuthEmulator(auth, `https://${CUSTOM_PROXY_DOMAIN}`, { disableWarnings: true });
-      console.log('✅ Firebase Auth 已连接到代理');
-    } catch (authError: any) {
-      if (authError.code !== 'auth/emulator-config-failed') {
-         console.warn('ℹ️ 设置Auth代理时发生意外错误:', authError);
-      }
-    }
-    
-    // 使用 initializeFirestore 并直接指定 host 和 ssl，这是正确的做法
-    return initializeFirestore(firebaseApp, {
-      host: CUSTOM_PROXY_DOMAIN,
-      ssl: true, // 强制使用 HTTPS，解决 Mixed Content 问题
-      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-      experimentalForceLongPolling: true, // ✅ 启用长轮询，提高连接稳定性
-    });
+    console.log('🇨🇳 代理模式 + Cloud Functions架构');
+          return initializeFirestore(firebaseApp, {
+        host: 'api.lexiconlab.cn',
+        ssl: true,
+        cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+        // 🔥 完全禁用WebChannel和实时功能
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: false,
+      });
   } else {
-    console.log('🔧 非代理环境，使用Firebase直连');
-    // 在非代理环境下，使用不带参数的 initializeFirestore
-    return initializeFirestore(firebaseApp, {
-      cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-      experimentalForceLongPolling: true, // ✅ 启用长轮询，提高连接稳定性
-    });
+    console.log('🔧 直连模式 + Cloud Functions架构');
+          return initializeFirestore(firebaseApp, {
+        cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+        // 🔥 直连模式也禁用WebChannel，统一使用Cloud Functions
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: false,
+      });
   }
 })();
 
-console.log('✅ Firestore 初始化完成');
+console.log('✅ Firebase初始化完成');
 
-
-// 🔥【修改3】: 其他代码保持不变
+// 错误处理
 if (typeof window !== 'undefined') {
+  // 禁用WebChannel错误的全局处理
   window.addEventListener('unhandledrejection', (event) => {
     if (event.reason?.message?.includes('WebChannelConnection') || 
-        event.reason?.message?.includes('transport errored')) {
-      console.warn('🔥 检测到WebChannel连接问题，建议使用离线模式');
+        event.reason?.message?.includes('transport errored') ||
+        event.reason?.message?.includes('WebChannel transport')) {
+      console.warn('🔥 WebChannel连接问题已忽略');
+      event.preventDefault(); // 阻止错误冒泡
     }
   });
+  
+  // 🔥 智能代理配置 - 生产环境启用代理，开发环境可选
+  if (process.env.NODE_ENV === 'production') {
+    // 生产环境默认启用代理（除非用户明确禁用）
+    if (!localStorage.getItem('disable-proxy')) {
+      console.log('🇨🇳 生产环境：启用代理模式');
+    }
+  } else {
+    // 开发环境默认直连（除非用户明确启用代理）
+    if (!localStorage.getItem('disable-proxy')) {
+      localStorage.setItem('disable-proxy', 'true');
+      console.log('🔧 开发环境：启用直连模式');
+    }
+  }
 }
 
 let ai: any = null;

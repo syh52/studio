@@ -23,6 +23,7 @@ import {
 } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase'
 import { useToast } from '../hooks/use-toast'
+import { cloudFunctionsService } from '../lib/cloud-functions-service'
 
 interface User {
   id: string;
@@ -272,37 +273,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await sendEmailVerification(userCredential.user);
       console.log('✅ 验证邮件发送成功');
       
-      // 🔥 辅助步骤：在Firestore中创建用户文档（非阻塞）
+      // 🔥 辅助步骤：通过Cloud Functions创建用户文档（避免WebChannel问题）
       const userData = {
+        uid: userCredential.user.uid,
         email,
-        username,
-        indexPoints: 0,
-        lastCheckIn: null,
-        emailVerified: false,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        displayName: username,
+        role: 'student'
       };
       
-      // 过滤掉undefined值的数据对象
-      const cleanUserData = Object.fromEntries(
-        Object.entries(userData).filter(([_, value]) => value !== undefined)
-      );
-      
       try {
-        await setDoc(doc(db, 'users', userCredential.user.uid), cleanUserData);
-        console.log('✅ 用户文档创建成功');
+        console.log('🌐 通过Cloud Functions创建用户数据...');
+        const result = await cloudFunctionsService.registerUser(userData);
         
-        toast({
-          title: "注册成功",
-          description: "验证邮件已发送，请查收邮箱",
-        });
-      } catch (firestoreError) {
-        console.warn('⚠️ 用户文档创建失败（不影响登录）:', firestoreError);
+        if (result.success) {
+          console.log('✅ 用户文档创建成功 (Cloud Functions)');
+          
+          toast({
+            title: "注册成功",
+            description: "验证邮件已发送，请查收邮箱",
+          });
+        } else {
+          console.warn('⚠️ Cloud Functions创建用户失败:', result.error);
+          
+          // 即使Cloud Functions失败，用户账户已创建，仍视为成功
+          toast({
+            title: "注册成功",
+            description: "账户已创建，验证邮件已发送。用户资料将在首次登录时自动创建。",
+          });
+        }
+      } catch (cloudFunctionError) {
+        console.warn('⚠️ Cloud Functions请求失败（不影响登录）:', cloudFunctionError);
         
-        toast({
-          title: "注册成功",
-          description: "账户已创建，验证邮件已发送。用户资料将在首次登录时自动创建。",
-        });
+        // 降级方案：使用原有的Firestore直接写入
+        try {
+          const fallbackUserData = {
+            email,
+            username,
+            indexPoints: 0,
+            lastCheckIn: null,
+            emailVerified: false,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          };
+          
+          const cleanUserData = Object.fromEntries(
+            Object.entries(fallbackUserData).filter(([_, value]) => value !== undefined)
+          );
+          
+          await setDoc(doc(db, 'users', userCredential.user.uid), cleanUserData);
+          console.log('✅ 降级方案：直接Firestore写入成功');
+          
+          toast({
+            title: "注册成功",
+            description: "验证邮件已发送，请查收邮箱",
+          });
+        } catch (firestoreError) {
+          console.warn('⚠️ 降级方案也失败（不影响登录）:', firestoreError);
+          
+          toast({
+            title: "注册成功",
+            description: "账户已创建，验证邮件已发送。用户资料将在首次登录时自动创建。",
+          });
+        }
       }
       
       return true;

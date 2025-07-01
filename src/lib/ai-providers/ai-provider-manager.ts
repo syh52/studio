@@ -40,6 +40,16 @@ export class AIProviderManager {
 
   private constructor() {
     this.deepSeekProvider = new DeepSeekProvider();
+    
+    // 恢复用户首选的AI服务
+    if (typeof window !== 'undefined') {
+      const savedProvider = localStorage.getItem('preferred_ai_provider') as AIProviderType;
+      if (savedProvider && (savedProvider === 'google' || savedProvider === 'deepseek')) {
+        this.currentProvider = savedProvider;
+        console.log(`🔄 恢复首选AI服务: ${savedProvider}`);
+      }
+    }
+    
     // 异步初始化，优先检查Google AI
     this.initializeProvidersAsync();
   }
@@ -52,12 +62,21 @@ export class AIProviderManager {
   }
 
   private initializeProvidersAsync() {
-    // 异步初始化，优先检查Google AI
+    // 异步初始化，在代理环境下优先使用DeepSeek
     if (typeof window !== 'undefined') {
       // --- ★ AI 代理确认逻辑 ★ ---
       if (isProduction && window.location.hostname.includes('lexiconlab.cn')) {
         console.log('🚀 AI服务代理状态: 所有 AI 请求将通过 Cloudflare Worker 透明代理');
         console.log(`🔗 代理服务器: ${new URL(proxyUrl).host}`);
+        
+        // 🇨🇳 在代理环境下优先使用DeepSeek
+        console.log('🇨🇳 代理环境检测到，优先使用国产AI服务');
+        
+        if (this.deepSeekProvider.isConfigured()) {
+          this.currentProvider = 'deepseek';
+          console.log('🎯 使用AI服务: DeepSeek - 代理环境首选');
+          return; // 直接返回，不再检查Google AI
+        }
       }
       
       console.log('🤖 优先初始化 Google AI (Gemini)...');
@@ -147,6 +166,13 @@ export class AIProviderManager {
     
     if (providerConfig) {
       this.currentProvider = provider;
+      
+      // 持久化到localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('preferred_ai_provider', provider);
+        console.log(`💾 保存首选AI服务: ${provider}`);
+      }
+      
       console.log(`🔄 切换AI服务为: ${providerConfig.name}`);
       return true;
     } else {
